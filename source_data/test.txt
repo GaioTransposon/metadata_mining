@@ -1,0 +1,31 @@
+>SRS7218058
+sample_center_name=
+sample_alias=Aphanizomenon Enrichment Culture Metagenome
+sample_TAXON_ID=449393
+sample_SCIENTIFIC_NAME=freshwater metagenome
+sample_XREF_LINK=bioproject: 657201)
+sample_isolation_source=Aphanizomenon enrichment culture inoculated with lake water from cyanobacterial bloom
+sample_collection_date=12-Aug-2019
+sample_geo_loc_name=USA: Clear Lake, CA
+sample_lat_lon=39.08946 N 122.83015 W
+sample_BioSampleModel=Metagenome or environmental
+experiments=SRX8961728
+study=SRP277920
+study_STUDY_TITLE=Metagenomes from enrichment cultures of two cyanobacterial species in the order Nostocales. Metagenomic assembly
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=Cyanobacteria harmful algal bloom (cyanoHAB) species were isolated from Clear Lake, CA in August of 2019. Isolates 
+were enriched in media and allowed to grow in the lab for several months before DNA was extracted for metagenomic sequencing. The goal of 
+the project is to identify cyanoHAB species common to Clear Lake which experiences annual blooms.
+experiment=SRX8961728
+experiment_external_id_BioProject=PRJNA657201
+experiment_DESIGN_DESCRIPTION=Surface samples were collected via bucket tow from Clear Lake in August of 2019. Colonies were hand picked 
+and transferred into 50% C-N media. Enrichment cultures were allowed to grow for 7 months.  DNA was extracted and purified using the 
+Qiagen DNEasy PowerBiofilm Kit  and sent to Novogene for metagenomic sequencing.
+experiment_external_id_BioSample=SAMN15822589
+experiment_LIBRARY_NAME=Aphanizomenon metagenome Clear Lake 2019
+experiment_LIBRARY_STRATEGY=OTHER
+experiment_LIBRARY_SOURCE=METAGENOMIC
+experiment_LIBRARY_SELECTION=PCR
+experiment_LIBRARY_LAYOUT_PAIRED= :: 
+experiment_instrument=Illumina HiSeq 2000
+runs=SRR12467542
