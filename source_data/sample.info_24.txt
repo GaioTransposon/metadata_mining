@@ -1,0 +1,1207 @@
+>SRS1337475
+sample_center_name=
+sample_alias=PNUSAE002469
+sample_TAXON_ID=562
+sample_SCIENTIFIC_NAME=Escherichia coli
+sample_XREF_LINK=bioproject: 218110)
+sample_strain=PNUSAE002469
+sample_collected_by=CDC
+sample_collection_date=Aug-2013
+sample_geo_loc_name=USA
+sample_host=Missing
+sample_host_disease=Missing
+sample_isolation_source=stool
+sample_lat_lon=Missing
+sample_HHS_region=10
+sample_host_age=0-4
+sample_serovar=E. coli O177:NM
+sample_BioSampleModel=Pathogen.cl
+experiments=SRX1629903
+study=SRP046387
+study_STUDY_TITLE=PulseNet Escherichia coli and Shigella genome sequencing
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=PulseNet STEC genome reference library
+study_XREF_LINK=pubmed: 25103754)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 26044422)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 26679598)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 27365352)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 25013133)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 28860257)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 28302788)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29301876)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29326203)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29650580)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29748405)
+study_STUDY_LINK=      
+study_URL_LINK=NCBI Pathogen Detection (https://www.ncbi.nlm.nih.gov/pathogens/)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+experiment=SRX1629903
+experiment_external_id_EDLB-CDC=PNUSAE002469:wgs
+experiment_external_id_BioProject=PRJNA218110
+experiment_DESIGN_DESCRIPTION=
+experiment_external_id_BioSample=SAMN04544282
+experiment_LIBRARY_NAME=NexteraXT
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: 
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=NexteraXT
+experiment_instrument=Illumina MiSeq
+runs=SRR3223145
+
+>SRS7471636
+sample_center_name=
+sample_alias=AOA_enrichment_SS
+sample_TAXON_ID=2109671
+sample_SCIENTIFIC_NAME=Candidatus Nitrosocosmicus sp.
+sample_DESCRIPTION=Ca. nitrosocosmics
+sample_XREF_LINK=bioproject: 667025)
+sample_isolation_source=ammonia-oxidizing archaea enrichment inoculated with soil
+sample_collection_date=2018-12-01
+sample_geo_loc_name=China: Guangzhou
+sample_lat_lon=23.13 N 113.28 E
+sample_isolate=missing
+sample_sample_type=missing
+sample_BioSampleModel=Microbe, viral or environmental
+experiments=SRX9238413
+study=SRP286249
+study_STUDY_TITLE=AOA_enrichment_SS
+study_STUDY_TYPE=
+experiment=SRX9238413
+experiment_DESIGN_DESCRIPTION=TruSeq DNA Sample Prep Kit
+experiment_LIBRARY_NAME=SS1
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=METAGENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: 
+experiment_instrument=HiSeq X Ten
+runs=SRR12767728
+
+>SRS4278871
+sample_center_name=
+sample_alias=671964.biosample
+sample_TITLE=Shigella flexneri serovar Shigella flexneri 671964
+sample_TAXON_ID=623
+sample_SCIENTIFIC_NAME=Shigella flexneri
+sample_XREF_LINK=bioproject: 315192)
+sample_strain=671964
+sample_collected_by=PHE
+sample_collection_date=Jan-2019
+sample_isolation_source=human
+sample_geo_loc_name=United Kingdom: United Kingdom
+sample_lat_lon=Missing
+sample_serovar=Shigella flexneri
+sample_isolate_name_alias=671964
+sample_sequence_type=245
+sample_potential_contaminant=Shigella flexneri 2002017 uid159233
+sample_host=Homo sapiens
+sample_host_disease=Not available
+sample_BioSampleModel=Pathogen.env
+experiments=SRX5278905
+study=SRP071789
+study_STUDY_TITLE=Routine surveillance of E. coli and Shigella by Public Health England
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=Routine surveillance of E. coli &amp; Shigella by Public Health England
+study_XREF_LINK=pubmed: 31433830)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+study_parent_bioproject=PRJNA248064
+study_STUDY_ATTRIBUTE=      
+study_STUDY_ATTRIBUTES=    
+experiment=SRX5278905
+experiment_external_id_PHE=671964
+experiment_external_id_BioProject=PRJNA315192
+experiment_DESIGN_DESCRIPTION=
+experiment_external_id_PHE=671964.biosample
+experiment_LIBRARY_NAME=strain
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: 
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=Illumina Nextera XT
+experiment_instrument=Illumina HiSeq 2500
+runs=SRR8473386
+
+>SRS6850516
+sample_center_name=
+sample_alias=PNUSAS148265
+sample_TITLE=Salmonella enterica
+sample_TAXON_ID=28901
+sample_SCIENTIFIC_NAME=Salmonella enterica
+sample_XREF_LINK=bioproject: 230403)
+sample_strain=PNUSAS148265
+sample_isolate=missing
+sample_isolation_source=missing
+sample_collected_by=CDC
+sample_collection_date=missing
+sample_geo_loc_name=USA
+sample_lat_lon=missing
+sample_host=missing
+sample_host_disease=missing
+sample_BioSampleModel=Pathogen.cl
+experiments=SRX8557625
+study=SRP040281
+study_STUDY_TITLE=PulseNet Salmonella enterica Genome sequencing
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=Salmonella enterica genomes sequenced as part of PulseNet USA surveillance for foodborne disease
+study_URL_LINK=NCBI Pathogen Detection (https://www.ncbi.nlm.nih.gov/pathogens/)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+study_parent_bioproject=PRJNA290730
+study_STUDY_ATTRIBUTE=      
+study_STUDY_ATTRIBUTES=    
+experiment=SRX8557625
+experiment_external_id_EDLB-CDC=PNUSAS148265:wgs
+experiment_external_id_BioProject=PRJNA230403
+experiment_DESIGN_DESCRIPTION=
+experiment_external_id_EDLB-CDC=PNUSAS148265
+experiment_LIBRARY_NAME=NexteraXT
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: 
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=NexteraXT
+experiment_instrument=Illumina MiSeq
+runs=SRR12026209
+
+>SRS1306257
+sample_center_name=
+sample_alias=PNUSAE002275
+sample_TAXON_ID=562
+sample_SCIENTIFIC_NAME=Escherichia coli
+sample_XREF_LINK=bioproject: 218110)
+sample_strain=PNUSAE002275
+sample_collected_by=CDC
+sample_collection_date=Unknown
+sample_geo_loc_name=USA
+sample_host=Missing
+sample_host_disease=Missing
+sample_isolation_source=stool
+sample_lat_lon=Missing
+sample_HHS_region=3
+sample_host_age=50-59
+sample_serovar=E. coli O103:H2
+sample_BioSampleModel=Pathogen.cl
+experiments=SRX1596155
+study=SRP046387
+study_STUDY_TITLE=PulseNet Escherichia coli and Shigella genome sequencing
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=PulseNet STEC genome reference library
+study_XREF_LINK=pubmed: 25103754)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 26044422)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 26679598)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 27365352)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 25013133)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 28860257)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 28302788)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29301876)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29326203)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29650580)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29748405)
+study_STUDY_LINK=      
+study_URL_LINK=NCBI Pathogen Detection (https://www.ncbi.nlm.nih.gov/pathogens/)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+experiment=SRX1596155
+experiment_external_id_EDLB-CDC=PNUSAE002275:wgs
+experiment_external_id_BioProject=PRJNA218110
+experiment_DESIGN_DESCRIPTION=
+experiment_external_id_BioSample=SAMN04500850
+experiment_LIBRARY_NAME=NexteraXT
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: 
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=NexteraXT
+experiment_instrument=Illumina MiSeq
+runs=SRR3181805
+
+>ERS132372
+sample_center_name=
+sample_alias=SAMEA1316539
+sample_TITLE=LSS10-sc-2012-04-26T12:11:08Z-1278348
+sample_TAXON_ID=1307
+sample_SCIENTIFIC_NAME=Streptococcus suis
+sample_Alias=LSS10-sc-2012-04-26T12:11:08Z-1278348
+sample_ENA checklist=ERC000011
+sample_INSDC center alias=SC
+sample_INSDC center name=Wellcome Sanger Institute
+sample_INSDC first public=2012-05-01T10:12:59Z
+sample_INSDC last update=2018-03-09T09:57:38Z
+sample_INSDC status=public
+sample_SRA accession=ERS132372
+sample_Sample Name=ERS132372
+sample_Title=7114_5#10
+sample_anonymized_name=1278348
+sample_collection_date=1800/2014
+sample_country=United Kingdom
+sample_serovar=Non-typeable
+sample_specific_host=Pig
+sample_strain=LSS10
+experiments=ERX096402
+study=ERP000428
+study_STUDY_TITLE=Streptococcus suis genome comparisons
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=Streptococcus suis is a major porcine and zoonotic pathogen responsible for significant economic losses in the pig 
+industry and an increasing number of human cases. Multiple isolates of S. suis show marked genomic diversity. Here, we report the analysis 
+of whole genome sequences of nine pig isolates that caused disease typical of S. suis and had phenotypic characteristics of S. suis, but 
+their genomes were divergent from those of many other S. suis isolates. Comparison of protein sequences predicted from divergent genomes 
+with those from normal S. suis reduced the size of core genome from 793 to only 397 genes. Divergence was clear if phylogenetic analysis 
+was performed on reduced core genes and MLST alleles. Phylogenies based on certain other genes (16S rRNA, sodA, recN, and cpn60) did not 
+show divergence for all isolates, suggesting recombination between some divergent isolates with normal S. suis for these genes. Indeed, 
+there is evidence of recent recombination between the divergent and normal S. suis genomes for 249 of 397 core genes. In addition, 
+phylogenetic analysis based on the 16S rRNA gene and 132 genes that were conserved between the divergent isolates and representatives of 
+the broader Streptococcus genus showed that divergent isolates were more closely related to S. suis. Six out of nine divergent isolates 
+possessed a S. suis-like capsule region with variation in capsular gene sequences but the remaining three did not have a discrete capsule 
+locus. The majority (40/70), of virulence-associated genes in normal S. suis were present in the divergent genomes. Overall, the divergent 
+isolates extend the current diversity of S. suis species but the phenotypic similarities and the large amount of gene exchange with normal 
+S. suis gives insufficient evidence to assign these isolates to a new species or subspecies. Further, sampling and whole genome analysis 
+of more isolates is warranted to understand the diversity of the species.  Keywords: Streptococcus suis, divergent, genome, phylogeny, 
+MLST, virulence, capsule, recombinatio
+study_STUDY_DESCRIPTION=http://www.sanger.ac.uk/resources/downloads/bacteria/ This data is part of a pre-publication release. For 
+information on the proper use of pre-publication data shared by the Wellcome Trust Sanger Institute (including details of any publication 
+moratoria), please see http://www.sanger.ac.uk/datasharing/
+study_XREF_LINK=PUBMED: 26583006)
+study_STUDY_LINK=      
+study_XREF_LINK=PUBMED: 25824154)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+experiment=ERX096402
+experiment_DESIGN_DESCRIPTION=Illumina sequencing of library 3804130, constructed from sample accession ERS132372 for study accession 
+ERP000428.  This is part of an Illumina multiplexed sequencing run (7114_5).  This submission includes reads tagged with the sequence 
+TAGCTTGT.
+experiment_LIBRARY_NAME=3804130
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: NOMINAL_LENGTH=192,NOMINAL_SDEV=72
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=Standard
+experiment_instrument=Illumina HiSeq 2000
+runs=ERR120130
+
+>ERS3720124
+sample_center_name=
+sample_alias=SAMEA5931644
+sample_TAXON_ID=1313
+sample_SCIENTIFIC_NAME=Streptococcus pneumoniae
+sample_ArrayExpress-SPECIES=Streptococcus pneumoniae
+sample_ArrayExpress-STRAIN_OR_LINE=R6I-20d
+sample_ENA first public=2020-11-10
+sample_ENA last update=2019-09-04
+sample_External Id=SAMEA5931644
+sample_INSDC center alias=SC
+sample_INSDC center name=Wellcome Sanger Institute
+sample_INSDC first public=2020-11-10T17:01:29Z
+sample_INSDC last update=2019-09-04T08:52:08Z
+sample_INSDC status=public
+sample_SRA accession=ERS3720124
+sample_Sample Name=2b70c308-cee8-11e9-88a2-68b599768938
+sample_Submitter Id=2b70c308-cee8-11e9-88a2-68b599768938
+sample_common name=Streptococcus pneumoniae
+sample_subject id=5940STDY8158631
+sample_title=R6I20d-SK23_C_3_i
+experiments=ERX4694172
+study=ERP117105
+study_STUDY_TITLE=Characterising_streptococcal_transformation_through_sequencing_in_vitro_recombinants
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=Bacterial transformation is of great importance both clinically, as it can faciiltate the acquisition of antibiotic 
+resistance and the evasion of vaccines, and biologically, as it plays a a critical role in affecting bacterial population structure and 
+speciation. This analysis is designed to characterise the constraints on genetic exchange through bacterial transformation. A recipient 
+genotype, Streptococcus pneumoniae R6I-20d, was transformed with the same rifampicin resistance mutation isolated in different 
+streptococcal donor species, to identify the important aspects of interspecies variation that limited recombination. Similarly, other 
+resistance markers in S. pneumoniae were also transformed into R6I-20d, to identify how the properties of homologous recombination changed 
+with the structural properties of the resistance determinant. Finally, mutant derivatives of R6I-20d were transformed with the same 
+resistance markers, to identify which aspects of the machinery controlled different properties of the recombination process. By better 
+understanding the transformation process, we can greatly enhance our understanding of bacterial evolution and epidemiology.
+study_STUDY_DESCRIPTION=Bacterial transformation is of great importance both clinically, as it can faciiltate the acquisition of 
+antibiotic resistance and the evasion of vaccines, and biologically, as it plays a a critical role in affecting bacterial population 
+structure and speciation. To characterise the constraints on horizontal DNA transfer through this process, we have conducted a series of 
+experiments using different donors and recipients to generate recombinant bacteria in the laboratory. By quantifying the rates of exchange 
+between donors of different species into a Streptococccus pneumoniae recipient, we have detected a limitation on the transformation rate 
+by interspecies genetic differences. By similarly performing experiments with different S. pneumoniae donors and mutant recipient strains, 
+we have identified limitations to the rate of transfer of multiple types of antibiotic resistance marker, and the moderation of 
+transformation rate by different aspects of the machinery involved in the process. By sequencing these transformant bacteria, we will be 
+able to characterise exactly what types of genetic variation limit genetic exchange between species, and improve our understanding of 
+homologous recombination in bacteria. This data is part of a pre-publication release. For information on the proper use of pre-publication 
+data shared by the Wellcome Trust Sanger Institute (including details of any publication moratoria), please see 
+http://www.sanger.ac.uk/datasharing/
+study_ENA-FIRST-PUBLIC=2020-11-10
+study_STUDY_ATTRIBUTE=      
+study_ENA-LAST-UPDATE=2019-09-03
+study_STUDY_ATTRIBUTE=      
+study_STUDY_ATTRIBUTES=    
+experiment=ERX4694172
+experiment_external_id_BioProject=PRJEB34230
+experiment_DESIGN_DESCRIPTION=Illumina sequencing of library DN538835C:H7, constructed from sample accession ERS3720124 for study 
+accession ERP117105.  This is part of an Illumina multiplexed sequencing run (31585_6).  This submission includes reads tagged with the 
+sequence AGACACTA.
+experiment_external_id_BioSample=SAMEA5931644
+experiment_LIBRARY_NAME=DN538835C:H7
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: NOMINAL_LENGTH=463,NOMINAL_SDEV=124
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=Standard
+experiment_instrument=HiSeq X Ten
+runs=ERR4824188
+
+>ERS142836
+sample_center_name=
+sample_alias=SAMEA1483700
+sample_TITLE=14304-sc-2012-05-29T15:46:07Z-1429415
+sample_TAXON_ID=5833
+sample_SCIENTIFIC_NAME=Plasmodium falciparum
+sample_Alias=14304-sc-2012-05-29T15:46:07Z-1429415
+sample_INSDC center alias=SC
+sample_INSDC center name=Wellcome Sanger Institute
+sample_INSDC first public=2012-08-28T10:23:23Z
+sample_INSDC last update=2018-03-08T15:46:47Z
+sample_INSDC status=public
+sample_SRA accession=ERS142836
+sample_Sample Name=ERS142836
+sample_Title=Plasmodium falciparum
+experiments=ERX140594
+study=ERP000190
+study_STUDY_TITLE=Identification_of_virulence_factors_in_cerebral_malaria_
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=The aim of this study is to correlate proteomic data from cerebral malaria samples with whole genome sequencing of 
+these samples. The data from the whole genome sequencing will be used for analysis of proteomic and RNA-sequencing. The whole genome 
+sequencing will allow adding new sequences and to facilitate the identification of variants associated to cerebral malaria in the 
+proteomic analysis.
+study_STUDY_DESCRIPTION=DNA extracted from clonal isolates of P. falciparum will be mixed at varying ratios and submitted to the standard 
+MalariaGEN Plasmodium Genome Variation sequencing pipeline.  The known in vitro ratios of DNA will simulate the unknown in vivo ratios of 
+multiple strains in a typical field sample, and this information will be used to assess the reliability of using sequence reads to 
+estimate these proportions. This data is part of a pre-publication release. For information on the proper use of pre-publication data 
+shared by the Wellcome Trust Sanger Institute (including details of any publication moratoria), please see 
+http://www.sanger.ac.uk/datasharing/
+study_ENA-FIRST-PUBLIC=2010-05-27
+study_STUDY_ATTRIBUTE=      
+study_ENA-LAST-UPDATE=2017-11-02
+study_STUDY_ATTRIBUTE=      
+study_STUDY_ATTRIBUTES=    
+experiment=ERX140594
+experiment_DESIGN_DESCRIPTION=Illumina sequencing of library 5360287, constructed from sample accession ERS142836 for study accession 
+ERP000190.  This is part of an Illumina multiplexed sequencing run (8036_7).  This submission includes reads tagged with the sequence 
+TGCGATCT.
+experiment_LIBRARY_NAME=5360287
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: NOMINAL_LENGTH=263,NOMINAL_SDEV=73
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=Standard
+experiment_instrument=Illumina HiSeq 2000
+runs=ERR164717
+
+>ERS223481
+sample_center_name=
+sample_alias=SAMEA2057367
+sample_TITLE=SBVW349-sc-2013-03-15T13:03:09Z-1584352
+sample_TAXON_ID=90370
+sample_SCIENTIFIC_NAME=Salmonella enterica subsp. enterica serovar Typhi
+sample_Alias=SBVW349-sc-2013-03-15T13:03:09Z-1584352
+sample_ENA checklist=ERC000011
+sample_INSDC center alias=SC
+sample_INSDC center name=Wellcome Sanger Institute
+sample_INSDC first public=2013-08-14T17:01:10Z
+sample_INSDC last update=2018-03-09T10:10:42Z
+sample_INSDC status=public
+sample_SRA accession=ERS223481
+sample_Sample Name=ERS223481
+sample_Title=9953_5#68
+sample_anonymized_name=1584352
+sample_collection_date=2010
+sample_geographic location (country and/or sea)=Laos
+sample_specific_host=Homo sapiens
+sample_strain=LNT1360
+sample_supplier_name=SBVW349
+sample_serovar=Typhi
+sample_sub_species=enterica
+experiments=ERX299764
+study=ERP001718
+study_STUDY_TITLE=Genomic study of Typhi from typhoid-endemic regions of Asia and Africa and interactions with vaccines, antimicrobials, 
+HIV and asymptomatic carriage
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=INTRODUCTION: Between 1998 and 2010, S. Typhi was an uncommon cause of bloodstream infection (BSI) in Blantyre, 
+Malawi and it was usually susceptible to first-line antimicrobial therapy. In 2011 an increase in a multidrug resistant (MDR) strain was 
+detected through routine bacteriological surveillance conducted at Queen Elizabeth Central Hospital (QECH). METHODS: Longitudinal trends 
+in culture-confirmed Typhoid admissions at QECH were described between 1998-2014. A retrospective review of patient cases notes was 
+conducted, focusing on clinical presentation, prevalence of HIV and case-fatality. Isolates of S. Typhi were sequenced and the phylogeny 
+of Typhoid in Blantyre was reconstructed and placed in a global context. RESULTS: Between 1998-2010, there were a mean of 14 
+microbiological diagnoses of Typhoid/year at QECH, of which 6.8% were MDR. This increased to 67 in 2011 and 782 in 2014 at which time 97% 
+were MDR. The disease predominantly affected children and young adults (median age 11 [IQR 6-21] in 2014). The prevalence of HIV in adult 
+patients was 16.7% [8/48], similar to that of the general population (17.8%). Overall, the case fatality rate was 2.5% (3/94). 
+Complications included anaemia, myocarditis, pneumonia and intestinal perforation. 112 isolates were sequenced and the phylogeny 
+demonstrated the introduction and clonal expansion of the H58 lineage of S. Typhi. CONCLUSIONS: Since 2011, there has been a rapid 
+increase in the incidence of multidrug resistant, H58-lineage Typhoid in Blantyre. This is one of a number of reports of the re-emergence 
+of Typhoid in Southern and Eastern Africa. There is an urgent need to understand the reservoirs and transmission of disease and how to 
+arrest this regional increase.   http://www.sanger.ac.uk/resources/downloads/bacteria/salmonella.html
+study_STUDY_DESCRIPTION=http://www.sanger.ac.uk/resources/downloads/bacteria/salmonella.html This data is part of a pre-publication 
+release. For information on the proper use of pre-publication data shared by the Wellcome Trust Sanger Institute (including details of any 
+publication moratoria), please see http://www.sanger.ac.uk/datasharing/
+study_XREF_LINK=PUBMED: 25961941)
+study_STUDY_LINK=      
+study_XREF_LINK=PUBMED: 25909750)
+study_STUDY_LINK=      
+study_XREF_LINK=PUBMED: 26974227)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+experiment=ERX299764
+experiment_DESIGN_DESCRIPTION=Illumina sequencing of library 7346753, constructed from sample accession ERS223481 for study accession 
+ERP001718.  This is part of an Illumina multiplexed sequencing run (9953_5).  This submission includes reads tagged with the sequence 
+TGCGTGAA.
+experiment_LIBRARY_NAME=7346753
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: NOMINAL_LENGTH=221,NOMINAL_SDEV=68
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=Standard
+experiment_instrument=Illumina HiSeq 2000
+runs=ERR326664
+
+>ERS3782249
+sample_center_name=
+sample_alias=SAMEA5979419
+sample_TAXON_ID=1313
+sample_SCIENTIFIC_NAME=Streptococcus pneumoniae
+sample_ArrayExpress-SPECIES=Streptococcus pneumoniae
+sample_ENA-FIRST-PUBLIC=2020-01-07
+sample_ENA-LAST-UPDATE=2019-09-27
+sample_External Id=SAMEA5979419
+sample_INSDC center alias=SC
+sample_INSDC center name=Wellcome Sanger Institute
+sample_INSDC first public=2020-01-07T17:10:49Z
+sample_INSDC last update=2019-09-27T14:38:34Z
+sample_INSDC status=public
+sample_SRA accession=ERS3782249
+sample_SUBJECT_ID=2245STDY8086931
+sample_Sample Name=9ad9f21e-e12b-11e9-92ba-fa163edcd912
+sample_Submitter Id=9ad9f21e-e12b-11e9-92ba-fa163edcd912
+sample_Title=GPS_ZA_3617
+sample_common name=Streptococcus pneumoniae
+experiments=ERX3797474
+study=ERP001505
+study_STUDY_TITLE=Global_Pneumococcal_Sequencing__GPS__study_I
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=http://www.sanger.ac.uk/resources/downloads/bacteria/streptococcus-pneumoniae.html
+study_STUDY_DESCRIPTION=http://www.sanger.ac.uk/resources/downloads/bacteria/streptococcus-pneumoniae.html This data is part of a 
+pre-publication release. For information on the proper use of pre-publication data shared by the Wellcome Trust Sanger Institute 
+(including details of any publication moratoria), please see http://www.sanger.ac.uk/datasharing/
+study_XREF_LINK=PUBMED: 26363404)
+study_STUDY_LINK=      
+study_XREF_LINK=PUBMED: 26962082)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+experiment=ERX3797474
+experiment_external_id_BioProject=PRJEB3084
+experiment_DESIGN_DESCRIPTION=Illumina sequencing of library DN550014U:E5, constructed from sample accession ERS3782249 for study 
+accession ERP001505.  This is part of an Illumina multiplexed sequencing run (32036_8).  This submission includes reads tagged with the 
+sequence CCTAGGGC.
+experiment_external_id_BioSample=SAMEA5979419
+experiment_LIBRARY_NAME=DN550014U:E5
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: NOMINAL_LENGTH=434,NOMINAL_SDEV=119
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=Standard
+experiment_instrument=HiSeq X Ten
+runs=ERR3795507
+
+>SRS2628560
+sample_center_name=
+sample_alias=PNUSAS025920
+sample_TAXON_ID=90371
+sample_SCIENTIFIC_NAME=Salmonella enterica subsp. enterica serovar Typhimurium
+sample_XREF_LINK=bioproject: 230403)
+sample_collection_date=Jul-2017
+sample_strain=PNUSAS025920
+sample_collected_by=Missing
+sample_serovar=Typhimurium
+sample_lat_lon=Missing
+sample_geo_loc_name=USA
+sample_host=Missing
+sample_isolation_source=stool
+sample_HHS_region=4
+sample_host_age=80-89
+sample_host_disease=Missing
+sample_sub_species=enterica
+sample_BioSampleModel=Pathogen.cl
+experiments=SRX3324850
+study=SRP040281
+study_STUDY_TITLE=PulseNet Salmonella enterica Genome sequencing
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=Salmonella enterica genomes sequenced as part of PulseNet USA surveillance for foodborne disease
+study_URL_LINK=NCBI Pathogen Detection (https://www.ncbi.nlm.nih.gov/pathogens/)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+study_parent_bioproject=PRJNA290730
+study_STUDY_ATTRIBUTE=      
+study_STUDY_ATTRIBUTES=    
+experiment=SRX3324850
+experiment_external_id_EDLB-CDC=PNUSAS025920:wgs
+experiment_external_id_BioProject=PRJNA230403
+experiment_DESIGN_DESCRIPTION=
+experiment_external_id_BioSample=SAMN07816639
+experiment_LIBRARY_NAME=NexteraXT
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: 
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=NexteraXT
+experiment_instrument=Illumina MiSeq
+runs=SRR6216187
+
+>SRS1713087
+sample_center_name=
+sample_alias=2016K-0790
+sample_TITLE=Salmonella enterica
+sample_TAXON_ID=28901
+sample_SCIENTIFIC_NAME=Salmonella enterica
+sample_XREF_LINK=bioproject: 230403)
+sample_strain=2016K-0790
+sample_isolate=missing
+sample_isolation_source=missing
+sample_collected_by=CDC
+sample_collection_date=missing
+sample_geo_loc_name=USA
+sample_lat_lon=missing
+sample_host=missing
+sample_host_disease=missing
+sample_BioSampleModel=Pathogen.cl
+experiments=SRX2190516
+study=SRP040281
+study_STUDY_TITLE=PulseNet Salmonella enterica Genome sequencing
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=Salmonella enterica genomes sequenced as part of PulseNet USA surveillance for foodborne disease
+study_URL_LINK=NCBI Pathogen Detection (https://www.ncbi.nlm.nih.gov/pathogens/)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+study_parent_bioproject=PRJNA290730
+study_STUDY_ATTRIBUTE=      
+study_STUDY_ATTRIBUTES=    
+experiment=SRX2190516
+experiment_external_id_EDLB-CDC=2016K-0790:wgs
+experiment_external_id_BioProject=PRJNA230403
+experiment_DESIGN_DESCRIPTION=
+experiment_external_id_EDLB-CDC=2016K-0790
+experiment_LIBRARY_NAME=NexteraXT
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: 
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=NexteraXT
+experiment_instrument=Illumina MiSeq
+runs=SRR4295079
+
+>ERS2697201
+sample_center_name=Wellcome Sanger Institute
+sample_alias=243d7ba2-8f1b-11e8-ae47-68b59976a384
+sample_TITLE=3662STDY7591586
+sample_TAXON_ID=749906
+sample_COMMON_NAME=gut metagenome
+sample_SCIENTIFIC_NAME=gut metagenome
+sample_SUBJECT_ID=3662STDY7591586
+sample_ArrayExpress-SPECIES=gut metagenome
+sample_ENA-FIRST-PUBLIC=2020-02-12
+sample_ENA-LAST-UPDATE=2018-09-03
+experiments=ERX3909944
+study=ERP010503
+study_STUDY_TITLE=BAMBI__Baby_Associated_MicroBiota_of_the_Intestine_
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=http://www.sanger.ac.uk/research/projects/hostmicrobiota/
+study_STUDY_DESCRIPTION=Study to characterise the microbiota of preterm infants over time These data are part of a pre-publication 
+release. For information on the proper use of pre-publication data shared by the Wellcome Trust Sanger Institute (including details of any 
+publication moratoria), please see http://www.sanger.ac.uk/datasharing/
+experiment=ERX3909944
+experiment_external_id_BioProject=PRJEB9403
+experiment_DESIGN_DESCRIPTION=Illumina sequencing of library NT1450180K, constructed from sample accession ERS2697201 for study accession 
+ERP010503.  This is part of an Illumina multiplexed sequencing run (26850_1).  This submission includes reads tagged with the sequence 
+ACGTACGT.
+experiment_external_id_BioSample=SAMEA4878234
+experiment_LIBRARY_NAME=NT1450180K
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=METAGENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: NOMINAL_LENGTH=450
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=qPCR only
+experiment_instrument=Illumina MiSeq
+runs=ERR3899891
+
+>SRS3974036
+sample_center_name=
+sample_alias=PNUSAS058137
+sample_TITLE=Salmonella enterica
+sample_TAXON_ID=28901
+sample_SCIENTIFIC_NAME=Salmonella enterica
+sample_XREF_LINK=bioproject: 230403)
+sample_strain=PNUSAS058137
+sample_isolate=missing
+sample_isolation_source=missing
+sample_collected_by=CDC
+sample_collection_date=missing
+sample_geo_loc_name=USA
+sample_lat_lon=missing
+sample_host=missing
+sample_host_disease=missing
+sample_BioSampleModel=Pathogen.cl
+experiments=SRX4929076
+study=SRP040281
+study_STUDY_TITLE=PulseNet Salmonella enterica Genome sequencing
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=Salmonella enterica genomes sequenced as part of PulseNet USA surveillance for foodborne disease
+study_URL_LINK=NCBI Pathogen Detection (https://www.ncbi.nlm.nih.gov/pathogens/)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+study_parent_bioproject=PRJNA290730
+study_STUDY_ATTRIBUTE=      
+study_STUDY_ATTRIBUTES=    
+experiment=SRX4929076
+experiment_external_id_EDLB-CDC=PNUSAS058137:wgs
+experiment_external_id_BioProject=PRJNA230403
+experiment_DESIGN_DESCRIPTION=
+experiment_external_id_EDLB-CDC=PNUSAS058137
+experiment_LIBRARY_NAME=NexteraXT
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: 
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=NexteraXT
+experiment_instrument=Illumina MiSeq
+runs=SRR8102323
+
+>ERS1214592
+sample_center_name=
+sample_alias=SAMEA4043482
+sample_TITLE=a4d61b80-330f-11e6-a111-3c4a9275d6c8
+sample_TAXON_ID=1311
+sample_SCIENTIFIC_NAME=Streptococcus agalactiae
+sample_Alias=a4d61b80-330f-11e6-a111-3c4a9275d6c8
+sample_ENA checklist=ERC000011
+sample_INSDC center name=SC
+sample_INSDC first public=2016-10-05T09:27:21Z
+sample_INSDC last update=2016-06-21T16:18:19Z
+sample_INSDC status=public
+sample_SRA accession=ERS1214592
+sample_Sample Name=ERS1214592
+sample_Title=4238STDY6445504
+sample_sample_description=unknown
+sample_strain=unknown
+experiments=ERX1742580
+study=ERP015737
+study_STUDY_TITLE=Group_B_streptococcal_infections_in_neonates__GBS_interaction_with_the_host_innate_immune_system
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=A progressive increase has been identified in the incidence of GBS neonatal meningitis in the Netherlands between 
+1987 and 2011, whereas the incidence of E. coli neonatal meningitis has declined over the same 25-year observation period (Bekker et al, 
+2014. Lancet Infectious Diseases 14:1083-1089). This increase in GBS disease was accompanied by changes in genotype distribution as 
+determined by multi-locus sequence typing (MLST). The introduction of risk-based GBS preventive treatment guidelines in 1999 (consisting 
+of intravenous antibiotic prophylaxis during fever during delivery, premature labour or prolonged rupture of membranes) did not result in 
+the expected decline of GBS disease incidence.  We hypothesize that the sensitivity of GBS to the host innate immune response is 
+associated with GBS genotype, and we will will investigate whether: 1. GBS isolates have gained virulence genes over time (whole genome 
+sequencing); and whether 2. GBS strains have accordingly become less vulnerable to the early innate immune responses (cellular test 
+panels, patient-derived GBS strains from our 25-year spanning collection, and virulence gene-specific deletion mutants).  Understanding 
+neonatal susceptibility to GBS and a change in bacterial virulence factors will lead to approaches to improve the current prevention 
+strategies. Alternatively, protection by prior multivalent GBS vaccination of pregnant women is being considered a novel strategy to 
+improve immunity in neonates, where success will depend on the correct selection of the vaccine components, which may be used to boost 
+immunity in-vivo.
+study_STUDY_DESCRIPTION=A progressive increase has been identified in the incidence of GBS neonatal meningitis in the Netherlands between 
+1987 and 2011, whereas the incidence of E. coli neonatal meningitis has declined over the same 25-year observation period (Bekker et al, 
+2014. Lancet Infectious Diseases 14:1083-1089). This increase in GBS disease was accompanied by changes in genotype distribution as 
+determined by multi-locus sequence typing (MLST). The introduction of risk-based GBS preventive treatment guidelines in 1999 (consisting 
+of intravenous antibiotic prophylaxis during fever during delivery, premature labour or prolonged rupture of membranes) did not result in 
+the expected decline of GBS disease incidence.  We hypothesize that the sensitivity of GBS to the host innate immune response is 
+associated with GBS genotype, and we will will investigate whether: 1. GBS isolates have gained virulence genes over time (whole genome 
+sequencing); and whether 2. GBS strains have accordingly become less vulnerable to the early innate immune responses (cellular test 
+panels, patient-derived GBS strains from our 25-year spanning collection, and virulence gene-specific deletion mutants).  Understanding 
+neonatal susceptibility to GBS and a change in bacterial virulence factors will lead to approaches to improve the current prevention 
+strategies. Alternatively, protection by prior multivalent GBS vaccination of pregnant women is being considered a novel strategy to 
+improve immunity in neonates, where success will depend on the correct selection of the vaccine components, which may be used to boost 
+immunity in-vivo.  This data is part of a pre-publication release. For information on the proper use of pre-publication data shared by the 
+Wellcome Trust Sanger Institute (including details of any publication moratoria), please see http://www.sanger.ac.uk/datasharing/.
+experiment=ERX1742580
+experiment_DESIGN_DESCRIPTION=Illumina sequencing of library 17000481, constructed from sample accession ERS1214592 for study accession 
+ERP015737.  This is part of an Illumina multiplexed sequencing run (20416_6).  This submission includes reads tagged with the sequence 
+TAGACGGAATAGAGGC.
+experiment_external_id_BioSample=SAMEA4043482
+experiment_LIBRARY_NAME=17000481
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: NOMINAL_LENGTH=427,NOMINAL_SDEV=75
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=Standard
+experiment_instrument=Illumina HiSeq 2000
+runs=ERR1672528
+
+>SRS2579384
+sample_center_name=
+sample_alias=PNUSAS022533
+sample_TAXON_ID=28901
+sample_SCIENTIFIC_NAME=Salmonella enterica
+sample_XREF_LINK=bioproject: 230403)
+sample_strain=PNUSAS022533
+sample_collected_by=Missing
+sample_collection_date=Missing
+sample_geo_loc_name=USA
+sample_host=Missing
+sample_host_disease=Missing
+sample_isolation_source=Missing
+sample_lat_lon=Missing
+sample_BioSampleModel=Pathogen.cl
+experiments=SRX3267176
+study=SRP040281
+study_STUDY_TITLE=PulseNet Salmonella enterica Genome sequencing
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=Salmonella enterica genomes sequenced as part of PulseNet USA surveillance for foodborne disease
+study_URL_LINK=NCBI Pathogen Detection (https://www.ncbi.nlm.nih.gov/pathogens/)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+study_parent_bioproject=PRJNA290730
+study_STUDY_ATTRIBUTE=      
+study_STUDY_ATTRIBUTES=    
+experiment=SRX3267176
+experiment_external_id_EDLB-CDC=PNUSAS022533:wgs
+experiment_external_id_BioProject=PRJNA230403
+experiment_DESIGN_DESCRIPTION=
+experiment_external_id_BioSample=SAMN07731217
+experiment_LIBRARY_NAME=NexteraXT
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: 
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=NexteraXT
+experiment_instrument=Illumina MiSeq
+runs=SRR6155338
+
+>SRS5567773
+sample_center_name=
+sample_alias=PNUSAS111092
+sample_TITLE=Salmonella enterica
+sample_TAXON_ID=28901
+sample_SCIENTIFIC_NAME=Salmonella enterica
+sample_XREF_LINK=bioproject: 230403)
+sample_strain=PNUSAS111092
+sample_isolate=missing
+sample_isolation_source=missing
+sample_collected_by=CDC
+sample_collection_date=missing
+sample_geo_loc_name=USA
+sample_lat_lon=missing
+sample_host=missing
+sample_host_disease=missing
+sample_BioSampleModel=Pathogen.cl
+experiments=SRX7050818
+study=SRP040281
+study_STUDY_TITLE=PulseNet Salmonella enterica Genome sequencing
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=Salmonella enterica genomes sequenced as part of PulseNet USA surveillance for foodborne disease
+study_URL_LINK=NCBI Pathogen Detection (https://www.ncbi.nlm.nih.gov/pathogens/)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+study_parent_bioproject=PRJNA290730
+study_STUDY_ATTRIBUTE=      
+study_STUDY_ATTRIBUTES=    
+experiment=SRX7050818
+experiment_external_id_EDLB-CDC=PNUSAS111092:wgs
+experiment_external_id_BioProject=PRJNA230403
+experiment_DESIGN_DESCRIPTION=
+experiment_external_id_EDLB-CDC=PNUSAS111092
+experiment_LIBRARY_NAME=NexteraXT
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: 
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=NexteraXT
+experiment_instrument=Illumina MiSeq
+runs=SRR10340752
+
+>ERS2866494
+sample_center_name=
+sample_alias=SAMEA5055317
+sample_TAXON_ID=1351
+sample_SCIENTIFIC_NAME=Enterococcus faecalis
+sample_ArrayExpress-SPECIES=Enterococcus faecalis
+sample_ENA-FIRST-PUBLIC=2020-02-04
+sample_ENA-LAST-UPDATE=2018-10-30
+sample_External Id=SAMEA5055317
+sample_INSDC center alias=SC
+sample_INSDC center name=Wellcome Sanger Institute
+sample_INSDC first public=2020-02-04T17:04:36Z
+sample_INSDC last update=2018-10-30T15:35:20Z
+sample_INSDC status=public
+sample_SRA accession=ERS2866494
+sample_SUBJECT_ID=5337STDY7479312
+sample_Sample Name=0039cb72-52c9-11e8-a54b-3c4a9275d6c8
+sample_Submitter Id=0039cb72-52c9-11e8-a54b-3c4a9275d6c8
+sample_Title=5337STDY7479312
+sample_common name=Enterococcus faecalis
+experiments=ERX3877186
+study=ERP110518
+study_STUDY_TITLE=Enterococcus_faecalis_global_phylogeny
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=Enterococcus faecalis belongs to the core gut microbiota of humans. It emerged in the last decades as a leading 
+multidrug resistant pathogens in debilitated hospitalized patients. E. faecalis is not human specific but is widespread in nature where it 
+can colonize the gastrointestinal tracts of a wide range of land animals. We will investigate the population structure of the species 
+based on broad sampling from animal sources.
+study_STUDY_DESCRIPTION=Whole genome sequencing of a collection of approximately 2000 human and non-human E. faecalis isolates to infer 
+the core genome-based population structure of this species   This data is part of a pre-publication release. For information on the proper 
+use of pre-publication data shared by the Wellcome Trust Sanger Institute (including details of any publication moratoria), please see 
+http://www.sanger.ac.uk/datasharing/
+study_ENA-FIRST-PUBLIC=2019-12-17
+study_STUDY_ATTRIBUTE=      
+study_ENA-LAST-UPDATE=2018-08-22
+study_STUDY_ATTRIBUTE=      
+study_STUDY_ATTRIBUTES=    
+experiment=ERX3877186
+experiment_external_id_BioProject=PRJEB28327
+experiment_DESIGN_DESCRIPTION=Illumina sequencing of library DN539018E:F8, constructed from sample accession ERS2866494 for study 
+accession ERP110518.  This is part of an Illumina multiplexed sequencing run (28099_2).  This submission includes reads tagged with the 
+sequence GCAAACTA.
+experiment_external_id_BioSample=SAMEA5055317
+experiment_LIBRARY_NAME=DN539018E:F8
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: NOMINAL_LENGTH=456,NOMINAL_SDEV=119
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=Standard
+experiment_instrument=HiSeq X Ten
+runs=ERR3865133
+
+>SRS723582
+sample_center_name=
+sample_alias=CFSAN025187
+sample_TAXON_ID=28901
+sample_SCIENTIFIC_NAME=Salmonella enterica
+sample_XREF_LINK=bioproject: 186035)
+sample_strain=OSF025187
+sample_lat_lon=missing
+sample_collection_date=2013-03-08
+sample_geo_loc_name=USA:MO
+sample_isolation_source=environmental swab
+sample_host_disease=missing
+sample_collected by=OSF
+sample_isolate name alias=CFSAN025187
+sample_ontological term=environmental (swab or sampling):GENEPIO_0001732
+sample_IFSAC+ Category=environmental
+sample_source type=Environmental
+sample_BioSampleModel=Pathogen.env
+experiments=SRX735231
+study=SRP018785
+study_STUDY_TITLE=GenomeTrakr Project: US Food and Drug Administration
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=Currently encompasses whole genome sequencing of cultured pathogens as part of a surveillance project for the rapid 
+detection of outbreaks of foodborne illnesses
+study_XREF_LINK=pubmed: 26139723)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 28705959)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 24158624)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 25995194)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+study_parent_bioproject=PRJNA183844
+study_STUDY_ATTRIBUTE=      
+study_STUDY_ATTRIBUTES=    
+experiment=SRX735231
+experiment_external_id_BioProject=PRJNA186035
+experiment_DESIGN_DESCRIPTION=MiSeq deep shotgun sequencing of cultured isolate.
+experiment_external_id_BioSample=SAMN03102310
+experiment_LIBRARY_NAME=Salmonella enterica str. IEH-NGS-SAL-01462 shotgun
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: NOMINAL_LENGTH=500
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=Illumina Nextera XT library created for Salmonella enterica str. IEH-NGS-SAL-01462.
+experiment_instrument=Illumina MiSeq
+runs=SRR1615076
+
+>SRS2649021
+sample_center_name=
+sample_alias=PNUSAE010344
+sample_TAXON_ID=562
+sample_SCIENTIFIC_NAME=Escherichia coli
+sample_XREF_LINK=bioproject: 218110)
+sample_strain=PNUSAE010344
+sample_collected_by=Missing
+sample_collection_date=Missing
+sample_geo_loc_name=Missing
+sample_host=Missing
+sample_host_disease=Missing
+sample_isolation_source=Missing
+sample_lat_lon=Missing
+sample_BioSampleModel=Pathogen.cl
+experiments=SRX3349305
+study=SRP046387
+study_STUDY_TITLE=PulseNet Escherichia coli and Shigella genome sequencing
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=PulseNet STEC genome reference library
+study_XREF_LINK=pubmed: 25103754)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 26044422)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 26679598)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 27365352)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 25013133)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 28860257)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 28302788)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29301876)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29326203)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29650580)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29748405)
+study_STUDY_LINK=      
+study_URL_LINK=NCBI Pathogen Detection (https://www.ncbi.nlm.nih.gov/pathogens/)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+experiment=SRX3349305
+experiment_external_id_EDLB-CDC=PNUSAE010344:wgs
+experiment_external_id_BioProject=PRJNA218110
+experiment_DESIGN_DESCRIPTION=
+experiment_external_id_BioSample=SAMN07838534
+experiment_LIBRARY_NAME=NexteraXT
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: 
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=NexteraXT
+experiment_instrument=Illumina MiSeq
+runs=SRR6241932
+
+>SRS5508772
+sample_center_name=
+sample_alias=PNUSAS108169
+sample_TITLE=Salmonella enterica
+sample_TAXON_ID=28901
+sample_SCIENTIFIC_NAME=Salmonella enterica
+sample_XREF_LINK=bioproject: 230403)
+sample_strain=PNUSAS108169
+sample_isolate=missing
+sample_isolation_source=missing
+sample_collected_by=CDC
+sample_collection_date=missing
+sample_geo_loc_name=USA
+sample_lat_lon=missing
+sample_host=missing
+sample_host_disease=missing
+sample_BioSampleModel=Pathogen.cl
+experiments=SRX6984552
+study=SRP040281
+study_STUDY_TITLE=PulseNet Salmonella enterica Genome sequencing
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=Salmonella enterica genomes sequenced as part of PulseNet USA surveillance for foodborne disease
+study_URL_LINK=NCBI Pathogen Detection (https://www.ncbi.nlm.nih.gov/pathogens/)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+study_parent_bioproject=PRJNA290730
+study_STUDY_ATTRIBUTE=      
+study_STUDY_ATTRIBUTES=    
+experiment=SRX6984552
+experiment_external_id_EDLB-CDC=PNUSAS108169:wgs
+experiment_external_id_BioProject=PRJNA230403
+experiment_DESIGN_DESCRIPTION=
+experiment_external_id_EDLB-CDC=PNUSAS108169
+experiment_LIBRARY_NAME=NexteraXT
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: 
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=NexteraXT
+experiment_instrument=Illumina MiSeq
+runs=SRR10271341
+
+>SRS6304088
+sample_center_name=
+sample_alias=PNUSAE050092
+sample_TITLE=Shigella sonnei
+sample_TAXON_ID=624
+sample_SCIENTIFIC_NAME=Shigella sonnei
+sample_XREF_LINK=bioproject: 218110)
+sample_strain=PNUSAE050092
+sample_isolate=missing
+sample_isolation_source=missing
+sample_collected_by=CDC
+sample_collection_date=missing
+sample_geo_loc_name=USA
+sample_lat_lon=missing
+sample_host=missing
+sample_host_disease=missing
+sample_BioSampleModel=Pathogen.cl
+experiments=SRX7895120
+study=SRP046387
+study_STUDY_TITLE=PulseNet Escherichia coli and Shigella genome sequencing
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=PulseNet STEC genome reference library
+study_XREF_LINK=pubmed: 25103754)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 26044422)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 26679598)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 27365352)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 25013133)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 28860257)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 28302788)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29301876)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29326203)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29650580)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 29748405)
+study_STUDY_LINK=      
+study_URL_LINK=NCBI Pathogen Detection (https://www.ncbi.nlm.nih.gov/pathogens/)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+experiment=SRX7895120
+experiment_external_id_EDLB-CDC=PNUSAE050092:wgs
+experiment_external_id_BioProject=PRJNA218110
+experiment_DESIGN_DESCRIPTION=
+experiment_external_id_EDLB-CDC=PNUSAE050092
+experiment_LIBRARY_NAME=NexteraXT
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: 
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=NexteraXT
+experiment_instrument=Illumina MiSeq
+runs=SRR11289447
+
+>SRS969018
+sample_center_name=
+sample_alias=CFSAN030665
+sample_TAXON_ID=28901
+sample_SCIENTIFIC_NAME=Salmonella enterica
+sample_XREF_LINK=bioproject: 186035)
+sample_strain=CFSAN030665
+sample_lat_lon=missing
+sample_collection_date=2014-09-16
+sample_isolate_name_alias=CFSAN030665
+sample_geo_loc_name=USA:GA
+sample_isolation_source=soil
+sample_collected_by=missing
+sample_host_disease=missing
+sample_ontological term=soil:ENVO_00001998
+sample_IFSAC+ Category=environmental
+sample_source type=Environmental
+sample_BioSampleModel=Pathogen.env
+experiments=SRX1070069
+study=SRP018785
+study_STUDY_TITLE=GenomeTrakr Project: US Food and Drug Administration
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=Currently encompasses whole genome sequencing of cultured pathogens as part of a surveillance project for the rapid 
+detection of outbreaks of foodborne illnesses
+study_XREF_LINK=pubmed: 26139723)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 28705959)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 24158624)
+study_STUDY_LINK=      
+study_XREF_LINK=pubmed: 25995194)
+study_STUDY_LINK=      
+study_STUDY_LINKS=    
+study_parent_bioproject=PRJNA183844
+study_STUDY_ATTRIBUTE=      
+study_STUDY_ATTRIBUTES=    
+experiment=SRX1070069
+experiment_external_id_BioProject=PRJNA186035
+experiment_DESIGN_DESCRIPTION=HiSeq deep shotgun sequencing of cultured isolate.
+experiment_external_id_BioSample=SAMN03464178
+experiment_LIBRARY_NAME=Salmonella enterica str. CFSAN030665 shotgun
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: NOMINAL_LENGTH=302
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=150-bp library created for Salmonella enterica str. CFSAN030665.
+experiment_instrument=NextSeq 500
+runs=SRR2075037
+
+>ERS3427731
+sample_center_name=
+sample_alias=SAMEA5623650
+sample_TAXON_ID=562
+sample_SCIENTIFIC_NAME=Escherichia coli
+sample_ArrayExpress-SEX=not applicable
+sample_ArrayExpress-SPECIES=Escherichia coli
+sample_ENA-FIRST-PUBLIC=2020-07-02
+sample_ENA-LAST-UPDATE=2019-05-21
+sample_External Id=SAMEA5623650
+sample_GENDER=Not Applicable
+sample_INSDC center alias=SC
+sample_INSDC center name=Wellcome Sanger Institute
+sample_INSDC first public=2020-07-02T17:09:33Z
+sample_INSDC last update=2019-05-21T12:43:58Z
+sample_INSDC status=public
+sample_SRA accession=ERS3427731
+sample_SUBJECT_ID=NORM7911215
+sample_Sample Name=89a7d010-7bb9-11e9-a8d3-68b59976a384
+sample_Submitter Id=89a7d010-7bb9-11e9-a8d3-68b59976a384
+sample_common name=Escherichia coli
+sample_title=NORM7911215
+experiments=ERX4037300
+study=ERP114685
+study_STUDY_TITLE=Norwegian_E__coli_bacteraemia_survey
+study_STUDY_TYPE=
+study_STUDY_ABSTRACT=Worldwide spread of specific bacterial lineages (high-risk clones) is a hallmark of all successful nosocomial and 
+community-related pathogens. However, our current understanding of the evolution, selection and rapid dissemination of these lineages is 
+limited and this prevents accurate prediction of future emerging lineages, improved diagnostics, and optimized targeted treatment 
+strategies. In this project we focus on Escherichia coli, the most common cause of bloodstream and urinary tract infections in the 
+developed world. The problem presented by the scale of these infections is exacerbated by the number of cases involving multi-drug 
+resistant (MDR) strains, which has resulted in MDR E. coli being included in the WHO global priority pathogen list. Our objective is to 
+elucidate the underlying mechanisms that contribute to the evolution, selection and spread of successful bacterial lineages. We do this by 
+characterizing at a whole population level the variation of the ExPEC genomes in a national survey covering all larger hospitals in Norway 
+over the years 2002-2017.
+study_STUDY_DESCRIPTION=Hospitals in Norway have routinely stored all E coli bacteremia isolates since 2002 and there are now ~31000 
+isolates in the national database. We plan to take 10% random sample proportional to the population sizes from each year between 
+2002-2017. Metadata available includes phenotypic resistance tests for 10 antibiotics and the location of the patient. We will use the 
+data to investigate the detailed dynamics of dissemination of clones, AMR and accessory genes over time and space, to validate and extend 
+the results from our published BSAC study This data is part of a pre-publication release. For information on the proper use of 
+pre-publication data shared by the Wellcome Trust Sanger Institute please see http://www.sanger.ac.uk/datasharing/
+study_ENA-FIRST-PUBLIC=2020-07-02
+study_STUDY_ATTRIBUTE=      
+study_ENA-LAST-UPDATE=2019-04-05
+study_STUDY_ATTRIBUTE=      
+study_STUDY_ATTRIBUTES=    
+experiment=ERX4037300
+experiment_external_id_BioProject=PRJEB32059
+experiment_DESIGN_DESCRIPTION=Illumina sequencing of library DN539262O:D6, constructed from sample accession ERS3427731 for study 
+accession ERP114685.  This is part of an Illumina multiplexed sequencing run (30602_1).  This submission includes reads tagged with the 
+sequence GGTCGCTC.
+experiment_external_id_BioSample=SAMEA5623650
+experiment_LIBRARY_NAME=DN539262O:D6
+experiment_LIBRARY_STRATEGY=WGS
+experiment_LIBRARY_SOURCE=GENOMIC
+experiment_LIBRARY_SELECTION=RANDOM
+experiment_LIBRARY_LAYOUT_PAIRED= :: NOMINAL_LENGTH=463,NOMINAL_SDEV=120
+experiment_LIBRARY_CONSTRUCTION_PROTOCOL=Standard
+experiment_instrument=HiSeq X Ten
+runs=ERR4036002
