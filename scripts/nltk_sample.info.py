@@ -20,9 +20,10 @@ from string import punctuation
 #nltk.download('stopwords')
 #nltk.download('averaged_perceptron_tagger')
 
+import os
+home = os.path.expanduser( '~' )
 
-
-file_path = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_50000.txt"
+file_path = home+"/cloudstor/Gaio/MicrobeAtlasProject/sample.info_50000.txt"
 file1 = open(file_path, 'r')
 lines = file1.readlines()
 file1.close()
@@ -49,15 +50,26 @@ three_mers_list=[]
 bean_bag=[]
 
 
-# lines = ['study_STUDY_ABSTRACT=Currently encompasses whole genome sequencing of cultured pathogens as part of a surveillance project for 
-the rapid detection of outbreaks of foodborne illnesses',
-#           'experiment_DESIGN_DESCRIPTION=HiSeq deep shotgun sequencing of cultured isolate.',
-#           'experiment_LIBRARY_CONSTRUCTION_PROTOCOL=150-bp library created for Salmonella enterica str. CFSAN030665.', 
-#           'study_STUDY_DESCRIPTION=http://www.sanger.ac.uk/resources/downloads/bacteria/streptococcus-pneumoniae.html This data is part 
-of a pre-publication release. For information on the proper use of pre-publication data shared by the Wellcome Trust Sanger Institute 
-(including details of any publication moratoria), please see http://www.sanger.ac.uk/datasharing/']
 
-
+lines = [  '>ERS2697201\n',
+ 'sample_center_name=Wellcome Sanger Institute\n',
+ 'sample_alias=243d7ba2-8f1b-11e8-ae47-68b59976a384\n',
+ 'sample_TITLE=3662STDY7591586\n',
+ 'sample_TAXON_ID=749906\n',
+ 'sample_COMMON_NAME=gut metagenome\n',
+ 'sample_SCIENTIFIC_NAME=gut metagenome\n',
+ 'sample_SUBJECT_ID=3662STDY7591586\n',
+ 'sample_ArrayExpress-SPECIES=gut metagenome\n',
+ 'sample_ENA-FIRST-PUBLIC=2020-02-12\n',
+ 'sample_ENA-LAST-UPDATE=2018-09-03\n',
+ 'experiments=ERX3909944\n',
+ 'study=ERP010503\n',
+ 'study_STUDY_TITLE=BAMBI__Baby_Associated_MicroBiota_of_the_Intestine_\n',
+ 'study_STUDY_TYPE=\n',
+ 'study_STUDY_ABSTRACT=http://www.sanger.ac.uk/research/projects/hostmicrobiota/\n',
+ 'study_STUDY_DESCRIPTION=Study to characterise the microbiota of preterm infants over time These data are part of a pre-publication release. For information on the proper use of pre-publication data shared by the Wellcome Trust Sanger Institute (including details of any publication moratoria), please see http://www.sanger.ac.uk/datasharing/\n',
+ 'experiment=ERX3909944\n'
+    ]
 
 new_stopwords = ["all", "due", "to", "on", "daily"]
 
@@ -69,43 +81,167 @@ for line in lines:
     
     
     # get rid of end of line char
-    line_1 = line.strip()
+    line = line.strip()
     
     # get rid of all left string up to =
-    line_2= line_1.split('=', 1)[-1]
+    line= line.split('=', 1)[-1]
     
     # subsitute _ with white space  (FIRST!)
-    line_3 = line_2. replace('_', ' ') 
+    line = line. replace('_', ' ') 
     
     # get rid of punctuation except - and _
     #re.sub(pattern, "", line_2) 
-    line_4 = line_3.translate(str.maketrans("", "", my_punctuation_except_dash))
+    line = line.translate(str.maketrans("", "", my_punctuation_except_dash))
+    
+    
+    #tokenize: 
+    from nltk.tokenize import WhitespaceTokenizer
+    line=WhitespaceTokenizer().tokenize(line) # It does not tokenize on punctuation.
         
-    #print(line_4)
+    
+    print(line)
     
     
-    # 1. make line to list
-    #my_list = nouns.split()
     
-    # tokenize and extract nouns
-    is_noun = lambda pos: pos[:2] == 'NN'
-    tokenized = nltk.word_tokenize(line_4)
-    my_list = [word for (word, pos) in nltk.pos_tag(tokenized) if is_noun(pos)] 
-    #print(my_list)
+    
+    text = 'study_STUDY_DESCRIPTION=Study to characterise the microbiota of preterm infants over time These data are part of a pre-publication release. For information on the proper use of pre-publication data shared by the Wellcome Trust Sanger Institute (including details of any publication moratoria), please see http://www.sanger.ac.uk/datasharing/\n'
+    
+    #tokenize: 
+    from nltk.tokenize import WhitespaceTokenizer
+    line=WhitespaceTokenizer().tokenize(text) # It does not tokenize on punctuation.
+    line
+    
+    
+    
+    
+    
+    
+    ##### TOKENIZATION
+    nltk.download('punkt')
+    from nltk.tokenize import word_tokenize 
+    tokens = word_tokenize(text) 
+    tokens 
+
+    from nltk.tokenize import RegexpTokenizer
+    tokens = RegexpTokenizer('\w+') # punctuation is not considered
+    print(tokens.tokenize(text))
+
+    tokens= RegexpTokenizer('\w+|\S') # punctuation is considered
+    print(tokens.tokenize(text))
+
+    from nltk.tokenize import WordPunctTokenizer
+    print(WordPunctTokenizer().tokenize(text)) # everything is split. it is used when we want to split a text into tokens every time there is either a whitespace or a new line or a tab.
+
+
+
+
+
+
+    from nltk.tokenize import WhitespaceTokenizer
+    text = 'Would you like to travel to New York?\nThe city is expensive\tbut it is amazing!'
+    print(WhitespaceTokenizer().tokenize(text)) # It does not tokenize on punctuation.
+
+    from nltk.tokenize import TreebankWordTokenizer
+    text= "If you think you can't keep up-to-date don't @do it! "
+    print(TreebankWordTokenizer().tokenize(text)) #hyphenated words into single tokens, contractions are not split. 
 
     
-    # 2. chuck if alpha-numeric
-    #if len(my_list)<=2:                    # because usually sample names are lone-standing 
-    my_list=remove_digit_strings(my_list)   
-    #print(my_list)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+# =============================================================================
+#     # make line to list
+#     line_split = line.split()
+# =============================================================================
+    
+    # remove url-addresses: 
+    line_split = [x for x in line_split if not x.startswith('http')]
+    
+    # chuck if alpha-numeric
+    if len(line_split)<=2:      # because usually sample names are lone-standing 
+        line_split=remove_digit_strings(line_split)   
+    
+    
+    
+    
+    
+    # tokenize
+    #if len(line_split)>0:    
+    #    line_split = nltk.word_tokenize(line_split)
+    
+    print(line_split)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    # extract nouns
+    is_noun = lambda pos: pos[:2] == 'NN'
+    line_split = [word for (word, pos) in nltk.pos_tag(line_split) if is_noun(pos)] 
+    
+    
+    
+    print(line_split)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    print(line_split)
+    
+    
+    
+    
+    
+    
+    
+    print(my_list)
+
+    
+    
     
     # Lemmatization
     lemmatizer = nltk.WordNetLemmatizer()
     refined_list = [lemmatizer.lemmatize(t,'n') for t in my_list] # nouns: plural to singular
     
     
-    # remove url-addresses: 
-    refined_list = [x for x in refined_list if not x.startswith('http')]
+    
     
     print(refined_list)
     
@@ -256,6 +392,7 @@ with open('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/words_occurrence.txt'
 # fd.tabulate(3)
 # =============================================================================
         
+
 
 
 
