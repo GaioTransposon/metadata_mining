@@ -179,7 +179,7 @@ stemmer = PorterStemmer()
 stemmer.stem('active') 
 stemmer.stem('better')
 stemmer.stem('friendly')
-stemmer.stem('activity')
+stemmer.stem('susceptibility')
 
 # Lemmatization
 #nltk.download('wordnet')
