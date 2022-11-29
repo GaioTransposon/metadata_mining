@@ -5,14 +5,6 @@ Created on Wed Sep 21 15:44:28 2022
 @author: dgaio
 """
 
-
-import nltk
-from nltk.corpus import stopwords
-from string import punctuation
-from nltk.tokenize import word_tokenize
-from collections import Counter
-from nltk.tokenize import WhitespaceTokenizer
-
 #from nltk.tokenize import word_tokenize # Passing the string text into word tokenize for breaking the sentences
 #nltk.download('punkt')
 #from nltk.stem import WordNetLemmatizer
@@ -23,28 +15,42 @@ from nltk.tokenize import WhitespaceTokenizer
 #nltk.download('stopwords')
 #nltk.download('averaged_perceptron_tagger')
 
-import time
 
+import nltk
+from nltk.corpus import stopwords
+from string import punctuation
+from nltk.tokenize import word_tokenize
+from collections import Counter
+from nltk.tokenize import WhitespaceTokenizer
+import time
 import os
+
 home = os.path.expanduser( '~' )
 
-file_path = home+"/cloudstor/Gaio/MicrobeAtlasProject/sample.info_50000.txt"
+file_path = home+"/cloudstor/Gaio/MicrobeAtlasProject/sample.info_1000.txt"
+out_path = home+"/cloudstor/Gaio/MicrobeAtlasProject/"
 file1 = open(file_path, 'r')
 lines = file1.readlines()
 file1.close()
 
 
 
+
+###
+my_punctuation_except_dash = punctuation.replace("-", "")
+
 def remove_digit_strings(foo):
   foo1 = [x for x in foo if not any(x1.isdigit() for x1 in x)]
   return(foo1)
 
-my_punctuation_except_dash = punctuation.replace("-", "")
+lemmatizer = nltk.WordNetLemmatizer()
+is_noun = lambda pos: pos[:2] == 'NN'
 
-def has_numbers(inputString):
-    return any(char.isdigit() for char in inputString)
+stops = set(stopwords.words('english'))
+###
 
 
+###
 start = time.time()
 
 bean_bag=[]
@@ -52,16 +58,11 @@ counter=0
 
 for line in lines: 
     
-    if line=='\n':
-        #print('saving to file and deleting from memory')
-        counter+=1
-        
-    else: 
+    if line!='\n':      
         
         # grab sample name: 
         if line.startswith('>'):
             sample_name=line.replace('>', '').strip()
-            #print(line)
             
         else: 
             # get rid of end of line char
@@ -70,53 +71,58 @@ for line in lines:
             # get rid of all left string up to =
             line= line.split('=', 1)[-1]
             
-            # subsitute _ with white space  (FIRST!)
-            line = line. replace('_', ' ') 
+            #subsitute _ with white space
+            line = line.replace('_', ' ') 
             
-            # get rid of punctuation except - and _
-            #re.sub(pattern, "", line_2) 
+            # get rid of punctuation except - 
             line = line.translate(str.maketrans("", "", my_punctuation_except_dash))
         
             
-            #TOKENIZATION: 
+            # tokenization: 
             line=WhitespaceTokenizer().tokenize(line) # It does not tokenize on punctuation.
-                
-            # remove url-addresses: 
-            line = [x for x in line if not x.startswith('http')]
-            
+
             # chuck if alpha-numeric
             if len(line)<=2:      # because usually sample names are lone-standing 
-                line=remove_digit_strings(line)   
+                line=remove_digit_strings(line)             
+            
+            
+            for x in line: 
+                x = lemmatizer.lemmatize(x) # nouns: plural to singular
+                x = lemmatizer.lemmatize(x,'v') # nouns are made singular by default, other options: 'a' adjectives, 'r' adverbs, 's' satellite adjectives 
 
-            # remove stopwords
-            line = [word for word in line if word.lower() not in stopwords.words('english')]
+                if x.lower().startswith('http') or x.lower() in stops:
+                    x=''
+   
+                if len(x)>2:
+                    bean_bag.append(x.lower())
+                    
+        # create dir based on 3 last sample name: 
+        here=out_path+sample_name
+        df=open(here,'w')
+        df.write(bean_bag)
 
-            # Lemmatization
-            lemmatizer = nltk.WordNetLemmatizer()
-            line = [lemmatizer.lemmatize(t,'v') for t in line] # verbs: tense to infinitive
-            line = [lemmatizer.lemmatize(t,'n') for t in line] # nouns: plural to singular
-            line = [lemmatizer.lemmatize(t,'s') for t in line] # satellite adj
-            line = [lemmatizer.lemmatize(t,'a') for t in line] # adjectives
-            line = [lemmatizer.lemmatize(t,'r') for t in line] # adverbs
-            
-            
-            # # Or you could just extract nouns!
-            # is_noun = lambda pos: pos[:2] == 'NN'
-            # line = [word for (word, pos) in nltk.pos_tag(line) if is_noun(pos)] 
-            #nouns = [word for word, pos in nltk.pos_tag(word_tokenize(word)) if pos.startswith('N')]
-            
+     
+   
+    else: 
         
-            
-            
-            for item in line: 
-                if len(line)>0:
-                    bean_bag.append(item.lower())
-            
-            # remove words that are present in black list:
+        # print('saving to file and deleting from memory')
+        counter+=1
+        bean_bag=[]
+
+end = time.time()
+###
+        
         
                 
         
-end = time.time()
+
+
+print(bean_bag)
+
+
+
+
+
 print('number of samples:',counter) # 1325
 print("Time elapsed: ", end-start)   # 9.735403060913086
 
@@ -124,35 +130,40 @@ print('hours to run on all samples would be: ', (2000000*(end-start)/counter)/60
 print('days to run on all samples would be: ', (2000000*(end-start)/counter)/60/24)
 
 
-print(bean_bag)
-    
-
-#####
-# create black list based on this : 
-
-##### Frequency distribution 
-from nltk.probability import FreqDist
-
-fdist=FreqDist(bean_bag)
-fdist
-
-##### Plot the Freq distribution
-import matplotlib.pyplot as plt
-fdist.plot(30,cumulative=False)
-#####
 
 
 
+# # Or you could just extract nouns!
+#is_noun = lambda pos: pos[:2] == 'NN'
+# line = [word for (word, pos) in nltk.pos_tag(line) if is_noun(pos)] 
+#nouns = [word for word, pos in nltk.pos_tag(word_tokenize(word)) if pos.startswith('N')]
 
-
-
-
-
-
-
-
-
-
+# remove words that are present in black list:
+                
+                
+                
+                
+# =============================================================================
+# print(bean_bag)
+#     
+# 
+# #####
+# # create black list based on this : 
+# 
+# ##### Frequency distribution 
+# from nltk.probability import FreqDist
+# 
+# fdist=FreqDist(bean_bag)
+# fdist
+# 
+# ##### Plot the Freq distribution
+# import matplotlib.pyplot as plt
+# fdist.plot(30,cumulative=False)
+# #####
+# 
+# 
+# 
+# =============================================================================
 
 
 

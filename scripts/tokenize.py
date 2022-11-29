@@ -279,5 +279,63 @@ print(len(tokens))
 print(word_count_vector.toarray())
 #####
 
+# POS tagging
+
+from nltk.tokenize import word_tokenize
+
+from nltk import pos_tag
+
+text = "I make coffee at work." 
+tokens = word_tokenize(text) 
+tag = pos_tag(tokens) 
+tag
+
+
+# N-GRAMS
+
+from nltk import ngrams
+bigrams = ngrams(tag, n = 2) 
+for grams in bigrams:
+    print(grams)
+
+
+
+# NER
+import nltk
+from nltk import word_tokenize
+from nltk import pos_tag
+text = "Every day I make coffee for Lisa at Duolingo, located in America, and I pay $3."
+tokens = word_tokenize(text)
+tag=pos_tag(tokens)
+tag
+
+
+# Sentences tokenize:
+from nltk import sent_tokenize
+f = open('/Users/danielagaio/Downloads/swiss.txt')
+file = f.read()
+file
+
+sentences = sent_tokenize(file)
+sentences
+
+# Tokenize each sentence into words
+token_sentences = [ word_tokenize(sentence) for sentence in sentences ]
+print(token_sentences)
+
+pos_sentences = [ nltk.pos_tag(sentence) for sentence in token_sentences ]
+print(pos_sentences)
+
+#nltk.download('maxent_ne_chunker')
+#nltk.download('words')
+# Extract named entities
+chunked_sentences = nltk.ne_chunk_sents(pos_sentences)
+for sent in chunked_sentences:  
+    for chunk in sent: 
+        if hasattr(chunk,'label'): 
+            print(chunk)
+
+
+
 
 
