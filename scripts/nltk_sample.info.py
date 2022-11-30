@@ -15,7 +15,7 @@ Created on Wed Sep 21 15:44:28 2022
 #nltk.download('stopwords')
 #nltk.download('averaged_perceptron_tagger')
 
-
+import pandas 
 import nltk
 from nltk.corpus import stopwords
 from string import punctuation
@@ -24,16 +24,16 @@ from collections import Counter
 from nltk.tokenize import WhitespaceTokenizer
 import time
 import os
+import csv 
+import matplotlib.pyplot as plt
 
 home = os.path.expanduser( '~' )
 
-file_path = home+"/cloudstor/Gaio/MicrobeAtlasProject/sample.info_1000.txt"
+file_path = home+"/cloudstor/Gaio/MicrobeAtlasProject/sample.info_10000.txt"
 out_path = home+"/cloudstor/Gaio/MicrobeAtlasProject/"
 file1 = open(file_path, 'r')
 lines = file1.readlines()
 file1.close()
-
-
 
 
 ###
@@ -64,6 +64,14 @@ for line in lines:
         if line.startswith('>'):
             sample_name=line.replace('>', '').strip()
             
+            # create dir based on 3 last sample name: 
+            here=sample_name
+            last_3 = here[-3:]
+            # if dir doesn't already exist make it 
+            if not os.path.exists(out_path+last_3):
+                os.makedirs(out_path+last_3)
+            name_of_file=out_path+last_3+'/'+sample_name+'.txt'
+            
         else: 
             # get rid of end of line char
             line = line.strip()
@@ -76,15 +84,13 @@ for line in lines:
             
             # get rid of punctuation except - 
             line = line.translate(str.maketrans("", "", my_punctuation_except_dash))
-        
-            
+
             # tokenization: 
             line=WhitespaceTokenizer().tokenize(line) # It does not tokenize on punctuation.
 
-            # chuck if alpha-numeric
-            if len(line)<=2:      # because usually sample names are lone-standing 
-                line=remove_digit_strings(line)             
-            
+            # chuck if (alpha)numeric
+            #if len(line)<=2:      # because usually sample names are lone-standing 
+            line=remove_digit_strings(line)             
             
             for x in line: 
                 x = lemmatizer.lemmatize(x) # nouns: plural to singular
@@ -92,34 +98,25 @@ for line in lines:
 
                 if x.lower().startswith('http') or x.lower() in stops:
                     x=''
-   
+
                 if len(x)>2:
                     bean_bag.append(x.lower())
                     
-        # create dir based on 3 last sample name: 
-        here=out_path+sample_name
-        df=open(here,'w')
-        df.write(bean_bag)
+            # with open(name_of_file,'w') as f:
+            #     f.write(str(bean_bag))
 
-     
-   
     else: 
-        
-        # print('saving to file and deleting from memory')
+
         counter+=1
-        bean_bag=[]
+        #bean_bag=[]
 
 end = time.time()
 ###
-        
-        
-                
-        
-
-
-print(bean_bag)
-
-
+   
+# save all words:    
+name_of_file=out_path+'bean_bag.txt'
+with open(name_of_file,'w') as f:
+    f.write(str(bean_bag))
 
 
 
@@ -134,54 +131,45 @@ print('days to run on all samples would be: ', (2000000*(end-start)/counter)/60/
 
 
 # # Or you could just extract nouns!
-#is_noun = lambda pos: pos[:2] == 'NN'
 # line = [word for (word, pos) in nltk.pos_tag(line) if is_noun(pos)] 
-#nouns = [word for word, pos in nltk.pos_tag(word_tokenize(word)) if pos.startswith('N')]
+# nouns = [word for word, pos in nltk.pos_tag(word_tokenize(word)) if pos.startswith('N')]
 
 # remove words that are present in black list:
                 
-                
-                
-                
-# =============================================================================
-# print(bean_bag)
-#     
-# 
-# #####
-# # create black list based on this : 
-# 
-# ##### Frequency distribution 
-# from nltk.probability import FreqDist
-# 
-# fdist=FreqDist(bean_bag)
-# fdist
-# 
-# ##### Plot the Freq distribution
-# import matplotlib.pyplot as plt
-# fdist.plot(30,cumulative=False)
-# #####
-# 
-# 
-# 
-# =============================================================================
+    
+
+#####
+# create black list based on this : 
+
+    
+
+
+
+##### Frequency distribution 
+from nltk.probability import FreqDist
+
+fdist=FreqDist(bean_bag).most_common()
+fdist
+
+
+
+pandas.DataFrame(fdist, columns=['word', 'count']).to_csv(out_path+'bean_bag_freq.txt', index=False)
+
+
+
+fdist=FreqDist(bean_bag)
+##### Plot the Freq distribution
+fdist.plot(30,cumulative=False)
+#####
+
+
+
+
 
 
 
 
     
-# =============================================================================
-#     
-#     
-# from collections import Counter
-# out = Counter(bean_bag)
-# print(out)
-# 
-#         
-# 
-# with open('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/words_occurrence.txt', 'w') as f:
-#     for k,v in  out.most_common():
-#         f.write( "{} {}\n".format(k,v) )
-# =============================================================================
 
 
     
