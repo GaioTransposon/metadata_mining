@@ -26,6 +26,7 @@ import time
 import os
 import csv 
 import matplotlib.pyplot as plt
+from nltk import ngrams
 
 home = os.path.expanduser( '~' )
 
@@ -56,22 +57,31 @@ start = time.time()
 bean_bag=[]
 counter=0
 
+
+# add: if directories exist, delete them. 
+
+
 for line in lines: 
     
+    # if no line break, then it's the same sample. 
     if line!='\n':      
         
-        # grab sample name: 
+        # if line reports sample name, grab sample name: 
         if line.startswith('>'):
             sample_name=line.replace('>', '').strip()
             
-            # create dir based on 3 last sample name: 
+            # create dir based on 3 last characters of sample name: 
             here=sample_name
             last_3 = here[-3:]
+            this_dir=out_path+'dir_'+last_3
             # if dir doesn't already exist make it 
-            if not os.path.exists(out_path+last_3):
-                os.makedirs(out_path+last_3)
-            name_of_file=out_path+last_3+'/'+sample_name+'.txt'
+            try:
+                os.makedirs(this_dir)
+            except FileExistsError:
+                # directory already exists
+                pass
             
+        # any other line is the metadata content of the sample. Parse it: 
         else: 
             # get rid of end of line char
             line = line.strip()
@@ -92,27 +102,68 @@ for line in lines:
             #if len(line)<=2:      # because usually sample names are lone-standing 
             line=remove_digit_strings(line)             
             
+            new_line=[]
             for x in line: 
+                #print(x)
                 x = lemmatizer.lemmatize(x) # nouns: plural to singular
-                x = lemmatizer.lemmatize(x,'v') # nouns are made singular by default, other options: 'a' adjectives, 'r' adverbs, 's' satellite adjectives 
-
-                if x.lower().startswith('http') or x.lower() in stops:
+                x = lemmatizer.lemmatize(x,'v') # verbs to infinitive form. Other options: 'a' adjectives, 'r' adverbs, 's' satellite adjectives 
+                x=x.lower()
+                
+                if x.startswith('http') or x in stops:
                     x=''
 
-                if len(x)>2:
-                    bean_bag.append(x.lower())
+                elif len(x)>0:
                     
-            # with open(name_of_file,'w') as f:
-            #     f.write(str(bean_bag))
+                    # add each word to bean bag
+                    bean_bag.append(x)
+                    
+                    # concatenate back into a line
+                    new_line.append(x)
+                    
+                    
+                    
+            sentence=' '.join(new_line)
 
-    else: 
+            # make n-grams 
+            bigrams = ngrams(sentence.split(), 2)
+            trigrams = ngrams(sentence.split(), 3)
+            quadrigrams = ngrams(sentence.split(), 4)
+            
+            
+            
+
+            my_bi=[]
+            for grams in bigrams:
+                my_bi.append(grams)
+            name_of_file=this_dir+'/'+sample_name+'_bigrams.txt'
+            with open(name_of_file,'a') as f:
+                f.write("%r\n" %str(my_bi))
+            
+            my_tri=[]
+            for grams in trigrams:
+                my_tri.append(grams)
+            name_of_file=this_dir+'/'+sample_name+'_trigrams.txt'
+            with open(name_of_file,'a') as f:
+                f.write("%r\n" %str(my_tri))
+            
+            my_quadri=[]
+            for grams in quadrigrams:
+                my_quadri.append(grams)
+            name_of_file=this_dir+'/'+sample_name+'_quadrigrams.txt'
+            with open(name_of_file,'a') as f:
+                f.write("%r\n" %str(my_quadri))
+                
+                
+
+
+    else: # if there is a line break it's a new sample, add counter 
 
         counter+=1
         #bean_bag=[]
 
 end = time.time()
 ###
-   
+  
 # save all words:    
 name_of_file=out_path+'bean_bag.txt'
 with open(name_of_file,'w') as f:
@@ -161,9 +212,6 @@ fdist=FreqDist(bean_bag)
 ##### Plot the Freq distribution
 fdist.plot(30,cumulative=False)
 #####
-
-
-
 
 
 
