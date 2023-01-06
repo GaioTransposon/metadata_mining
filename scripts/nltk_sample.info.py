@@ -48,6 +48,17 @@ lemmatizer = nltk.WordNetLemmatizer()
 is_noun = lambda pos: pos[:2] == 'NN'
 
 stops = set(stopwords.words('english'))
+
+
+
+
+def get_n_gramlist(text,n):        
+    nngramlist=[]
+    for s in ngrams(text.split(),n=n):        
+        nngramlist.append(s)                
+    return nngramlist
+
+
 ###
 
 
@@ -61,7 +72,7 @@ counter=0
 # add: if directories exist, delete them. 
 
 
-for line in lines: 
+for line in lines[0:1000]: 
     
     # if no line break, then it's the same sample. 
     if line!='\n':      
@@ -102,6 +113,10 @@ for line in lines:
             #if len(line)<=2:      # because usually sample names are lone-standing 
             line=remove_digit_strings(line)             
             
+            
+            my_bi=[]
+            
+            
             new_line=[]
             for x in line: 
                 #print(x)
@@ -122,14 +137,32 @@ for line in lines:
                     
                     
                     
-            sentence=' '.join(new_line)
-
+                
+                sentence=' '.join(new_line)
+                
             # make n-grams 
+            bi=get_n_gramlist(sentence,2)
+            my_bi.append(bi)
+            
+            
+            
+print(my_bi)
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             bigrams = ngrams(sentence.split(), 2)
             trigrams = ngrams(sentence.split(), 3)
             quadrigrams = ngrams(sentence.split(), 4)
-            
-            
             
 
             my_bi=[]
