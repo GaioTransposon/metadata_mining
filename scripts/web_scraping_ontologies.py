@@ -46,7 +46,7 @@ for i in list_of_urls:
     if 'format=tsv' in  i: 
         list_of_tsv.append(i)
 print(list_of_tsv)
-
+len(list_of_tsv)
 ##############################################################################
 
 # PART 2: download the ontologies (tsv files) in directory - must be in our list of desired ontologies
@@ -75,8 +75,15 @@ with open('/Users/dgaio/MicrobeAtlasProject/wanted_ontologies.txt') as file:
     our_list = [line.rstrip() for line in file]
 
 for i in list_of_tsv:
-    if i in our_list:
-        download(i, dest_folder="/Users/dgaio/MicrobeAtlasProject/ontologies")
+    #if i in our_list:
+    download(i, dest_folder="/Users/dgaio/MicrobeAtlasProject/ontologies")
+    # else:
+    #     print("a new ontology is now on Ontobee: ", i)
+    #     print("if you want to download it, type 'yes'")
+    #     if input("yes"):
+    #         download(i, dest_folder="/Users/dgaio/MicrobeAtlasProject/ontologies")
+    #     else: 
+    #         pass
 
 ##############################################################################
 
