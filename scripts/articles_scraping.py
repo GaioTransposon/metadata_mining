@@ -11,62 +11,158 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 
-# Set the URL for the search results page on PubMed
-url = "https://pubmed.ncbi.nlm.nih.gov/?term=marine+ecology+marine+conservation+water+metagenomics&filter=simsearch1.fha&size=200"
 
-
-# Send a GET request to the URL and store the response
-response = requests.get(url)
-
-# Parse the HTML content of the response using BeautifulSoup
-soup = BeautifulSoup(response.content, "html.parser")
-
-# Create an empty dataframe to store the results
-df = pd.DataFrame(columns=["Title", "Abstract", "Journal", "Search Term"])
-
-# Find all article links on the search results page
-article_links = soup.find_all("a", class_="docsum-title")
-
-
-# Loop through the first 20 article links and scrape the title, abstract, and journal name
-for link in article_links:
-    # Get the URL for the article page
-    article_url = "https://pubmed.ncbi.nlm.nih.gov" + link.get("href")
+# It takes on a list of biome related terms and creates urls for the search results page on PubMed
+def create_pubmed_search_urls(biome_list):
     
-    # Send a GET request to the article page and store the response
-    article_response = requests.get(article_url)
+    # keep name of list (hence biome) in memory 
+    var_name=biome_list[0]
     
-    # Parse the HTML content of the article page using BeautifulSoup
-    article_soup = BeautifulSoup(article_response.content, "html.parser")
     
-    # Extract the title, abstract, and journal name from the article page
-    title = article_soup.find("h1", class_="heading-title")
-    abstract = article_soup.find("div", class_="abstract-content selected")
-    journal = article_soup.find("span", class_="docsum-journal-citation short-journal-citation").text.strip()
+    my_terms=[]
+    for i in biome_list:
+        # when item in the list is a composed term, join it: 
+        if len(i.split())==2:
+            i=i.split()
+            i='+'.join(i)
+        else:
+            pass
+        # compose ncbi url
+        term="https://pubmed.ncbi.nlm.nih.gov/?term="+str(i)+"+metagenomics"+"&filter=simsearch1.fha&size=200"
+        my_terms.append(term)
+    return var_name,str(i),my_terms
+
+
+water_list = ["water", "wastewater", "water sediment", "river", "lake", 
+              "groundwater", "estuary", "sea", "marine", "water reservoir" , 
+              "ocean", "brine"]
+
+soil_list = ["field", "agricultural", "paddy", "forest", "farm", "desert", 
+             "tundra", "peatland","shrub"]
+
+print(create_pubmed_search_urls(water_list)) 
+my_urls=create_pubmed_search_urls(water_list)
+len(my_urls[2]) 
+
+
     
-    print(journal)
+def give_article_links(these_urls):
     
-    # Check if the journal name includes the word "marine" or "water" (case insensitive)
-    if "marine" in journal.lower() or "water" in journal.lower():
+    biome = these_urls[0]
+    search_term = these_urls[1]
+    
+    for url in these_urls[2]: 
         
-        # Check if the article has a title, abstract, and journal name
-        if title is not None and abstract is not None: #and journal is not None:
-            # Extract the text content of the title, abstract, and journal sections
-            title = title.text.strip()
-            abstract = abstract.text.strip()
-            journal = journal
+        # Send a GET request to the URL and store the response
+        response = requests.get(url)
         
+        # Parse the HTML content of the response using BeautifulSoup
+        soup = BeautifulSoup(response.content, "html.parser")
+        
+        # Create an empty dataframe to store the results
+        df = pd.DataFrame(columns=["url", "biome"])
+
+        # Find all article links on the search results page
+        articles_links_fun = soup.find_all("a", class_="docsum-title")
+
+        # Loop through the first 20 article links and scrape the title, abstract, and journal name
+        for link in articles_links_fun:
+            #print(link)
+            # Get the URL for the article page
+            article_url = "https://pubmed.ncbi.nlm.nih.gov" + link.get("href")
+            
             # Create a new row in the dataframe with the article information
-            df = df.append({"Title": title, "Abstract": abstract, "Journal": journal, "Search Term": "marine"}, ignore_index=True)  
+            df = df.append({"url": article_url, "biome": biome, "search_term": search_term}, ignore_index=True)  
 
-# Print the dataframe
-print(df)
-len(df)
+    return df
 
 
+x = give_article_links(my_urls)
+print(x)         
+
+
+           
+
+
+# Define a function to scrape information from URLs
+def scrape_url(df):
+    
+    df_out = df.copy()
+    
+    for index, row in df.iterrows():
+        # Get the URL from the specified column of the row
+        url = row['url']
+        #url="https://pubmed.ncbi.nlm.nih.gov/35649310/"
+        
+        # Send a request to the URL
+        response = requests.get(url)
+        
+        # Parse the HTML content using BeautifulSoup
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Scrape the title of the article
+        title = soup.find('h1', class_='heading-title').text.strip()
+        abstract = soup.find("div", class_="abstract-content selected").text.strip()
+        journal = soup.find('div', class_='article-source').text.strip().split('\n')[0]
+        
+        
+        if journal is not None and title is not None and abstract is not None:     # and row['search_term'] in journal.lower() 
+                        
+            # Add the scraped information to the dataframe as new columns
+            df_out.loc[index, 'Title'] = title
+            df_out.loc[index, 'Abstract'] = abstract
+            df_out.loc[index, 'Journal'] = journal
+            
+        else:
+            pass
+            
+    return df_out
+        
+        
+    
+
+# Apply the function to each row of the dataframe
+y = scrape_url(x)
+print(y)
+            
+
+    
+
+
+            
+            
+            
+            
 
 
 
+
+
+
+
+import pandas as pd
+import spacy
+
+# load the spaCy model for named entity recognition
+nlp = spacy.load("en_core_web_sm")
+
+# read in the abstracts from a CSV file
+df = y
+
+# define a function to extract sample origin information from an abstract
+def extract_sample_origin(abstract):
+    doc = nlp(abstract)
+    sample_origins = []
+    for ent in doc.ents:
+        if ent.label_ in ["LOC", "ORG"]:
+            sample_origins.append(ent.text.lower())
+    return sample_origins
+
+# apply the function to the abstract column of the dataframe
+df["sample_origins"] = df["Abstract"].apply(extract_sample_origin)
+
+# print the resulting dataframe
+print(df.head())
 
 
 
