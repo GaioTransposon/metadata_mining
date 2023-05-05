@@ -290,35 +290,26 @@ def evaluate_biome_labels(df):
 y3 = evaluate_biome_labels(y2[0:4])
 #y3.to_csv('articles_info_for_training.csv', index=False)
 
-y4 = evaluate_biome_labels(y2[3:7])
+y4 = evaluate_biome_labels(y2[3:5])
 
 
-
-
-
-# if file already exists, open it and concatenate the new dataframe
-def update_dataframe(df, output_file):
-    
-    if os.path.isfile(output_file):
-        
-        # If the output file exists, load the existing dataframe and concatenate with the new rows
+def update_dataframe(updated_df, output_file):
+    if os.path.exists(output_file):
         existing_df = pd.read_csv(output_file)
-        # Keep only the rows with titles that don't match
-        titles = existing_df['title'].str.lower()
-        new_rows = df.loc[~df['title'].str.lower().isin(titles)]
-        updated_df = pd.concat([existing_df, new_rows], ignore_index=True)
+        existing_titles = existing_df['title'].str.lower().tolist()
+        new_df = updated_df[~updated_df['title'].str.lower().isin(existing_titles)]
+        if len(new_df) > 0:
+            existing_df = pd.concat([existing_df, new_df], ignore_index=True)
+            existing_df.to_csv(output_file, index=False)
+            print(f"{len(new_df)} new rows added to {output_file}")
+            return existing_df
+        else:
+            print("No new rows added to the existing file.")
+            return existing_df
     else:
-        # If the output file doesn't exist, use the new dataframe as-is
-        updated_df = df.copy()
-
-    # Evaluate the biome labels
-    updated_df = evaluate_biome_labels(updated_df)
-
-    # Save the updated dataframe to a new file
-    updated_df.to_csv(output_file, index=False)
-    print(f"Saved the updated dataframe to {output_file}")
-    return updated_df
-
+        updated_df.to_csv(output_file, index=False)
+        print(f"File saved as {output_file}")
+        return updated_df
 
 
 # Update the dataframe and save to file
@@ -335,15 +326,9 @@ update_dataframe(y4, 'articles_info_for_training.csv')
 
 
 
-# list of PubMed article links
-article_links = ['https://pubmed.ncbi.nlm.nih.gov/28925579/',
-                 'https://pubmed.ncbi.nlm.nih.gov/23577216/',
-                 'https://pubmed.ncbi.nlm.nih.gov/29016661/',
-                 'https://pubmed.ncbi.nlm.nih.gov/27458453/',
-                 'https://pubmed.ncbi.nlm.nih.gov/37073260/']
 
-for link in article_links:
-    
+
+
 
 
     
