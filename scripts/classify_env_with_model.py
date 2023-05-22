@@ -6,172 +6,214 @@ Created on Wed Apr 26 17:15:15 2023
 @author: dgaio
 """
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.metrics import classification_report
-from sklearn.model_selection import train_test_split
-import pandas as pd
 import os
-import numpy as np
-
-
-home = os.path.expanduser( '~' )
-
-file_path = home+"/cloudstor/Gaio/MicrobeAtlasProject/articles.csv"
-
-
-
-# Step 1: Collect and prepare the data
-data = pd.read_csv(file_path)
-X = data['text']
-y = data['class']
-
-# Step 2: Define the classes
-classes = ['marine', 'human', 'host-associated', 'plant', 'soil']
-
-# Step 3: Feature extraction
-vectorizer = TfidfVectorizer(stop_words='english')
-X = vectorizer.fit_transform(X)
-
-# Step 4: Train the model
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-clf = MultinomialNB()
-clf.fit(X_train, y_train)
-
-
-# Step 5: Evaluate the model
-y_pred = clf.predict(X_test)
-target_names = sorted(data['class'].unique())
-
-# Calculate the confusion matrix
-conf_mat = np.zeros((len(target_names), len(target_names)), dtype=np.int32)
-for i, j in zip(y_test, y_pred):
-    conf_mat[target_names.index(i), target_names.index(j)] += 1
-
-# Print the confusion matrix
-print("Confusion Matrix:")
-print(" ", end="")
-for target in target_names:
-    print(f"{target:10s}", end="")
-print()
-for i, target in enumerate(target_names):
-    print(f"{target:10s}", end="")
-    for j in range(len(target_names)):
-        print(f"{conf_mat[i, j]:10d}", end="")
-    print()
-
-
-# Step 6: Use the model
-new_article = vectorizer.transform(['This is a new article about marine life.'])
-predicted_class = clf.predict(new_article)
-print(predicted_class)
-
-
-###########################
-# Edited to print "unknown":
-    
-# This script loads the data, preprocesses it, 
-# splits it into training and testing sets, trains a Naive Bayes classifier, 
-# evaluates the model using a confusion matrix, and outputs 
-# the predicted class for each sample in the test set. 
-# If the classifier is uncertain about the predicted class for a sample, 
-# it outputs "unknown".
-
-
 import pandas as pd
 import numpy as np
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.svm import SVC
 
-# Step 1: Load the data
-data = pd.read_csv(file_path)
 
-# Step 2: Preprocess the data
-vectorizer = CountVectorizer()
-X = vectorizer.fit_transform(data['text'])
-y = data['class']
+def train_classifier_model(model_name):
+    """
+    Trains a classifier model using the specified training dataset file and model name.
+    
+    Parameters:
+        model_name (str): Name of the classifier model to train. Should be one of:
+            'Multinomial Naive Bayes', 'Random Forest Classifier', 'Support Vector Machines', or
+            'Gradient Boosting Classifier'.
+            
+    Returns:
+        A tuple containing the trained classifier model and the TfidfVectorizer object.
+    """
+    file_path = os.path.expanduser('~/github/metadata_mining/middle_dir/pubmed_articles_info_for_training.csv')
 
-# Step 3: Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Step 1: Collect and prepare the data
+    data = pd.read_csv(file_path).dropna(subset=['confirmed_biome'])
 
-# Step 4: Train a Naive Bayes classifier
-clf = MultinomialNB()
-clf.fit(X_train, y_train)
+    # Step 2: Define the classes
+    classes = ['water', 'animal', 'soil', 'plant']
+    
+    # Step 3: Group the data by confirmed_biome and sample an equal number of rows for each biome
+    grouped_data = data.groupby('confirmed_biome')
+    sampled_data = grouped_data.apply(lambda x: x.sample(grouped_data.size().min(), random_state=42))
 
-# Step 5: Evaluate the model
-y_pred = clf.predict(X_test)
-target_names = sorted(data['class'].unique())
+    # Step 4: Feature extraction
+    vectorizer = TfidfVectorizer(stop_words='english')
+    X = vectorizer.fit_transform(sampled_data['abstract'] + ' ' + sampled_data['title'])
+    y = sampled_data['confirmed_biome']
 
-# Calculate the confusion matrix
-conf_mat = confusion_matrix(y_test, y_pred, labels=target_names)
+    # Step 5: Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, stratify=y, random_state=42)
 
-# Print the confusion matrix
-print("Confusion Matrix:")
-print(" ", end="")
-for target in target_names:
-    print(f"{target:10s}", end="")
-print()
-for i, target in enumerate(target_names):
-    print(f"{target:10s}", end="")
-    for j in range(len(target_names)):
-        print(f"{conf_mat[i, j]:10d}", end="")
-    print()
-
-# Output uncertain predictions as "unknown"
-for i in range(len(y_pred)):
-    if np.max(clf.predict_proba(X_test)[i]) < 0.5:
-        print(f"Uncertain prediction for sample {i + 1}: unknown")
+    # Step 6: Train the model
+    if model_name == "Multinomial Naive Bayes":
+        clf = MultinomialNB()
+    elif model_name == "Random Forest Classifier":
+        clf = RandomForestClassifier(random_state=42)
+    elif model_name == "Support Vector Machines":
+        clf = SVC(random_state=42)
+    elif model_name == "Gradient Boosting Classifier":
+        clf = GradientBoostingClassifier(random_state=42)
     else:
-        print(f"Predicted class for sample {i + 1}: {y_pred[i]}")
+        raise ValueError(f"Invalid model name: {model_name}")
 
-###########################
+    clf.fit(X_train, y_train)
+
+    # Step 7: Evaluate the model on the testing set
+    y_pred = clf.predict(X_test)
+    target_names = sorted(data['confirmed_biome'].unique())
+
+    # Calculate the confusion matrix
+    conf_mat = np.zeros((len(target_names), len(target_names)), dtype=np.int32)
+    for i, j in zip(y_test, y_pred):
+        conf_mat[target_names.index(i), target_names.index(j)] += 1
+
+    # Print the confusion matrix
+    print("Confusion Matrix -", model_name)
+    print("{:<10s}".format(""), end="")
+    print("".join("{:<10s}".format(target) for target in target_names))
+    for i, target in enumerate(target_names):
+        print("{:<10s}".format(target), end="")
+        print("".join("{:<10d}".format(conf_mat[i, j]) for j in range(len(target_names))))
+
+    # Calculate the number of correct and incorrect predictions
+    correct_predictions = np.trace(conf_mat)
+    incorrect_predictions = y_test.shape[0] - correct_predictions
     
-# as a function:   
+    # Print the number of correct and incorrect predictions
+    print("\n", model_name)
+    print("Correct Predictions:", correct_predictions)
+    print("Incorrect Predictions:", incorrect_predictions)
     
+    # Return the trained model and vectorizer
+    return clf, vectorizer
+
+
+
+
+
+
+
+train_classifier_model("Multinomial Naive Bayes")
+train_classifier_model("Random Forest Classifier")
+train_classifier_model("Support Vector Machines")
+train_classifier_model("Gradient Boosting Classifier")
+
+
+
+# maybe it's better to train the models and use them all, then pick the biome they most agree on for a testing string. 
+
+
+import os
 import pandas as pd
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import normalize
+import re
+import string
 
-def predict_class(text, vectorizer, clf):
-
-    # Step 2: Preprocess the data (using the pre-trained vectorizer)
-    X_input = vectorizer.transform([text])
-
-    # Step 3: Predict the class of the input text (using the pre-trained classifier)
-    y_pred = clf.predict(X_input)[0]
+def preprocess_text(text):
+    """
+    Preprocesses the input text by removing punctuation, converting to lowercase, and removing extra whitespaces.
     
-    # Output uncertain predictions as "unknown"
-    if np.max(clf.predict_proba(X_input)) < 0.2:   # higher means more doubtful 
-        return "unknown"
-    else:
-        return y_pred
+    Parameters:
+        text (str): The input text to preprocess.
     
+    Returns:
+        The preprocessed text.
+    """
+    text = text.lower()  # Convert to lowercase
+    text = re.sub(f"[{re.escape(string.punctuation)}]", "", text)  # Remove punctuation
+    text = re.sub("\s+", " ", text)  # Remove extra whitespaces
     
-# Preprocess the data and train the classifier
-file_path = home+"/cloudstor/Gaio/MicrobeAtlasProject/articles.csv"
-data = pd.read_csv(file_path)
-vectorizer = CountVectorizer()
-X = vectorizer.fit_transform(data['text'])
-y = data['class']
-clf = MultinomialNB()
-clf.fit(X, y)
+    return text
+
+def predict_biome(model, vectorizer, text):
+    """
+    Predicts the biome for a given text using the trained classifier model and TfidfVectorizer.
     
+    Parameters:
+        model: Trained classifier model.
+        vectorizer: TfidfVectorizer object used for feature extraction.
+        text (str): Text to predict the biome for.
     
-text = "A new study examines the effects of climate change on marine ecosystems. The study analyzes data..."
+    Returns:
+        The predicted biome for the given text.
+    """
+    preprocessed_text = preprocess_text(text)
+    
+    # Transform the preprocessed text using the vectorizer
+    X = vectorizer.transform([preprocessed_text])
+    
+    # Predict the biome
+    predicted_biome = model.predict(X)[0]
+    
+    return predicted_biome
 
-# Predict the class of the input text
-predicted_class = predict_class(text, vectorizer, clf)
+# Example usage
+model_name = "Multinomial Naive Bayes"  # Choose the model name you used during training
+trained_model, vectorizer = train_classifier_model(model_name)
 
-# Print the predicted class
-print("Predicted class:", predicted_class)
+text_to_predict = "This is a sample text for prediction."  # Replace with your own text
+predicted_biome = predict_biome(trained_model, vectorizer, text_to_predict)
+print("Predicted Biome:", predicted_biome)
 
 
-###########################
 
 
+
+# Example usage
+text_to_predict = "This is a sample text for prediction."  # Replace with your own text
+preprocessed_text = preprocess_text(text_to_predict)
+
+# Transform the preprocessed text using the vectorizer
+X = vectorizer.transform([preprocessed_text])
+
+# Predict the biome using the trained model
+predicted_biome = trained_model.predict(X)[0]
+print("Predicted Biome:", predicted_biome)
+
+
+
+# Check the vocabulary learned by the vectorizer:
+vocab = vectorizer.get_feature_names()
+print("Vocabulary:", vocab)
+
+if model_name in ["Random Forest Classifier", "Gradient Boosting Classifier"]:
+    importances = trained_model.feature_importances_
+    feature_importances = list(zip(vocab, importances))
+    feature_importances.sort(key=lambda x: x[1], reverse=True)
+    print("Top 10 Feature Importances:")
+    for feature, importance in feature_importances[:10]:
+        print(feature, importance)
+elif model_name == "Multinomial Naive Bayes":
+    feature_log_prob = trained_model.feature_log_prob_
+    top_biomes = trained_model.classes_
+    for i, biome in enumerate(top_biomes):
+        print("Top 10 Features for Biome:", biome)
+        top_features_indices = feature_log_prob[i].argsort()[::-1][:10]
+        for feature_index in top_features_indices:
+            print(vocab[feature_index])
+        print()
+else:
+    print("Feature importances/coefficients not available for this model.")
 
     
+train_predictions = trained_model.predict(X_train)
+train_accuracy = accuracy_score(y_train, train_predictions)
+print("Training Accuracy:", train_accuracy)
+
+from sklearn.metrics import accuracy_score
+
+# Assuming you have the training features and labels as X_train and y_train
+
+# Calculate the training predictions
+train_predictions = trained_model.predict(X_train)
+
+# Calculate the training accuracy
+train_accuracy = accuracy_score(y_train, train_predictions)
+print("Training Accuracy:", train_accuracy)
 
 

@@ -6,12 +6,16 @@ Created on Thu Apr 27 15:45:06 2023
 @author: dgaio
 """
 
-
+import sys
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import os
+import matplotlib.pyplot as plt
+import re
+from collections import Counter
+import random
 
 
 
@@ -95,113 +99,150 @@ def create_pubmed_search_urls(biome_list):
      
     return var_name,mydic
     
-    
-           
 
-water_list = ["water", "wastewater", "sediment"] # "river", "lake", 
-              #"groundwater", "estuary", "sea", "marine", "reservoir" , 
-              #"ocean", "brine"]
 
-soil_list = ["soil", "field", "agricultural"]# "paddy", "forest", "farm", "desert", 
-             #"tundra", "peatland","shrub"]
 
+
+def read_file(file_path):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+        data_list = [line.strip() for line in lines]
+    return data_list
+
+def get_random_selection_from_file(file_path, n, random_seed):
+    data_list = read_file(file_path)
+    first_item = data_list[0]
+    random.seed(random_seed)  # Set the random seed
+    random_items = random.sample(data_list[1:], n)
+    random_selection = [first_item] + random_items
+    return random_selection
+
+
+home = os.path.expanduser('~')
+
+n = 2
+# n = int(input("Enter the number of additional random items to select: "))
+
+# random seed of choice
+rs = 42
+# rs = int(input("Enter the random seed integer to run random selection of items from lists: "))
+
+
+
+soil_list = get_random_selection_from_file((home + "/github/metadata_mining/middle_dir/envs_soil.csv"), n, rs)
+print(soil_list)
+
+water_list = get_random_selection_from_file((home + "/github/metadata_mining/middle_dir/envs_water.csv"), n, rs)
+print(water_list)
+
+plant_list = get_random_selection_from_file((home + "/github/metadata_mining/middle_dir/envs_plant.csv"), n, rs)
+print(plant_list)
+
+animal_list = get_random_selection_from_file((home + "/github/metadata_mining/middle_dir/envs_animal.csv"), n, rs)
+print(animal_list)
+
+
+
+# Usage exmaple: 
 x = create_scholar_search_urls(water_list)
 x[0]
 x[1]
 
+
+r = create_pubmed_search_urls(soil_list)
 y = create_pubmed_search_urls(water_list)
-y[0]
-y[1]
-    
-    
+u = create_pubmed_search_urls(plant_list)
+k = create_pubmed_search_urls(animal_list)
     
 
-    
+
+
+# Get article links if not already present in old file: 
+home = os.path.expanduser('~')
+myfile = home + "/github/metadata_mining/middle_dir/pubmed_articles_info_for_training.csv"
+old_df = pd.read_csv(myfile)  # Read the older DataFrame
+
 def get_article_links(df_with_urls):
-    
     # for testing purposes
-    #df_with_urls = y
-    
+    # df_with_urls = y
+
     # find out which page it comes from (e.g.: scholar or pubmed)
-    which_source=list(df_with_urls[1].items())[0][1][0].split('/')[2].split('.')[0]
-    
-    
+    which_source = list(df_with_urls[1].items())[0][1][0].split('/')[2].split('.')[0]
+
     biome = df_with_urls[0]
-    article_links_list =[]
-            
+    article_links_list = []
+
     for i in df_with_urls[1]:
-        search_term=i
+        search_term = i
         print(search_term)
-        
+
         for page_url in df_with_urls[1][i]:
-            
             # URL for testing:
-            #page_url="https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=soil+AND+earth+AND+microbiome+AND+metagenomics+&btnG="
-            #page_url="https://pubmed.ncbi.nlm.nih.gov/?term=water+microbiome+metagenomics&filter=simsearch1.fha&size=200"
+            # page_url="https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=soil+AND+earth+AND+microbiome+AND+metagenomics+&btnG="
+            # page_url="https://pubmed.ncbi.nlm.nih.gov/?term=water+microbiome+metagenomics&filter=simsearch1.fha&size=200"
             print(page_url)
-            
+
             # Send a GET request to the URL and get the HTML content
             response = requests.get(page_url)
-            
-            if (response.status_code == 200):
-                
+
+            if response.status_code == 200:
                 # Add a 5-second delay between requests
                 time.sleep(5)
-                
-                
+
                 # Parse the HTML content using BeautifulSoup
                 soup = BeautifulSoup(response.content, 'html.parser')
 
-
-                # if soup from scholar: 
+                # if soup from scholar:
                 if which_source == 'scholar':
                     print('scholar')
                     articles = soup.find_all('div', class_='gs_ri')
                     for article in articles:
-                        articles_link_fun = article.find('a')['href']
-                        article_links_list.append({'biome': biome, 'search_term': search_term, 'search_url': url, 'article_link': articles_link_fun})
+                        article_link = article.find('a')['href']
+                        article_links_list.append({'biome': biome, 'search_term': search_term, 'search_url': page_url, 'article_link': article_link})
                     print(len(article_links_list))
-                    
-                # if soup from pubmed: 
+
+                # if soup from pubmed:
                 elif which_source == 'pubmed':
                     print('pubmed')
                     articles = soup.find_all('div', class_='docsum-content')
                     for article in articles:
-                        articles_link_fun = article.find('a', class_='docsum-title')['href']
-                        articles_link_fun = 'https://pubmed.ncbi.nlm.nih.gov' + articles_link_fun
-                        article_links_list.append({'biome': biome, 'search_term': search_term, 'search_url': page_url, 'article_link': articles_link_fun})
+                        article_link = article.find('a', class_='docsum-title')['href']
+                        article_link = 'https://pubmed.ncbi.nlm.nih.gov' + article_link
+                        article_links_list.append({'biome': biome, 'search_term': search_term, 'search_url': page_url, 'article_link': article_link})
                     print(len(article_links_list))
-                
-            else: 
+
+            else:
                 print('server is complaining. need to wait to send more requests')
 
                 # Add a 10 min delay between requests
                 # time.sleep(60*10)
 
-
     # Convert the list of dictionaries to a DataFrame
     article_links_df = pd.DataFrame(article_links_list)
+    
+    # Convert the article link columns to lowercase for case-insensitive comparison
+    article_links_df['article_link_lower'] = article_links_df['article_link'].str.lower()
+    old_links = old_df['article_link'].str.lower()
+    
+    # Filter out rows with article links already present in the older DataFrame
+    article_links_df = article_links_df[~article_links_df['article_link_lower'].isin(old_links)]
+
     print(article_links_df)
- 
+    
     return article_links_df
 
 
 
 
-                
-
-# using scholar: sever complaining whole day
+# using scholar: succesfull
 x1 = get_article_links(x)
 x1 
 
-
 # using pubmed: succesfull 
+r1 = get_article_links(r)
 y1 = get_article_links(y)
-y1 
-
-
-
-
+u1 = get_article_links(u)
+k1 = get_article_links(k)
 
 
 
@@ -220,7 +261,7 @@ def extract_pubmed_article_info(some_df):
     for index, row in some_df.iterrows():
         
         # send a GET request to the article link
-        response = requests.get(row['article_links'])
+        response = requests.get(row['article_link'])
         
         if (response.status_code == 200):
             
@@ -257,14 +298,30 @@ def extract_pubmed_article_info(some_df):
             
         
         
-    
+r2 = extract_pubmed_article_info(r1) 
 y2 = extract_pubmed_article_info(y1) 
+u2 = extract_pubmed_article_info(u1) 
+k2 = extract_pubmed_article_info(k1) 
 
 
 
 
-import pandas as pd
 
+
+
+def depict_biome(biome):
+    if biome == 'plant':
+        return '🌿'  # Leaf symbol
+    elif biome == 'water':
+        return '💧'  # Droplet symbol
+    elif biome == 'animal':
+        return '🐾'  # Animal symbol
+    elif biome == 'soil':
+        return '🌱'  # Soil symbol
+    else:
+        return '❓'  # Unknown or unsupported biome
+
+# evaluate biome:
 def evaluate_biome_labels(df):
     for idx, row in df.iterrows():
         print('\n\n\n\n')
@@ -273,24 +330,36 @@ def evaluate_biome_labels(df):
         if 'Methods' in df.columns:
             print("Methods: ", row['methods'])
         while True:
-            answer = input(f"Do you agree with the label '{row['biome']}' under 'biome'? (y or n): ")
+            sys.stdout.flush()  # Flush the output buffer
+            biome = row['biome']
+            biome_symbol = depict_biome(biome)
+            answer = input(f"Do you agree with the label '{biome_symbol}' ({biome}) under 'biome'? (y or n): ")
             print('\n\n')
             if answer.lower() == 'y':
-                df.at[idx, 'confirmed_biome'] = row['biome']
+                df.at[idx, 'confirmed_biome'] = biome
                 break
             elif answer.lower() == 'n':
                 df.at[idx, 'confirmed_biome'] = None
                 break
             else:
                 print("Invalid input. Please enter 'yes' or 'no'.")
+    
     return df
 
 
 
-y3 = evaluate_biome_labels(y2[0:4])
-#y3.to_csv('articles_info_for_training.csv', index=False)
+r3 = evaluate_biome_labels(r2)
 
-y4 = evaluate_biome_labels(y2[3:5])
+y3 = evaluate_biome_labels(y2)
+
+u3 = evaluate_biome_labels(u2)
+
+k3 = evaluate_biome_labels(k2)
+
+# if an unwanted article has been added, remove it as follows:
+#y3.drop(y3[y3['title'] == "Impact of treated wastewater irrigation on antibiotic resistance in the soil microbiome"].index, inplace = True)
+
+
 
 
 def update_dataframe(updated_df, output_file):
@@ -313,63 +382,105 @@ def update_dataframe(updated_df, output_file):
 
 
 # Update the dataframe and save to file
-update_dataframe(y4, 'articles_info_for_training.csv')
+home=os.path.expanduser('~')
+myfile=home+"/github/metadata_mining/middle_dir/pubmed_articles_info_for_training.csv"     
+
+r4 = update_dataframe(r3, myfile)
+y4 = update_dataframe(y3, myfile)
+u4 = update_dataframe(u3, myfile)
+k4 = update_dataframe(k3, myfile)
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+# inspect my training set: 
+def analyze_file(filepath):
+    # Read the file into a DataFrame
+    df = pd.read_csv(filepath)
     
+    # Drop the rows where confirmed_biome has NaN values
+    df = df.dropna(subset=['confirmed_biome'])
 
-
-
-
-
-def extract_article_info(df_with_links_to_articles):
+    # Count the number of rows per group
+    group_counts = df['confirmed_biome'].value_counts()
     
-    df2 = df2.reset_index()  # make sure indexes pair with number of rows
+    # Construct the labels for the pie chart
+    labels = [f"{group} ({count})" for group, count in zip(group_counts.index, group_counts.values)]
+
+    # Count the total number of words per group in the "title", "abstract" and "total" columns
+    word_count_df = df.groupby('confirmed_biome')[['title', 'abstract']].agg(lambda x: x.str.split().apply(len).sum())
+    word_count_df['total'] = word_count_df['title'] + word_count_df['abstract']
+
+    # Create a figure with a 1x2 grid of subplots
+    fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(12, 6))
+
+    # Plot the pie chart on the left subplot
+    ax1.pie(group_counts.values, labels=labels, autopct='%1.1f%%')
+    ax1.set_title('Number of articles for model training')
+
+    # Plot the bar chart on the right subplot
+    word_count_df.plot(kind='bar', ax=ax2)
+    ax2.set_title('Distribution of word counts per biome')
+    ax2.set_xlabel('biome')
+    ax2.set_ylabel('word count')
+    ax2.legend(['Title', 'Abstract', 'Total'], loc='best')
+
+    # Print the total word counts per group
+    print('Total word counts by Group:')
+    print(word_count_df)
+
+    # Show the plot
+    plt.show()
 
 
 
-    # read dataframe and add new info as new columns: title, abstract, methods
-    for index, row in df2.iterrows():
-        
-        # title=...
-        # abstract=...
-        # methods=...
-        print(row['article_url'])
-        
-        if 'nature.com' in row['article_url']:
+analyze_file(myfile)
 
-            #print(row['article_url'])
-            out = scrape_nature(row['article_url'])
-            # title = out[0]
-            # abstract = out[1]
-            # methods = out[2]
-            print(out[0]) 
-            
-            
-        elif 'journals.plos' in row['article_url']:
-            
 
-            #print(row['article_url'])
-            out = scrape_plosone(row['article_url'])
-            # title = out[0]
-            # abstract = out[1]
-            # methods = out[2]
-            print(out[0]) 
+
+
+
+
+
+
+
+# =============================================================================
+# def extract_article_info(df_with_links_to_articles):
+#     
+#     df2 = df2.reset_index()  # make sure indexes pair with number of rows
+# 
+# 
+# 
+#     # read dataframe and add new info as new columns: title, abstract, methods
+#     for index, row in df2.iterrows():
+#         
+#         # title=...
+#         # abstract=...
+#         # methods=...
+#         print(row['article_url'])
+#         
+#         if 'nature.com' in row['article_url']:
+# 
+#             #print(row['article_url'])
+#             out = scrape_nature(row['article_url'])
+#             # title = out[0]
+#             # abstract = out[1]
+#             # methods = out[2]
+#             print(out[0]) 
+#             
+#             
+#         elif 'journals.plos' in row['article_url']:
+#             
+# 
+#             #print(row['article_url'])
+#             out = scrape_plosone(row['article_url'])
+#             # title = out[0]
+#             # abstract = out[1]
+#             # methods = out[2]
+#             print(out[0]) 
+# =============================================================================
             
     
                                 
@@ -400,154 +511,95 @@ def extract_article_info(df_with_links_to_articles):
         
         
         
-######
-def scrape_nature(some_url):
+# =============================================================================
+# ######
+# def scrape_nature(some_url):
+#     
+#     # Send a request to the URL
+#     response = requests.get(some_url)
+#     
+#     # Parse the HTML content of the page with BeautifulSoup
+#     soup = BeautifulSoup(response.content, "html.parser")
+# 
+#     # Extract the title of the article
+#     title = soup.find("h1", class_="c-article-title").get_text().strip()
+# 
+#     # Extract the abstract of the article
+#     abstract = soup.find("div", class_="c-article-section__content").get_text().strip()
+# 
+#     # Extract the methods section of the article
+#     methods_heading = soup.find("h2", text="Methods")
+#     if methods_heading:
+#         methods_div = methods_heading.find_next_sibling("div")
+#         methods = methods_div.get_text().strip()
+#     else:
+#         methods = ""
+# 
+#     # Print the results
+#     print("Title: ", title)
+#     print("Abstract: ", abstract)
+#     print("Methods: ", methods)
+#     
+#     return title,abstract,methods
+# ######
+#      
+# ######
+# def scrape_plosone(some_url):
+#     
+#     # Send a request to the URL
+#     response = requests.get(some_url)
+#     
+#     # Parse the HTML content using BeautifulSoup
+#     soup = BeautifulSoup(response.content, 'html.parser')
+# 
+#     # Extract the title
+#     title = soup.find('h1', id='artTitle').text.strip()
+# 
+#     # Extract the abstract
+#     abstract = soup.find('div', class_='abstract-content').text.strip()
+# 
+#     # Extract the methods
+#     methods = soup.find('div', id='section2', class_='section toc-section').text.strip()
+# 
+#     # Print the results
+#     print('Title:', title)
+#     print('Abstract:', abstract)
+#     print('Methods:', methods)
+#     
+#     return title,abstract,methods
+# ######
+# 
+# ######
+# def scrape_sciencedirect(some_url):
+#     
+#     # Send a request to the URL
+#     response = requests.get(some_url)
+#     
+#     # Parse the HTML content using BeautifulSoup
+#     soup = BeautifulSoup(response.content, 'html.parser')
+# 
+#     # Extract the title
+#     title = soup.find('h1', id='artTitle').text.strip()
+# 
+#     # Extract the abstract
+#     abstract = soup.find('div', class_='abstract-content').text.strip()
+# 
+#     # Extract the methods
+#     methods = soup.find('div', id='section2', class_='section toc-section').text.strip()
+# 
+#     # Print the results
+#     print('Title:', title)
+#     print('Abstract:', abstract)
+#     print('Methods:', methods)
+#     
+#     return title,abstract,methods
+# ######
+# =============================================================================
+
+
+
     
-    # Send a request to the URL
-    response = requests.get(some_url)
-    
-    # Parse the HTML content of the page with BeautifulSoup
-    soup = BeautifulSoup(response.content, "html.parser")
-
-    # Extract the title of the article
-    title = soup.find("h1", class_="c-article-title").get_text().strip()
-
-    # Extract the abstract of the article
-    abstract = soup.find("div", class_="c-article-section__content").get_text().strip()
-
-    # Extract the methods section of the article
-    methods_heading = soup.find("h2", text="Methods")
-    if methods_heading:
-        methods_div = methods_heading.find_next_sibling("div")
-        methods = methods_div.get_text().strip()
-    else:
-        methods = ""
-
-    # Print the results
-    print("Title: ", title)
-    print("Abstract: ", abstract)
-    print("Methods: ", methods)
-    
-    return title,abstract,methods
-######
-     
-######
-def scrape_plosone(some_url):
-    
-    # Send a request to the URL
-    response = requests.get(some_url)
-    
-    # Parse the HTML content using BeautifulSoup
-    soup = BeautifulSoup(response.content, 'html.parser')
-
-    # Extract the title
-    title = soup.find('h1', id='artTitle').text.strip()
-
-    # Extract the abstract
-    abstract = soup.find('div', class_='abstract-content').text.strip()
-
-    # Extract the methods
-    methods = soup.find('div', id='section2', class_='section toc-section').text.strip()
-
-    # Print the results
-    print('Title:', title)
-    print('Abstract:', abstract)
-    print('Methods:', methods)
-    
-    return title,abstract,methods
-######
-
-######
-def scrape_sciencedirect(some_url):
-    
-    # Send a request to the URL
-    response = requests.get(some_url)
-    
-    # Parse the HTML content using BeautifulSoup
-    soup = BeautifulSoup(response.content, 'html.parser')
-
-    # Extract the title
-    title = soup.find('h1', id='artTitle').text.strip()
-
-    # Extract the abstract
-    abstract = soup.find('div', class_='abstract-content').text.strip()
-
-    # Extract the methods
-    methods = soup.find('div', id='section2', class_='section toc-section').text.strip()
-
-    # Print the results
-    print('Title:', title)
-    print('Abstract:', abstract)
-    print('Methods:', methods)
-    
-    return title,abstract,methods
-######
-
-
-
-    
-    
-    
-import requests
-from bs4 import BeautifulSoup
-
-url = "https://www.frontiersin.org/articles/10.3389/fmicb.2015.00966/full"
-response = requests.get(url)
-soup = BeautifulSoup(response.text, "html.parser")
-
-# Extract title
-title = soup.find("h1").get_text().strip()
-
-# Extract abstract
-abstract = soup.find("p").get_text().strip()
-
-
-soup.find("p", class_="mb0").get_text().strip()
-
-
-
-# Extract methods
-method_section = soup.find("section", {"aria-label": "Methods"}).find("div", {"class": "NlmCategory"}).get_text().strip()
-
-print(title)
-print(abstract)
-print(method_section)
-
-
-
-
-
-
-
-
-
-
-
-        
-        
-        
-        title = soup.find('h1', class_='heading-title').text.strip()
-        abstract = soup.find("div", class_="abstract-content selected").text.strip()
-        journal = soup.find('div', class_='article-source').text.strip().split('\n')[0]
-        
-        
-        if journal is not None and title is not None and abstract is not None:     # and row['search_term'] in journal.lower() 
-                        
-            # Add the scraped information to the dataframe as new columns
-            df_out.loc[index, 'Title'] = title
-            df_out.loc[index, 'Abstract'] = abstract
-            df_out.loc[index, 'Journal'] = journal
-            
-        else:
-            pass
-        
-        
-        
-        
-        
-        
-        
-    
+ 
     
 
             
@@ -566,50 +618,7 @@ print(method_section)
 
 
 
-          
-# Define a function to scrape information from URLs
-def scrape_url(df):
-    
-    df_out = df.copy()
-    
-    for index, row in df.iterrows():
-        # Get the URL from the specified column of the row
-        url = row['url']
-        #url="https://pubmed.ncbi.nlm.nih.gov/35649310/"
-        
-        # Send a request to the URL
-        response = requests.get(url)
-        
-        # Parse the HTML content using BeautifulSoup
-        soup = BeautifulSoup(response.content, 'html.parser')
-        
-        # Scrape the title of the article
-        title = soup.find('h1', class_='heading-title').text.strip()
-        abstract = soup.find("div", class_="abstract-content selected").text.strip()
-        journal = soup.find('div', class_='article-source').text.strip().split('\n')[0]
-        
-        
-        if journal is not None and title is not None and abstract is not None:     # and row['search_term'] in journal.lower() 
-                        
-            # Add the scraped information to the dataframe as new columns
-            df_out.loc[index, 'Title'] = title
-            df_out.loc[index, 'Abstract'] = abstract
-            df_out.loc[index, 'Journal'] = journal
-            
-        else:
-            pass
-            
-    return df_out
-        
-        
-    
 
-# Apply the function to each row of the dataframe
-y = scrape_url(x)
-print(y)
-            
-
-    
 
 
             
@@ -621,31 +630,6 @@ print(y)
 
 
 
-
-
-import pandas as pd
-import spacy
-
-# load the spaCy model for named entity recognition
-nlp = spacy.load("en_core_web_sm")
-
-# read in the abstracts from a CSV file
-df = y
-
-# define a function to extract sample origin information from an abstract
-def extract_sample_origin(abstract):
-    doc = nlp(abstract)
-    sample_origins = []
-    for ent in doc.ents:
-        if ent.label_ in ["LOC", "ORG"]:
-            sample_origins.append(ent.text.lower())
-    return sample_origins
-
-# apply the function to the abstract column of the dataframe
-df["sample_origins"] = df["Abstract"].apply(extract_sample_origin)
-
-# print the resulting dataframe
-print(df.head())
 
 
 
