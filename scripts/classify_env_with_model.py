@@ -14,6 +14,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.svm import SVC
+from sklearn.feature_selection import SelectKBest, chi2
+from sklearn.metrics import accuracy_score
+
 
 
 def train_classifier_model(model_name):
@@ -26,7 +29,7 @@ def train_classifier_model(model_name):
             'Gradient Boosting Classifier'.
             
     Returns:
-        A tuple containing the trained classifier model and the TfidfVectorizer object.
+        A tuple containing the trained classifier model, the TfidfVectorizer object, and the SelectKBest object.
     """
     file_path = os.path.expanduser('~/github/metadata_mining/middle_dir/pubmed_articles_info_for_training.csv')
 
@@ -40,10 +43,15 @@ def train_classifier_model(model_name):
     grouped_data = data.groupby('confirmed_biome')
     sampled_data = grouped_data.apply(lambda x: x.sample(grouped_data.size().min(), random_state=42))
 
-    # Step 4: Feature extraction
+    # Step 4: Feature extraction and selection
     vectorizer = TfidfVectorizer(stop_words='english')
     X = vectorizer.fit_transform(sampled_data['abstract'] + ' ' + sampled_data['title'])
     y = sampled_data['confirmed_biome']
+
+    # Apply feature selection using SelectKBest
+    k = 100  # Number of top features to select
+    selector = SelectKBest(chi2, k=k)
+    X = selector.fit_transform(X, y)
 
     # Step 5: Split the data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, stratify=y, random_state=42)
@@ -62,13 +70,17 @@ def train_classifier_model(model_name):
 
     clf.fit(X_train, y_train)
 
-    # Step 7: Evaluate the model on the testing set
-    y_pred = clf.predict(X_test)
+    # Step 7: Evaluate the model on the training set
+    y_train_pred = clf.predict(X_train)
+    train_accuracy = accuracy_score(y_train, y_train_pred)
+    
+    # Step 8: Evaluate the model on the testing set
+    y_test_pred = clf.predict(X_test)
     target_names = sorted(data['confirmed_biome'].unique())
 
     # Calculate the confusion matrix
     conf_mat = np.zeros((len(target_names), len(target_names)), dtype=np.int32)
-    for i, j in zip(y_test, y_pred):
+    for i, j in zip(y_test, y_test_pred):
         conf_mat[target_names.index(i), target_names.index(j)] += 1
 
     # Print the confusion matrix
@@ -85,11 +97,58 @@ def train_classifier_model(model_name):
     
     # Print the number of correct and incorrect predictions
     print("\n", model_name)
+    print("Train Accuracy:", train_accuracy)
     print("Correct Predictions:", correct_predictions)
     print("Incorrect Predictions:", incorrect_predictions)
     
-    # Return the trained model and vectorizer
-    return clf, vectorizer
+
+    # Return the trained model, vectorizer, and selector
+    return clf, vectorizer, selector
+
+
+
+
+
+def get_top_features_per_biome(trained_model, vectorizer, selector, n=10):
+    selected_indices = selector.get_support(indices=True)
+    feature_names = vectorizer.get_feature_names_out()
+
+    if isinstance(trained_model, MultinomialNB):
+        if hasattr(trained_model, 'feature_log_prob_'):
+            feature_log_prob = trained_model.feature_log_prob_
+            top_biomes = trained_model.classes_
+
+            for i, biome in enumerate(top_biomes):
+                print(f"Top {n} features for biome: {biome}")
+                top_indices = np.argsort(feature_log_prob[i])[::-1][:n]
+                top_features = [feature_names[idx] for idx in selected_indices[top_indices]]
+                for feature in top_features:
+                    print(feature)
+                print()
+        else:
+            print("Feature information not available for this model.")
+    elif isinstance(trained_model, RandomForestClassifier):
+        if hasattr(trained_model, 'feature_importances_'):
+            importances = trained_model.feature_importances_
+            top_indices = np.argsort(importances)[::-1][:n]
+            top_features = [feature_names[idx] for idx in selected_indices[top_indices]]
+            print(f"Top {n} features:")
+            for feature in top_features:
+                print(feature)
+        else:
+            print("Feature information not available for this model.")
+    elif isinstance(trained_model, GradientBoostingClassifier):
+        if hasattr(trained_model, 'feature_importances_'):
+            importances = trained_model.feature_importances_
+            top_indices = np.argsort(importances)[::-1][:n]
+            top_features = [feature_names[idx] for idx in selected_indices[top_indices]]
+            print(f"Top {n} features:")
+            for feature in top_features:
+                print(feature)
+        else:
+            print("Feature information not available for this model.")
+    else:
+        print("Feature information not available for this model.")
 
 
 
@@ -97,10 +156,32 @@ def train_classifier_model(model_name):
 
 
 
-train_classifier_model("Multinomial Naive Bayes")
-train_classifier_model("Random Forest Classifier")
-train_classifier_model("Support Vector Machines")
-train_classifier_model("Gradient Boosting Classifier")
+        
+a, b, s = train_classifier_model("Multinomial Naive Bayes")
+get_top_features_per_biome(a, b, s, 20)
+
+
+
+a, b, s = train_classifier_model("Random Forest Classifier")
+get_top_features_per_biome(a, b, s, 50)
+
+
+
+a, b, s = train_classifier_model("Gradient Boosting Classifier")
+get_top_features_per_biome(a, b, s, 20)
+
+
+a, b, s = train_classifier_model("Support Vector Machines")
+get_top_features_per_biome(a, b, s, 20)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -161,59 +242,5 @@ predicted_biome = predict_biome(trained_model, vectorizer, text_to_predict)
 print("Predicted Biome:", predicted_biome)
 
 
-
-
-
-# Example usage
-text_to_predict = "This is a sample text for prediction."  # Replace with your own text
-preprocessed_text = preprocess_text(text_to_predict)
-
-# Transform the preprocessed text using the vectorizer
-X = vectorizer.transform([preprocessed_text])
-
-# Predict the biome using the trained model
-predicted_biome = trained_model.predict(X)[0]
-print("Predicted Biome:", predicted_biome)
-
-
-
-# Check the vocabulary learned by the vectorizer:
-vocab = vectorizer.get_feature_names()
-print("Vocabulary:", vocab)
-
-if model_name in ["Random Forest Classifier", "Gradient Boosting Classifier"]:
-    importances = trained_model.feature_importances_
-    feature_importances = list(zip(vocab, importances))
-    feature_importances.sort(key=lambda x: x[1], reverse=True)
-    print("Top 10 Feature Importances:")
-    for feature, importance in feature_importances[:10]:
-        print(feature, importance)
-elif model_name == "Multinomial Naive Bayes":
-    feature_log_prob = trained_model.feature_log_prob_
-    top_biomes = trained_model.classes_
-    for i, biome in enumerate(top_biomes):
-        print("Top 10 Features for Biome:", biome)
-        top_features_indices = feature_log_prob[i].argsort()[::-1][:10]
-        for feature_index in top_features_indices:
-            print(vocab[feature_index])
-        print()
-else:
-    print("Feature importances/coefficients not available for this model.")
-
-    
-train_predictions = trained_model.predict(X_train)
-train_accuracy = accuracy_score(y_train, train_predictions)
-print("Training Accuracy:", train_accuracy)
-
-from sklearn.metrics import accuracy_score
-
-# Assuming you have the training features and labels as X_train and y_train
-
-# Calculate the training predictions
-train_predictions = trained_model.predict(X_train)
-
-# Calculate the training accuracy
-train_accuracy = accuracy_score(y_train, train_predictions)
-print("Training Accuracy:", train_accuracy)
 
 
