@@ -120,7 +120,7 @@ def get_random_selection_from_file(file_path, n, random_seed):
 
 home = os.path.expanduser('~')
 
-n = 2
+n = 3
 # n = int(input("Enter the number of additional random items to select: "))
 
 # random seed of choice
@@ -150,8 +150,14 @@ x[1]
 
 
 r = create_pubmed_search_urls(soil_list)
+
+
 y = create_pubmed_search_urls(water_list)
+
+
 u = create_pubmed_search_urls(plant_list)
+
+
 k = create_pubmed_search_urls(animal_list)
     
 
@@ -240,8 +246,14 @@ x1
 
 # using pubmed: succesfull 
 r1 = get_article_links(r)
+
+
 y1 = get_article_links(y)
+
+
 u1 = get_article_links(u)
+
+
 k1 = get_article_links(k)
 
 
@@ -299,8 +311,14 @@ def extract_pubmed_article_info(some_df):
         
         
 r2 = extract_pubmed_article_info(r1) 
+
+
 y2 = extract_pubmed_article_info(y1) 
+
+
 u2 = extract_pubmed_article_info(u1) 
+
+
 k2 = extract_pubmed_article_info(k1) 
 
 
@@ -317,7 +335,7 @@ def depict_biome(biome):
     elif biome == 'animal':
         return '🐾'  # Animal symbol
     elif biome == 'soil':
-        return '🌱'  # Soil symbol
+        return '⛰'  # Soil symbol
     else:
         return '❓'  # Unknown or unsupported biome
 

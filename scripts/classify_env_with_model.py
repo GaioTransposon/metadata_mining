@@ -90,6 +90,8 @@ def filter_nouns(text):
 
 
 
+
+
 def prep_and_split():
     """
     Prepares the training data by performing steps 1 to 5.
@@ -289,20 +291,22 @@ print("Ensemble Accuracy:", ensemble_accuracy)
 
 
 
-def extract_nouns(text):
-    """
-    Extracts only nouns from the given text using POS tagging.
-    
-    Parameters:
-        text (str): The input text to extract nouns from.
-    
-    Returns:
-        The extracted nouns as a space-separated string.
-    """
-    tokens = word_tokenize(text)
-    tagged_tokens = nltk.pos_tag(tokens)
-    nouns = [token for token, tag in tagged_tokens if tag.startswith('N')]
-    return ' '.join(nouns)
+# =============================================================================
+# def extract_nouns(text):
+#     """
+#     Extracts only nouns from the given text using POS tagging.
+#     
+#     Parameters:
+#         text (str): The input text to extract nouns from.
+#     
+#     Returns:
+#         The extracted nouns as a space-separated string.
+#     """
+#     tokens = word_tokenize(text)
+#     tagged_tokens = nltk.pos_tag(tokens)
+#     nouns = [token for token, tag in tagged_tokens if tag.startswith('N')]
+#     return ' '.join(nouns)
+# =============================================================================
 
 
 
@@ -354,7 +358,7 @@ def preprocess_text(text):
     text = re.sub(r"\s+", " ", text.strip())
 
     # Extract only nouns from the text
-    text = extract_nouns(text)
+    text = filter_nouns(text)
 
     return text
 
