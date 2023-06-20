@@ -284,11 +284,38 @@ ensemble_accuracy = accuracy_score(y_test, y_test_pred)
 print("Ensemble Accuracy:", ensemble_accuracy)
 
 
+##########
+# How the ensembled model performs: 
 
+# Step 7: Evaluate the model on the training set
+y_train_pred = ensemble_model.predict(X_train)
+train_accuracy = accuracy_score(y_train, y_train_pred)
 
+# Step 8: Evaluate the model on the testing set
+y_test_pred = ensemble_model.predict(X_test)
+target_names = ['animal', 'plant', 'soil', 'water']
 
+# Calculate the confusion matrix
+conf_mat = confusion_matrix(y_test, y_test_pred, labels=target_names)
 
+# Print the confusion matrix
+print("Confusion Matrix -", "ensembled")
+print("{:<10s}".format(""), end="")
+print("".join("{:<10s}".format(target) for target in target_names))
+for i, target in enumerate(target_names):
+    print("{:<10s}".format(target), end="")
+    print("".join("{:<10d}".format(conf_mat[i, j]) for j in range(len(target_names))))
 
+# Calculate the number of correct and incorrect predictions
+correct_predictions = np.trace(conf_mat)
+incorrect_predictions = y_test.shape[0] - correct_predictions
+
+# Print the number of correct and incorrect predictions
+print("\n", "ensembled")
+print("Train Accuracy:", train_accuracy)
+print("Correct Predictions:", correct_predictions)
+print("Incorrect Predictions:", incorrect_predictions)
+##########
 
 
 # =============================================================================
@@ -412,9 +439,13 @@ models = {
     'Ensembled model':ensemble_model
 }
 
-# Initialize the dictionary to store the predictions
-predictions = {'Sample Number': []}
+# # Initialize the dictionary to store the predictions
+# predictions = {'Sample Number': []}
 
+
+
+# Initialize the dictionary to store the predictions
+predictions = {'Sample Number': [], 'metadata': []}
 
 # Iterate through directories starting with "dir_"
 for dir_name in os.listdir(input_directory):
@@ -444,15 +475,51 @@ for dir_name in os.listdir(input_directory):
                         predictions[model_name] = []
                     predictions[model_name].append(predicted_biome)
 
-                # Add the sample number to the list of predictions
+                # Add the sample number and text to the list of predictions
                 predictions['Sample Number'].append(sample_number)
+                predictions['metadata'].append(text)
 
+# =============================================================================
+# 
+# # Iterate through directories starting with "dir_"
+# for dir_name in os.listdir(input_directory):
+#     if dir_name.startswith('dir_'):
+#         dir_path = os.path.join(input_directory, dir_name)
+# 
+#         # Iterate through the files in the directory
+#         for file_name in os.listdir(dir_path):
+#             file_path = os.path.join(dir_path, file_name)
+# 
+#             if file_name.endswith('.txt'):
+#                 # Read the file and extract the sample number
+#                 with open(file_path, 'r') as text_file:
+#                     lines = text_file.readlines()
+#                 sample_number = lines[0].strip().replace('>', '')
+# 
+#                 # Preprocess the text
+#                 text = ' '.join(lines[1:])  # Combine lines excluding the first line
+#                 preprocessed_text = preprocess_text(text)
+# 
+#                 # Perform predictions for each model
+#                 for model_name, model in models.items():
+#                     # Predict the biome
+#                     predicted_biome = predict_biome(model, vectorizer, selector, preprocessed_text)
+#                     # Append the predicted biome to the corresponding column
+#                     if model_name not in predictions:
+#                         predictions[model_name] = []
+#                     predictions[model_name].append(predicted_biome)
+# 
+#                 # Add the sample number to the list of predictions
+#                 predictions['Sample Number'].append(sample_number)
+# 
+# =============================================================================
 
 
 
 # Create a DataFrame from the predictions dictionary
 predictions_df = pd.DataFrame(predictions)
 
+predictions_df.to_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/predictions.csv', index=False)
 
 # Define the biome categories
 biome_categories = ['water', 'soil', 'animal', 'plant']
