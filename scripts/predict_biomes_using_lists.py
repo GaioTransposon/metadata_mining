@@ -7,6 +7,9 @@ Created on Fri May 26 16:34:22 2023
 """
 
 import pandas as pd
+import re
+
+
 
 def extract_sample_related_fields(file_path):
     with open(file_path, 'r') as file:
@@ -46,9 +49,8 @@ print(df)
 
 
 
-
-
-
+# Standardize the labels in column 'Data'
+df['Data'] = df['Data'].str.replace(r'ENVO[ \-]+', 'ENVO:', regex=True)
 
 
 # =============================================================================
@@ -82,35 +84,52 @@ print(df)
 
 
 
-import pandas as pd
-
-
 envo_df = pd.read_csv("/Users/dgaio/github/metadata_mining/middle_dir/envo_parsed.tsv")
 
 
+def replace_terms_with_changes(df, envo_df):
+    # Create a dictionary from the envo_df DataFrame
+    term_dict = pd.Series(envo_df.parent_label.values, index=envo_df.term).to_dict()
 
-def replace_terms(df, column, envo_df):
-    # Create dictionaries for mapping
-    term_dict = pd.Series(envo_df.term_label.values, index=envo_df.term).to_dict()
-    parent_term_dict = pd.Series(envo_df.parent_label.values, index=envo_df.parent_term).to_dict()
+    # A function to replace ENVO terms with corresponding parent label
+    def replace_with_dict(row, term_dict):
+        text = row['Data']
+        changes = []
+        for term in re.findall(r'\bENVO:\d+\b', text):
+            if term in term_dict:
+                changes.append((term, term_dict[term]))
+                text = text.replace(term, term_dict[term])
+        return {'Data': text, 'Changes': changes}
+
+    # Replace the terms in the Data column and keep track of changes
+    changes_df = df.apply(replace_with_dict, term_dict=term_dict, axis=1).apply(pd.Series)
     
-    # Combine the two dictionaries
-    combined_dict = {**term_dict, **parent_term_dict}
-    print(combined_dict)
-    # Replace terms in the specified column
-    df[column] = df[column].replace(combined_dict)
-    return df
+    return changes_df
 
 
 
 
 
 
+df2 = replace_terms_with_changes(df, envo_df)
+
+print(df2['Changes'])
+(df2['Changes'].str.len() == 0).sum()
+(df2['Changes'].str.len() > 0).sum()
+
+
+# which envo are left? 
+# Suppose you have a DataFrame called 'df' and want to return rows with partial matches in column 'column_name'
+partial_match = df2['Data'].str.contains('ENVO', case=False)
+
+
+check = df2[partial_match]
+print("if right, it should be empty: ", len(check))
 
 
 
 
-df2 = replace_terms(df, 'Data', envo_df)
+
 
 
 
@@ -138,6 +157,21 @@ def most_common_words(df, column, n):
 
 bacteria = ["salmonella", "enterica", "streptococcus", "plasmodium", "falciparum", 
             "staphylococcus", "aureus", "campylobacter", "escherichia", "coli"]
+
+
+mobilis 48
+shigella 42
+listeria 41
+monocytogenes 40
+mycobacterium 38
+tuberculosis 35
+sonnei
+culture 27
+bacterial
+bacterium
+neisseria 28
+
+
 
 
 soil = ["soil", "mud", "dirt", "clay", "agricultural", "field", "root"]  # Add your specific words
@@ -193,11 +227,11 @@ def assign_biome(row):
 
 
 
-df['biome'] = df['Data'].apply(assign_biome)
+df2['biome'] = df2['Data'].apply(assign_biome)
 
 
 
-unknown_rows = df.loc[df['biome'] == 'Unknown']
+unknown_rows = df2.loc[df2['biome'] == 'Unknown']
 
 
 most_common_n = most_common_words(unknown_rows, 'Data', 100)  # Adjust n as needed
