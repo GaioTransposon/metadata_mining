@@ -101,3 +101,13 @@ experiment_alignment_software=mothur v. 1.33.3
 runs=SRR3062996
 '''
 
+
+
+
+
+    
+    
+    
+    
+    
+
