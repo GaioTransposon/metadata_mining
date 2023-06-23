@@ -6,38 +6,50 @@ Created on Wed Jun 21 14:59:10 2023
 @author: dgaio
 """
 
+
+import requests
+from bs4 import BeautifulSoup
+import time
 import pandas as pd
 
-# Read the file
-df = pd.read_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/otu_97_cleanedEnvs_bray_maxBray08_nproj10_20210224_merged.tsv', sep='\t')
+df = pd.read_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid_biome.csv')
 
-# Split the column
-df[['sample_id_run', 'sample_id']] = df['SampleID'].str.split('.', expand=True)
+# remove NaN rows
+df = df.dropna(subset=['pmid_digits'])
 
-# Drop the original column
-df = df.drop(columns='SampleID')
+# remove unknown biome
+df = df[df['EnvClean_merged'] != 'unknown']
 
-# Save the DataFrame
-df.to_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/otu_97_cleanedEnvs_bray_maxBray08_nproj10_20210224_merged_sep_cols.tsv', sep='\t', index=False)
-
+# subset to minim number of non-NaN and not-unknown per biome: 283 per biome. 
+df = df.groupby('EnvClean_merged').apply(lambda x: x.sample(min(len(x), 283))).reset_index(drop=True)
 
 
-import pandas as pd
+# extract title and abstract
+# Create new columns for the title and abstract
+df['title'] = ''
+df['abstract'] = ''
 
-# Read the IDs from the first file
-df = pd.read_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/otu_97_cleanedEnvs_bray_maxBray08_nproj10_20210224_merged_sep_cols.tsv', sep='\t')
-sample_ids = df['sample_id'].tolist()
+# Iterate over each row in the DataFrame
+for i, row in df.iterrows():
+    # Construct the URL for the PubMed article
+    url = "https://pubmed.ncbi.nlm.nih.gov/" + str(row['pmid_digits'])
+    
+    # Send a GET request and pause for 5 seconds between each request
+    response = requests.get(url)
+    time.sleep(5)
 
-# Prepare to read the large file line by line
-with open("/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info", "r") as large_file, open("/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_otu_97_cleanedEnvs_bray_maxBray08_nproj10_20210224_merged.tsv", "w") as subset_file:
-    write_lines = False
-    for line in large_file:
-        if line.startswith('>'):  # Indicates start of a new sample
-            sample_id = line[1:].strip()  # Remove the leading '>'
-            if sample_id in sample_ids:
-                write_lines = True
-                subset_file.write(line)
-            else:
-                write_lines = False
-        elif write_lines:  # If it's part of a sample we're interested in
-            subset_file.write(line)
+    # Only parse the page if the status code is 200
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Extract the title and abstract
+        title = soup.find('h1', attrs={'class' : 'heading-title'})
+        abstract = soup.find('div', attrs={'class' : 'abstract-content selected'})
+        
+        # Some pages might not have a title or an abstract
+        df.at[i, 'title'] = title.text.strip() if title else "Not found"
+        df.at[i, 'abstract'] = abstract.text.strip() if abstract else "Not found"
+
+print(df)
+
+
