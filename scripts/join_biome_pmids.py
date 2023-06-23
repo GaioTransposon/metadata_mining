@@ -18,8 +18,8 @@ df2 = pd.read_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_p
 df1['sample'] = df1['SampleID'].str.split('.').str[1]
 
 # Set the number of lines to handle in df1 and df2
-n_lines_df1 = 40000  # Change this to the desired number of lines
-n_lines_df2 = 40000  # Change this to the desired number of lines
+n_lines_df1 = len(df1)  # Change this to the desired number of lines
+n_lines_df2 = len(df2)  # Change this to the desired number of lines
 
 # Slice the dataframes to the specified number of lines
 df1_sliced = df1[:n_lines_df1]
@@ -50,6 +50,8 @@ elapsed_time_df2 = time.time() - start_time_df2
 print(f"Elapsed Time for df1 ({n_lines_df1} lines): {elapsed_time_df1} seconds")
 print(f"Elapsed Time for df2 ({n_lines_df2} lines): {elapsed_time_df2} seconds")
 
+# save file: 
+merged_df.to_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid_biome.csv', index=False)
 
 
 # visualize: 
@@ -57,7 +59,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np 
 
-data = merged_df
+data = pd.read_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid_biome.csv')
+
 
 
 df_nan = data['pmid_digits'].isna().groupby(data['EnvClean_merged']).sum().astype(int).reset_index(name='NaN')
