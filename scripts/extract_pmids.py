@@ -6,12 +6,18 @@ Created on Thu Jun 22 15:10:34 2023
 @author: dgaio
 """
 
+# run as: 
+# python extract_pmids.py --dir '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs' --output_csv '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid.csv' --plot --figure_path '~/cloudstor/Gaio/MicrobeAtlasProject/pmids_NaN_vs_nonNaN.pdf'
+
+
 import os
 import re
 import time
 import csv
 import pandas as pd
 import matplotlib.pyplot as plt
+import argparse
+
 
 def find_pmids(directory):
     pmid_dict = {}
@@ -35,17 +41,12 @@ def find_pmids(directory):
                 
                 file_counter += 1
                 
-                if file_counter % 1000 == 0:  # print progress every 1000 files
+                if file_counter % 1000 == 0:
                     elapsed_time = time.time() - start_time
                     print(f"Processed {file_counter} files in {elapsed_time:.2f} seconds "
                           f"({file_counter / elapsed_time:.2f} files/second)")
 
     return pmid_dict
-
-
-directory = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs"
-pmid_dict = find_pmids(directory)
-# 6000 files per second --> expected: 4h for 2M samples 
 
 
 def dict_to_csv(dictionary, filename):
@@ -56,40 +57,53 @@ def dict_to_csv(dictionary, filename):
         for key, values in dictionary.items():
             if values:
                 pmid = '&'.join(values)
-                pmid_digits = re.findall(r'\d+', pmid)  # Extract digits
-                first_digits = pmid_digits[0] if pmid_digits else ''  # Get the first digit
+                pmid_digits = re.findall(r'\d+', pmid)
+                first_digits = pmid_digits[0] if pmid_digits else ''
                 writer.writerow([key, pmid, first_digits])
             else:
                 writer.writerow([key, '', ''])
 
+                
+def plot_pmid_info(filename, figure_path=None):
+    data = pd.read_csv(filename)
+    non_na_count = data['pmid_digits'].notna().sum()
+    na_count = data['pmid_digits'].isna().sum()
+
+    labels = ['Non-NA', 'NA']
+    counts = [non_na_count, na_count]
+
+    plt.bar(labels, counts)
+    plt.xlabel('Column "pmid_digits"')
+    plt.ylabel('Count')
+    plt.title('Count of Non-NA Values in Column "pmid_digits"')
+
+    for i, count in enumerate(counts):
+        plt.text(i, count, str(count), ha='center', va='bottom')
+
+    if figure_path:
+        plt.savefig(figure_path, format='pdf')
+    else:
+        plt.show()
 
 
-# Call the function to convert the dictionary to CSV
-dict_to_csv(pmid_dict, '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid.csv')
+parser = argparse.ArgumentParser(description='Find PMIDs in directory.')
+parser.add_argument('--dir', type=str, required=True, help='Directory to search for PMIDs')
+parser.add_argument('--output_csv', type=str, required=True, help='Output csv file')
+parser.add_argument('--plot', action='store_true', help='Plot the count of non-NA values')
+parser.add_argument('--figure_path', type=str, help='Optional path to save the histogram figure')
+args = parser.parse_args()
+
+dir_path = os.path.expanduser(args.dir)
+output_csv = os.path.expanduser(args.output_csv)
+figure_path = os.path.expanduser(args.figure_path) if args.figure_path else None
 
 
-# visualize how mahy samples contain pmid info: import pandas as pd
-# Read the CSV file into a DataFrame
-data = pd.read_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid.csv')
+
+pmid_dict = find_pmids(dir_path)
+dict_to_csv(pmid_dict, output_csv)
+
+if args.plot:
+    plot_pmid_info(output_csv, figure_path=figure_path)
 
 
-# Count the non-NA values in the 'pmid_digits' column
-non_na_count = data['pmid_digits'].notna().sum()
 
-# Count the NA values in the 'pmid_digits' column
-na_count = data['pmid_digits'].isna().sum()
-
-# Create a bar plot to visualize the counts
-labels = ['Non-NA', 'NA']
-counts = [non_na_count, na_count]
-
-plt.bar(labels, counts)
-plt.xlabel('Column "pmid_digits"')
-plt.ylabel('Count')
-plt.title('Count of Non-NA Values in Column "pmid_digits"')
-
-# Display the count on top of each bar
-for i, count in enumerate(counts):
-    plt.text(i, count, str(count), ha='center', va='bottom')
-
-plt.show()
