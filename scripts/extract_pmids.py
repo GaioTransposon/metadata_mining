@@ -7,7 +7,7 @@ Created on Thu Jun 22 15:10:34 2023
 """
 
 # run as: 
-# python extract_pmids.py --dir '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs' --output_csv '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid.csv' --plot --figure_path '~/cloudstor/Gaio/MicrobeAtlasProject/pmids_NaN_vs_nonNaN.pdf'
+# python github/metadata_mining/scripts/extract_pmids.py --dir '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs' --output_csv '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid2.csv' --plot --figure_path '~/cloudstor/Gaio/MicrobeAtlasProject/pmids_NaN_vs_nonNaN2.pdf'
 
 
 import os
@@ -21,7 +21,8 @@ import argparse
 
 def find_pmids(directory):
     pmid_dict = {}
-    pmid_pattern = re.compile(r"PMID[^0-9]*\d{8}", re.IGNORECASE)
+    #pmid_pattern = re.compile(r"PMID[^0-9]*\d{8}", re.IGNORECASE)
+    pmid_pattern = re.compile(r"(PMID|pmid)\D*(\d{8})", re.IGNORECASE)
 
     file_counter = 0
     start_time = time.time()
@@ -38,12 +39,13 @@ def find_pmids(directory):
                             match = pmid_pattern.search(line)
                             if match:
                                 pmid_dict[key].append(match.group())
+                                #print(pmid_dict[key])
                 
                 file_counter += 1
                 
-                if file_counter % 1000 == 0:
+                if file_counter % 200000 == 0:
                     elapsed_time = time.time() - start_time
-                    print(f"Processed {file_counter} files in {elapsed_time:.2f} seconds "
+                    print(f"Processed {file_counter} files in {elapsed_time:.2f} seconds "  # means this message shows 20 times before completion (ca 4M/200000)
                           f"({file_counter / elapsed_time:.2f} files/second)")
 
     return pmid_dict

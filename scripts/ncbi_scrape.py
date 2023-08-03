@@ -6,7 +6,8 @@ Created on Mon Jun 26 13:32:32 2023
 @author: dgaio
 """
 
-# run as: python github/metadata_mining/scripts/ncbi_scrape.py --output_dir "cloudstor/Gaio/MicrobeAtlasProject/ncbi_metadata_dir/"
+# run as: 
+# python github/metadata_mining/scripts/ncbi_scrape.py --output_dir "cloudstor/Gaio/MicrobeAtlasProject/ncbi_metadata_dir/"
 
 
 import requests

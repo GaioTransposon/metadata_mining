@@ -8,7 +8,7 @@ Created on Wed May 24 14:27:39 2023
 
 
 # run as: 
-# python dirs.py --input_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info' --output_dir '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs' --figure_path '~/cloudstor/Gaio/MicrobeAtlasProject/files_distribution_in_dirs.pdf'
+# python github/metadata_mining/scripts/dirs.py --input_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info' --output_dir '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs' --figure_path '~/cloudstor/Gaio/MicrobeAtlasProject/files_distribution_in_dirs.pdf'
 
 import os
 import time
