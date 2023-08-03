@@ -20,11 +20,44 @@ import matplotlib.pyplot as plt
 import argparse
 
 
+# throuw out 
+# =============================================================================
+# def find_pmids_from_large_file(file_path):
+#     pmid_dict = {}
+#     pmid_pattern = re.compile(r"(PMID|pmid)\D*(\d{8})", re.IGNORECASE)
+#     
+#     start_time = time.time()
+#     sample_counter = 0
+#     
+#     with open(file_path, 'r') as f:
+#         lines = f.readlines()
+# 
+#     sample_name = ''
+#     for line in lines:
+#         if line.startswith('>'):
+#             sample_name = line.replace('>', '').strip()
+#             pmid_dict[sample_name] = []
+#             sample_counter += 1
+#         else:
+#             match = pmid_pattern.search(line)
+#             if match:
+#                 pmid_dict[sample_name].append(match.group())
+#                 
+#         if sample_counter % 200000 == 0:
+#             elapsed_time = time.time() - start_time
+#             print(f"Processed {sample_counter} samples in {elapsed_time:.2f} seconds "  # means this message shows 20 times before completion (ca 4M/200000)
+#                   f"({sample_counter / elapsed_time:.2f} samples/second)")
+# 
+#     return pmid_dict
+# =============================================================================
 
 def find_pmids_from_large_file(file_path):
     pmid_dict = {}
     pmid_pattern = re.compile(r"(PMID|pmid)\D*(\d{8})", re.IGNORECASE)
-
+    
+    start_time = time.time()
+    sample_counter = 0
+    
     with open(file_path, 'r') as f:
         lines = f.readlines()
 
@@ -33,6 +66,12 @@ def find_pmids_from_large_file(file_path):
         if line.startswith('>'):
             sample_name = line.replace('>', '').strip()
             pmid_dict[sample_name] = []
+            sample_counter += 1
+
+            if sample_counter % 200000 == 0:  # placed inside the condition that checks if a new sample has been found
+                elapsed_time = time.time() - start_time
+                print(f"Processed {sample_counter} samples in {elapsed_time:.2f} seconds "  
+                      f"({sample_counter / elapsed_time:.2f} samples/second)")
         else:
             match = pmid_pattern.search(line)
             if match:
