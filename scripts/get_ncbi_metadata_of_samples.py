@@ -7,7 +7,8 @@ Created on Fri Jun 30 13:00:41 2023
 """
 
 
-# run as: python get_ncbi_metadata_of_samples.py --sample_info "cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid_biome.csv" --xml_files "cloudstor/Gaio/MicrobeAtlasProject/ncbi_metadata_dir" --output_dir "cloudstor/Gaio/MicrobeAtlasProject/"
+# run as: 
+# python github/metadata_mining/scripts/get_ncbi_metadata_of_samples.py --sample_info "cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid_biome.csv" --xml_files "cloudstor/Gaio/MicrobeAtlasProject/ncbi_metadata_dir" --output_dir "cloudstor/Gaio/MicrobeAtlasProject/"
 
 import pandas as pd
 import os
