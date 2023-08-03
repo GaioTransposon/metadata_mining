@@ -7,8 +7,7 @@ Created on Thu Jun 22 15:10:34 2023
 """
 
 # run as: 
-## python github/metadata_mining/scripts/extract_pmids.py --dir '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs' --output_csv '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid2.csv' --plot --figure_path '~/cloudstor/Gaio/MicrobeAtlasProject/pmids_NaN_vs_nonNaN2.pdf'
-# python github/metadata_mining/scripts/extract_pmids.py --large_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info' --output_csv '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid2.csv' --plot --figure_path '~/cloudstor/Gaio/MicrobeAtlasProject/pmids_NaN_vs_nonNaN2.pdf'
+# python github/metadata_mining/scripts/extract_pmids.py --large_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info' --output_csv '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid.csv' --plot --figure_path '~/cloudstor/Gaio/MicrobeAtlasProject/pmids_NaN_vs_nonNaN.pdf'
 
 
 import os
@@ -19,37 +18,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import argparse
 
-
-# throuw out 
-# =============================================================================
-# def find_pmids_from_large_file(file_path):
-#     pmid_dict = {}
-#     pmid_pattern = re.compile(r"(PMID|pmid)\D*(\d{8})", re.IGNORECASE)
-#     
-#     start_time = time.time()
-#     sample_counter = 0
-#     
-#     with open(file_path, 'r') as f:
-#         lines = f.readlines()
-# 
-#     sample_name = ''
-#     for line in lines:
-#         if line.startswith('>'):
-#             sample_name = line.replace('>', '').strip()
-#             pmid_dict[sample_name] = []
-#             sample_counter += 1
-#         else:
-#             match = pmid_pattern.search(line)
-#             if match:
-#                 pmid_dict[sample_name].append(match.group())
-#                 
-#         if sample_counter % 200000 == 0:
-#             elapsed_time = time.time() - start_time
-#             print(f"Processed {sample_counter} samples in {elapsed_time:.2f} seconds "  # means this message shows 20 times before completion (ca 4M/200000)
-#                   f"({sample_counter / elapsed_time:.2f} samples/second)")
-# 
-#     return pmid_dict
-# =============================================================================
 
 def find_pmids_from_large_file(file_path):
     pmid_dict = {}
@@ -78,40 +46,6 @@ def find_pmids_from_large_file(file_path):
                 pmid_dict[sample_name].append(match.group())
 
     return pmid_dict
-
-
-# =============================================================================
-# def find_pmids(directory):
-#     pmid_dict = {}
-#     #pmid_pattern = re.compile(r"PMID[^0-9]*\d{8}", re.IGNORECASE)
-#     pmid_pattern = re.compile(r"(PMID|pmid)\D*(\d{8})", re.IGNORECASE)
-# 
-#     file_counter = 0
-#     start_time = time.time()
-# 
-#     for root, _, files in os.walk(directory):
-#         for file in files:
-#             if file.endswith('.txt'):
-#                 with open(os.path.join(root, file), 'r') as f:
-#                     lines = f.readlines()
-#                     if lines:
-#                         key = lines[0].strip().replace(">","")
-#                         pmid_dict[key] = pmid_dict.get(key, [])
-#                         for line in lines[1:]:
-#                             match = pmid_pattern.search(line)
-#                             if match:
-#                                 pmid_dict[key].append(match.group())
-#                                 #print(pmid_dict[key])
-#                 
-#                 file_counter += 1
-#                 
-#                 if file_counter % 200000 == 0:
-#                     elapsed_time = time.time() - start_time
-#                     print(f"Processed {file_counter} files in {elapsed_time:.2f} seconds "  # means this message shows 20 times before completion (ca 4M/200000)
-#                           f"({file_counter / elapsed_time:.2f} files/second)")
-# 
-#     return pmid_dict
-# =============================================================================
 
 
 def dict_to_csv(dictionary, filename):
@@ -151,28 +85,6 @@ def plot_pmid_info(filename, figure_path=None):
         plt.show()
 
 
-# =============================================================================
-# parser = argparse.ArgumentParser(description='Find PMIDs in directory.')
-# parser.add_argument('--dir', type=str, required=True, help='Directory to search for PMIDs')
-# parser.add_argument('--output_csv', type=str, required=True, help='Output csv file')
-# parser.add_argument('--plot', action='store_true', help='Plot the count of non-NA values')
-# parser.add_argument('--figure_path', type=str, help='Optional path to save the histogram figure')
-# args = parser.parse_args()
-# 
-# dir_path = os.path.expanduser(args.dir)
-# output_csv = os.path.expanduser(args.output_csv)
-# figure_path = os.path.expanduser(args.figure_path) if args.figure_path else None
-# 
-# 
-# 
-# pmid_dict = find_pmids(dir_path)
-# dict_to_csv(pmid_dict, output_csv)
-# 
-# if args.plot:
-#     plot_pmid_info(output_csv, figure_path=figure_path)
-# =============================================================================
-
-
 parser = argparse.ArgumentParser(description='Find PMIDs in the large file.')
 parser.add_argument('--large_file', type=str, required=True, help='Path to the large input file')
 parser.add_argument('--output_csv', type=str, required=True, help='Output csv file')
@@ -192,4 +104,53 @@ if args.plot:
 
 
 
+
+
+
+
+
+
+
+# =============================================================================
+# import pandas as pd
+# import numpy as np
+# 
+# def find_pmids_from_large_file(file_path):
+#     pmid_dict = {}
+#     pmid_pattern = re.compile(r"(PMID|pmid)\D*(\d+)", re.IGNORECASE)
+#     
+#     with open(file_path, 'r') as f:
+#         lines = f.readlines()
+# 
+#     sample_name = ''
+#     for line in lines:
+#         if line.startswith('>'):
+#             sample_name = line.replace('>', '').strip()
+#             pmid_dict[sample_name] = []
+#         else:
+#             match = pmid_pattern.search(line)
+#             if match:
+#                 pmid_dict[sample_name].append(match.group(2))  # get only the digits of PMID
+#                 
+#     return pmid_dict
+# 
+# def compare_with_shell_output(python_dict, shell_file):
+#     # Load shell output into a pandas Series
+#     shell_output = pd.read_csv(shell_file, header=None, squeeze=True)
+#     
+#     # Flatten python_dict values into a list
+#     python_output = [pmid for pmids in python_dict.values() for pmid in pmids]
+#     python_output = pd.Series(python_output)
+#     
+#     # Compare
+#     not_in_python = shell_output.loc[~shell_output.isin(python_output)]
+#     not_in_shell = python_output.loc[~python_output.isin(shell_output)]
+#     
+#     print("PMIDs found in shell output but not in Python output:\n", not_in_python)
+#     print("PMIDs found in Python output but not in shell output:\n", not_in_shell)
+# 
+# # Usage
+# pmid_dict = find_pmids_from_large_file("/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info")
+# compare_with_shell_output(pmid_dict, "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/get_pmids_test.txt")
+# =============================================================================
 
