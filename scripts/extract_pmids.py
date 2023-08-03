@@ -7,7 +7,8 @@ Created on Thu Jun 22 15:10:34 2023
 """
 
 # run as: 
-# python github/metadata_mining/scripts/extract_pmids.py --dir '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs' --output_csv '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid2.csv' --plot --figure_path '~/cloudstor/Gaio/MicrobeAtlasProject/pmids_NaN_vs_nonNaN2.pdf'
+## python github/metadata_mining/scripts/extract_pmids.py --dir '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs' --output_csv '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid2.csv' --plot --figure_path '~/cloudstor/Gaio/MicrobeAtlasProject/pmids_NaN_vs_nonNaN2.pdf'
+# python github/metadata_mining/scripts/extract_pmids.py --large_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info' --output_csv '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid2.csv' --plot --figure_path '~/cloudstor/Gaio/MicrobeAtlasProject/pmids_NaN_vs_nonNaN2.pdf'
 
 
 import os
@@ -19,36 +20,59 @@ import matplotlib.pyplot as plt
 import argparse
 
 
-def find_pmids(directory):
+
+def find_pmids_from_large_file(file_path):
     pmid_dict = {}
-    #pmid_pattern = re.compile(r"PMID[^0-9]*\d{8}", re.IGNORECASE)
     pmid_pattern = re.compile(r"(PMID|pmid)\D*(\d{8})", re.IGNORECASE)
 
-    file_counter = 0
-    start_time = time.time()
+    with open(file_path, 'r') as f:
+        lines = f.readlines()
 
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if file.endswith('.txt'):
-                with open(os.path.join(root, file), 'r') as f:
-                    lines = f.readlines()
-                    if lines:
-                        key = lines[0].strip().replace(">","")
-                        pmid_dict[key] = pmid_dict.get(key, [])
-                        for line in lines[1:]:
-                            match = pmid_pattern.search(line)
-                            if match:
-                                pmid_dict[key].append(match.group())
-                                #print(pmid_dict[key])
-                
-                file_counter += 1
-                
-                if file_counter % 200000 == 0:
-                    elapsed_time = time.time() - start_time
-                    print(f"Processed {file_counter} files in {elapsed_time:.2f} seconds "  # means this message shows 20 times before completion (ca 4M/200000)
-                          f"({file_counter / elapsed_time:.2f} files/second)")
+    sample_name = ''
+    for line in lines:
+        if line.startswith('>'):
+            sample_name = line.replace('>', '').strip()
+            pmid_dict[sample_name] = []
+        else:
+            match = pmid_pattern.search(line)
+            if match:
+                pmid_dict[sample_name].append(match.group())
 
     return pmid_dict
+
+
+# =============================================================================
+# def find_pmids(directory):
+#     pmid_dict = {}
+#     #pmid_pattern = re.compile(r"PMID[^0-9]*\d{8}", re.IGNORECASE)
+#     pmid_pattern = re.compile(r"(PMID|pmid)\D*(\d{8})", re.IGNORECASE)
+# 
+#     file_counter = 0
+#     start_time = time.time()
+# 
+#     for root, _, files in os.walk(directory):
+#         for file in files:
+#             if file.endswith('.txt'):
+#                 with open(os.path.join(root, file), 'r') as f:
+#                     lines = f.readlines()
+#                     if lines:
+#                         key = lines[0].strip().replace(">","")
+#                         pmid_dict[key] = pmid_dict.get(key, [])
+#                         for line in lines[1:]:
+#                             match = pmid_pattern.search(line)
+#                             if match:
+#                                 pmid_dict[key].append(match.group())
+#                                 #print(pmid_dict[key])
+#                 
+#                 file_counter += 1
+#                 
+#                 if file_counter % 200000 == 0:
+#                     elapsed_time = time.time() - start_time
+#                     print(f"Processed {file_counter} files in {elapsed_time:.2f} seconds "  # means this message shows 20 times before completion (ca 4M/200000)
+#                           f"({file_counter / elapsed_time:.2f} files/second)")
+# 
+#     return pmid_dict
+# =============================================================================
 
 
 def dict_to_csv(dictionary, filename):
@@ -88,24 +112,45 @@ def plot_pmid_info(filename, figure_path=None):
         plt.show()
 
 
-parser = argparse.ArgumentParser(description='Find PMIDs in directory.')
-parser.add_argument('--dir', type=str, required=True, help='Directory to search for PMIDs')
+# =============================================================================
+# parser = argparse.ArgumentParser(description='Find PMIDs in directory.')
+# parser.add_argument('--dir', type=str, required=True, help='Directory to search for PMIDs')
+# parser.add_argument('--output_csv', type=str, required=True, help='Output csv file')
+# parser.add_argument('--plot', action='store_true', help='Plot the count of non-NA values')
+# parser.add_argument('--figure_path', type=str, help='Optional path to save the histogram figure')
+# args = parser.parse_args()
+# 
+# dir_path = os.path.expanduser(args.dir)
+# output_csv = os.path.expanduser(args.output_csv)
+# figure_path = os.path.expanduser(args.figure_path) if args.figure_path else None
+# 
+# 
+# 
+# pmid_dict = find_pmids(dir_path)
+# dict_to_csv(pmid_dict, output_csv)
+# 
+# if args.plot:
+#     plot_pmid_info(output_csv, figure_path=figure_path)
+# =============================================================================
+
+
+parser = argparse.ArgumentParser(description='Find PMIDs in the large file.')
+parser.add_argument('--large_file', type=str, required=True, help='Path to the large input file')
 parser.add_argument('--output_csv', type=str, required=True, help='Output csv file')
 parser.add_argument('--plot', action='store_true', help='Plot the count of non-NA values')
 parser.add_argument('--figure_path', type=str, help='Optional path to save the histogram figure')
 args = parser.parse_args()
 
-dir_path = os.path.expanduser(args.dir)
+large_file_path = os.path.expanduser(args.large_file)
 output_csv = os.path.expanduser(args.output_csv)
 figure_path = os.path.expanduser(args.figure_path) if args.figure_path else None
 
-
-
-pmid_dict = find_pmids(dir_path)
+pmid_dict = find_pmids_from_large_file(large_file_path)
 dict_to_csv(pmid_dict, output_csv)
 
 if args.plot:
     plot_pmid_info(output_csv, figure_path=figure_path)
+
 
 
 
