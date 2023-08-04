@@ -7,7 +7,7 @@ Created on Thu Jun 22 17:19:22 2023
 """
 
 # run as: 
-# python github/metadata_mining/scripts/join_biome_pmids.py --df1 "cloudstor/Gaio/MicrobeAtlasProject/otu_97_cleanedEnvs_bray_maxBray08_nproj10_20210224_merged.tsv" --df2 "cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid.csv" --output_file "cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid_biome.csv" --output_figure "cloudstor/Gaio/MicrobeAtlasProject/plot_sample.info_pmid_biome.pdf" 
+# python ~/github/metadata_mining/scripts/join_biome_pmids.py --df1 "cloudstor/Gaio/MicrobeAtlasProject/otu_97_cleanedEnvs_bray_maxBray08_nproj10_20210224_merged.tsv" --df2 "cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid.csv" --output_file "cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid_biome.csv" --output_figure "cloudstor/Gaio/MicrobeAtlasProject/plot_sample.info_pmid_biome.pdf" 
 
 
 import pandas as pd

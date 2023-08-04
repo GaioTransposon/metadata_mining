@@ -8,7 +8,7 @@ Created on Fri Jun 30 13:00:41 2023
 
 
 # run as: 
-# python github/metadata_mining/scripts/get_ncbi_metadata_of_samples.py --sample_info "cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid_biome.csv" --xml_files "cloudstor/Gaio/MicrobeAtlasProject/ncbi_metadata_dir" --output_dir "cloudstor/Gaio/MicrobeAtlasProject/"
+# python github/metadata_mining/scripts/get_ncbi_metadata_of_samples.py --sample_info_biomes "cloudstor/Gaio/MicrobeAtlasProject/samples_biomes.csv" --xml_files "cloudstor/Gaio/MicrobeAtlasProject/ncbi_metadata_dir" --output_dir "cloudstor/Gaio/MicrobeAtlasProject/"
 
 import pandas as pd
 import os
@@ -21,7 +21,7 @@ import argparse
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='Process XML files.')
-parser.add_argument('--sample_info', type=str, required=True, help='Path to the sample info file.')
+parser.add_argument('--sample_info_biomes', type=str, required=True, help='Path to the sample info file.')
 parser.add_argument('--xml_files', type=str, required=True, help='Path to the directory with XML files.')
 parser.add_argument('--output_dir', type=str, required=True, help='Output directory for the results.')
 args = parser.parse_args()
@@ -34,7 +34,7 @@ path_to_output_dir = os.path.join(home, args.output_dir)
 
 
 # # for testing purposes
-# path_to_sample_info = os.path.join(home, "cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid_biome.csv")
+# path_to_sample_info = os.path.join(home, "cloudstor/Gaio/MicrobeAtlasProject/samples_biomes.csv")
 # path_to_xml_files = os.path.join(home, "cloudstor/Gaio/MicrobeAtlasProject/ncbi_metadata_dir")
 
 
