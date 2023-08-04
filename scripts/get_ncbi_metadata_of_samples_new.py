@@ -8,7 +8,7 @@ Created on Fri Aug  4 15:35:51 2023
 
 
 # run as: 
-# python github/metadata_mining/scripts/get_ncbi_metadata_of_samples.py --sample_info_biomes "cloudstor/Gaio/MicrobeAtlasProject/samples_biomes.csv" --xml_files "cloudstor/Gaio/MicrobeAtlasProject/ncbi_metadata_dir" --output_dir "cloudstor/Gaio/MicrobeAtlasProject/"
+# python github/metadata_mining/scripts/get_ncbi_metadata_of_samples_new.py --sample_info_biomes "cloudstor/Gaio/MicrobeAtlasProject/samples_biomes.csv" --xml_files "cloudstor/Gaio/MicrobeAtlasProject/ncbi_metadata_dir" --output_dir "cloudstor/Gaio/MicrobeAtlasProject/"
 
 import pandas as pd
 import os
@@ -28,7 +28,7 @@ args = parser.parse_args()
 
 home = os.path.expanduser('~')
 
-path_to_sample_info = os.path.join(home, args.sample_info)
+path_to_sample_info = os.path.join(home, args.sample_info_biomes)
 path_to_xml_files = os.path.join(home, args.xml_files)
 path_to_output_dir = os.path.join(home, args.output_dir)
 
