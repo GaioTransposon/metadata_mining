@@ -28,7 +28,7 @@ args = parser.parse_args()
 
 home = os.path.expanduser('~')
 
-path_to_sample_info = os.path.join(home, args.sample_info)
+path_to_sample_info = os.path.join(home, args.sample_info_biomes)
 path_to_xml_files = os.path.join(home, args.xml_files)
 path_to_output_dir = os.path.join(home, args.output_dir)
 
