@@ -34,14 +34,23 @@ path_to_output_dir = os.path.join(home, args.output_dir)
 
 
 # # for testing purposes
-# path_to_sample_info = os.path.join(home, "cloudstor/Gaio/MicrobeAtlasProject/samples_biomes.csv")
+# path_to_sample_info = os.path.join(home, "cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid_biome.csv")
 # path_to_xml_files = os.path.join(home, "cloudstor/Gaio/MicrobeAtlasProject/ncbi_metadata_dir")
 
 
 # List of PMIDs
 data = pd.read_csv(path_to_sample_info)
-pmid_list = data['pmid_digits'].dropna().astype(int).tolist()
+
+# Use str.split() method to split the string on each semicolon, expand=True will return DataFrame
+# Then stack the DataFrame and reset the index to get a Series back
+pmid_series = data['pmid_digits'].dropna().str.split(';', expand=True).stack().reset_index(drop=True)
+
+# Convert Series to list after converting each entry to int
+pmid_list = pmid_series.astype(int).tolist()
+
 print(f"Number of PMIDs we want metadata about: {len(pmid_list)}")
+
+
 
 # Create an empty dataframe
 df = pd.DataFrame(columns=["pmid_digits", "title", "abstract"])
@@ -108,7 +117,7 @@ merged_df = pd.merge(data, df, on="pmid_digits", how="inner")  # inner gets only
 
 
 # Save the dataframe to a CSV file
-merged_df.to_csv(os.path.join(path_to_output_dir, 'sample_biome_pmid_title_abstract.csv'), index=False)
+merged_df.to_csv(os.path.join(path_to_output_dir, 'sample_biome_pmid_title_abstract2.csv'), index=False)
 print("Output file succesfully written")
 
 
