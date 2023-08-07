@@ -7,7 +7,7 @@ Created on Thu Jun 22 15:10:34 2023
 """
 
 # run as: 
-# python github/metadata_mining/scripts/extract_pmids.py --large_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info' --output_csv '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid.csv' --plot --figure_path '~/cloudstor/Gaio/MicrobeAtlasProject/pmids_NaN_vs_nonNaN.pdf'
+# python github/metadata_mining/scripts/extract_pmids.py --large_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info' --output_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid' 
 
 
 import os
@@ -17,6 +17,7 @@ import csv
 import pandas as pd
 import matplotlib.pyplot as plt
 import argparse
+import json
 
 
 def find_pmids_from_large_file(file_path):
@@ -48,100 +49,46 @@ def find_pmids_from_large_file(file_path):
     return pmid_dict
 
 
-def dict_to_csv(dictionary, filename):
-    with open(filename, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(['sample', 'pmid', 'pmid_digits'])
-
-        for key, values in dictionary.items():
-            if values:
-                pmid = '&'.join(values)
-                pmid_digits = re.findall(r'\d+', pmid)
-                all_digits = ';'.join(pmid_digits) if pmid_digits else ''
-                writer.writerow([key, pmid, all_digits])
-            else:
-                writer.writerow([key, '', ''])
+def transform_dict(original_dict):
+    new_dict = {}
+    for key, values in original_dict.items():
+        if values:
+            pmid = '&'.join(values)
+            pmid_digits = re.findall(r'\d+', pmid)
+            unique_pmid_digits = list(set(pmid_digits))  # Keep only unique values
+            new_dict[key] = unique_pmid_digits
+    return new_dict
 
 
-def plot_pmid_info(filename, figure_path=None):
-    data = pd.read_csv(filename)
-    # Creating a new column that indicates whether pmid_digits is NA or not
-    data['has_pmid'] = data['pmid_digits'].notna()
-
-    # Group by sample and aggregate by max, which ensures at most one PMID is counted per sample
-    data_grouped = data.groupby('sample').agg({'has_pmid': 'max'})
-    
-    non_na_count = data_grouped['has_pmid'].sum()
-    na_count = len(data_grouped) - non_na_count
-
-    labels = ['Non-NA', 'NA']
-    counts = [non_na_count, na_count]
-
-    plt.bar(labels, counts)
-    plt.xlabel('Column "pmid_digits"')
-    plt.ylabel('Count')
-    plt.title('Count of Non-NA Values in Column "pmid_digits" - (counting max 1 pmid per sample)')
-
-    for i, count in enumerate(counts):
-        plt.text(i, count, str(count), ha='center', va='bottom')
-
-    if figure_path:
-        plt.savefig(figure_path, format='pdf')
-    else:
-        plt.show()
-
-
-
-def compare_with_shell_output(python_dict, shell_file):
-    # Load shell output into a pandas Series
-    shell_output = pd.read_csv(shell_file, header=None).squeeze("columns").astype(str)
-    
-    # Flatten python_dict values into a list
-    python_output = [pmid for pmids in python_dict.values() for pmid in pmids]
-    python_output = pd.Series(python_output)
-    
-    # Compare
-    not_in_python = shell_output.loc[~shell_output.isin(python_output)]
-    not_in_shell = python_output.loc[~python_output.isin(shell_output)]
-    
-    
-    print("PMIDs found in shell output but not in Python output:\n", not_in_python)
-    print("PMIDs found in Python output but not in shell output:\n", not_in_shell)
-
-
-
+def save_to_json(dictionary, filename):
+    with open(filename, 'w') as file:
+        json.dump(dictionary, file)
+        
 
 parser = argparse.ArgumentParser(description='Find PMIDs in the large file.')
 parser.add_argument('--large_file', type=str, required=True, help='Path to the large input file')
-parser.add_argument('--output_csv', type=str, required=True, help='Output csv file')
-parser.add_argument('--plot', action='store_true', help='Plot the count of non-NA values')
-parser.add_argument('--figure_path', type=str, help='Optional path to save the histogram figure')
+parser.add_argument('--output_file', type=str, required=True, help='Output csv file')
 args = parser.parse_args()
 
 large_file_path = os.path.expanduser(args.large_file)
-output_csv = os.path.expanduser(args.output_csv)
-figure_path = os.path.expanduser(args.figure_path) if args.figure_path else None
+output_file = os.path.expanduser(args.output_file)
+
+
+# for testing purposes: 
+# large_file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info'
+
 
 pmid_dict = find_pmids_from_large_file(large_file_path)
-dict_to_csv(pmid_dict, output_csv)
-
-if args.plot:
-    plot_pmid_info(output_csv, figure_path=figure_path)
 
 
 
-# if you want to compare the pmid extraction with one obtained using shell as such:
-# grep -i -o -E 'PMID[^0-9]*[0-9]+' sample.info | grep -o -E '[0-9]+' > get_pmids_test.txt
-# run: 
-# compare_with_shell_output(pmid_dict, "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/get_pmids_test.txt")
+my_pmid_dict = transform_dict(pmid_dict)
+print(my_pmid_dict)  
 
 
 
 
-
-
-
-
+save_to_json(my_pmid_dict, output_file)
 
 
 
