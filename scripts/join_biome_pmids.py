@@ -15,6 +15,170 @@ import matplotlib.pyplot as plt
 import numpy as np 
 import argparse  
 import os 
+import json
+
+
+
+
+# for testing purposes 
+large_file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info'
+
+biomes_df = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/otu_97_cleanedEnvs_bray_maxBray08_nproj10_20210224_merged.tsv' 
+pmids_dict_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid' 
+dois_pmids_dict_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_doi' 
+
+output_file = "sample.info_pmid_doi_biome.csv"
+
+
+
+# open and transform also to dictionary: 
+biomes_df = pd.read_csv(biomes_df, sep='\t')
+
+# some df parse and col rename
+biomes_df['sample'] = biomes_df['SampleID'].str.split('.').str[1]
+biomes_df.drop('SampleID', axis=1, inplace=True)
+biomes_df = biomes_df.rename(columns={'EnvClean_merged': 'biome'})
+                        
+    
+
+
+
+# Open JSON files and load them as dictionaries
+with open(pmids_dict_path, 'r') as pmids_file:
+    pmids_dict = json.load(pmids_file)
+
+with open(dois_pmids_dict_path, 'r') as dois_pmids_file:
+    dois_pmids_dict = json.load(dois_pmids_file)
+
+# Now you can use pmids_dict and dois_pmids_dict as dictionaries
+print(pmids_dict)
+print(dois_pmids_dict)
+
+
+
+
+
+
+
+import pandas as pd
+
+# =============================================================================
+# # Given DataFrames and dictionaries
+# biomes_df = pd.DataFrame({
+#     'biome': ['animal', 'animal', 'soil'],
+#     'sample': ['SRS7869555', 'SRS295012', 'SRS957269']
+# })
+# 
+# pmids_dict = {
+#     'SRS7869555': ['29554137'],
+#     'SRS7869556': ['32042167'],
+#     'SRS7869558': ['32042167']
+# }
+# 
+# dois_pmids_dict = {
+#     'SRS7869555': ['doi:10.1038/s41598-020-64819-2', '29554137'],
+#     'SRS7698461': ['doi:10.1038/s41598-020-64819-2']
+# }
+# =============================================================================
+
+# Convert pmids_dict to DataFrame
+pmids_df = pd.DataFrame(list(pmids_dict.items()), columns=['sample', 'pmids'])
+pmids_df['pmids'] = pmids_df['pmids'].apply(lambda x: ';'.join(x))
+
+# Convert dois_pmids_dict to DataFrame, splitting doi and pmids
+dois_pmids_df = pd.DataFrame(list(dois_pmids_dict.items()), columns=['sample', 'dois_pmids'])
+dois_pmids_df['dois'] = dois_pmids_df['dois_pmids'].apply(lambda x: ';'.join([i for i in x if i.startswith('doi:')]))
+dois_pmids_df['pmids_from_dois'] = dois_pmids_df['dois_pmids'].apply(lambda x: ';'.join([i for i in x if not i.startswith('doi:')]))
+dois_pmids_df.drop(columns=['dois_pmids'], inplace=True)
+
+# Merge the dataframes
+final_df = biomes_df.merge(pmids_df, on='sample', how='left')\
+                    .merge(dois_pmids_df, on='sample', how='left')
+
+# Combine pmids and pmids_from_dois into a single column
+final_df['all_pmids'] = final_df.apply(lambda row: ';'.join(filter(bool, [str(row['pmids']) if pd.notna(row['pmids']) else '', str(row['pmids_from_dois']) if pd.notna(row['pmids_from_dois']) else ''])), axis=1)
+
+# Drop the separate pmids columns
+final_df.drop(columns=['pmids', 'pmids_from_dois'], inplace=True)
+
+# Handle NaN values if any
+final_df.fillna('', inplace=True)
+
+print(final_df)
+
+
+
+
+
+# Count non-empty dois per biome
+doi_counts = final_df[final_df['dois'] != ''].groupby('biome').size()
+
+# Count non-empty all_pmids per biome
+pmid_counts = final_df[final_df['all_pmids'] != ''].groupby('biome').size()
+
+# Combine both counts into a DataFrame
+counts_df = pd.DataFrame({'DOI Counts': doi_counts, 'PMID Counts': pmid_counts}).fillna(0)
+
+
+
+import matplotlib.pyplot as plt
+
+counts_df.plot(kind='bar', figsize=(10, 6))
+
+ax = counts_df.plot(kind='bar', figsize=(10, 6))
+plt.ylabel('Counts')
+plt.title('Non-Empty DOIs and PMIDs Counts per Biome')
+plt.xticks(rotation=45)
+
+# Loop through the bars and add the counts as text on top
+for p in ax.patches:
+    ax.annotate(str(int(p.get_height())), (p.get_x() + p.get_width() / 2., p.get_height()),
+                ha='center', va='center', xytext=(0, 10), textcoords='offset points')
+
+plt.show()
+
+
+
+
+
+
+# Count the unique PMIDs per biome
+unique_pmids_count = final_df[final_df['all_pmids'] != ''].groupby('biome')['all_pmids'].apply(lambda x: len(set(';'.join(x).split(';')))).reset_index(name='unique_pmids')
+
+# Merge with the existing counts
+counts_df = counts_df.merge(unique_pmids_count, on='biome', how='left').fillna(0)
+
+# Plot
+ax = counts_df.plot(kind='bar', figsize=(10, 6))
+plt.ylabel('Counts')
+plt.title('Non-Empty DOIs, PMIDs, and Unique PMIDs Counts per Biome')
+plt.xticks(rotation=45)
+
+# Loop through the bars and add the counts as text on top
+for p in ax.patches:
+    ax.annotate(str(int(p.get_height())), (p.get_x() + p.get_width() / 2., p.get_height()),
+                ha='center', va='center', xytext=(0, 10), textcoords='offset points')
+
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='Process and visualize data.')
@@ -99,6 +263,11 @@ if args.output_figure:
     plt.savefig(figure_path, format='pdf')
 
 plt.show()
+
+
+
+
+
 
 
 

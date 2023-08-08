@@ -13,9 +13,6 @@ Created on Thu Jun 22 15:10:34 2023
 import os
 import re
 import time
-import csv
-import pandas as pd
-import matplotlib.pyplot as plt
 import argparse
 import json
 
@@ -67,7 +64,7 @@ def save_to_json(dictionary, filename):
 
 parser = argparse.ArgumentParser(description='Find PMIDs in the large file.')
 parser.add_argument('--large_file', type=str, required=True, help='Path to the large input file')
-parser.add_argument('--output_file', type=str, required=True, help='Output csv file')
+parser.add_argument('--output_file', type=str, required=True, help='Output file')
 args = parser.parse_args()
 
 large_file_path = os.path.expanduser(args.large_file)
@@ -76,23 +73,22 @@ output_file = os.path.expanduser(args.output_file)
 
 # for testing purposes: 
 # large_file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info'
+# output_file = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid'
 
 
 pmid_dict = find_pmids_from_large_file(large_file_path)
 
-
-
 my_pmid_dict = transform_dict(pmid_dict)
-print(my_pmid_dict)  
-
-
-
 
 save_to_json(my_pmid_dict, output_file)
 
 
 
-
+# Print some stats: 
+all_values = [value for values in my_pmid_dict.values() for value in values]
+unique_values_count = len(set(all_values))
+n_samples = len(my_pmid_dict)
+print(f"Tot number of uniq pmids among {n_samples} samples is {unique_values_count}")
 
 
 
