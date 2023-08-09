@@ -144,7 +144,7 @@ bioprojects_dict = find_bioprojects_from_large_file(large_file_path)
 unique_bioprojects = extract_unique_bioprojects(bioprojects_dict)
 
 # # for testing purpses
-unique_bioprojects = set(itertools.islice(unique_bioprojects, 600))
+# unique_bioprojects = set(itertools.islice(unique_bioprojects, 600))
 
 
 bioprojects_pmcid_dic = fetch_pmcids(unique_bioprojects)
