@@ -26,6 +26,7 @@ large_file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info'
 biomes_df = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/otu_97_cleanedEnvs_bray_maxBray08_nproj10_20210224_merged.tsv' 
 pmids_dict_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid' 
 dois_pmids_dict_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_doi' 
+bioprojects_pmcid_dict_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject' 
 
 output_file = "sample.info_pmid_doi_biome.csv"
 
@@ -49,10 +50,17 @@ with open(pmids_dict_path, 'r') as pmids_file:
 
 with open(dois_pmids_dict_path, 'r') as dois_pmids_file:
     dois_pmids_dict = json.load(dois_pmids_file)
+    
+with open(bioprojects_pmcid_dict_path, 'r') as bioprojects_pmcid_dict_file:
+    bioprojects_pmcid_dict = json.load(bioprojects_pmcid_dict_file)
 
 # Now you can use pmids_dict and dois_pmids_dict as dictionaries
 print(pmids_dict)
 print(dois_pmids_dict)
+print(bioprojects_pmcid_dict)
+
+
+
 
 
 
