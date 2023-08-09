@@ -133,11 +133,9 @@ doi_dict = find_dois_from_large_file(large_file_path)
 
 unique_dois = extract_unique_dois(doi_dict)
 
+#unique_dois_small = unique_dois[1:30]
 
-
-unique_dois_small = unique_dois[1:30]
-
-my_doi_to_pmid = fetch_pmids(unique_dois_small)
+my_doi_to_pmid = fetch_pmids(unique_dois)
 
 
 
