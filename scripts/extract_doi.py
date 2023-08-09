@@ -53,35 +53,61 @@ def extract_unique_dois(dictionary):
     return list(unique_dois)
 
 
-def dois_to_pmids(dois):
-    dois = [doi.lower() for doi in dois] # Convert to lowercase
-    dois = list(set(dois)) # Convert to list and remove duplicates
-    doi_to_pmid = {}
-    total_dois = len(dois)
+def fetch_pmids(dois_set):
+    # Convert the set to a list
+    dois_list = list(dois_set)
+
+    # Set the batch size
     batch_size = 200
-    start_time = time.time()
-    
-    for idx in range(0, total_dois, batch_size):
-        batch_dois = dois[idx:idx+batch_size]
-        query = " OR ".join([f"{doi}[DOI]" for doi in batch_dois])
+    total_batches = (len(dois_list) + batch_size - 1) // batch_size
 
-        Entrez.email = "daniela.gaio@mls.uzh.ch"
-        handle = Entrez.esearch(db="pubmed", term=query)
-        record = Entrez.read(handle)
-        handle.close()
+    dois_pmid_dic = {}
 
-        # Map the DOIs to PMIDs
-        for doi, pmid in zip(batch_dois, record["IdList"]):
-            doi_to_pmid[doi] = pmid if pmid else None
+    # Make sure to include your email address, as NCBI requires it for tracking purposes
+    Entrez.email = "daniela.gaio@mls.uzh.ch"
+
+    for batch_num in range(total_batches):
+        start_time = time.time()
+
+        # Determine the start and end indices for this batch
+        start_idx = batch_num * batch_size
+        end_idx = min((batch_num + 1) * batch_size, len(dois_list))
+
+        # Process the DOIs in this batch
+        for i in range(start_idx, end_idx):
+            doi = dois_list[i]
+            print(f"Processing {doi}...")
+
+            # Fetch the related articles for the DOI
+            query = f"{doi}[DOI]"
+            handle = Entrez.esearch(db="pubmed", term=query)
+            record = Entrez.read(handle)            
+            handle.close()
+            
+            pmid_ids = record['IdList']
+            
+            if pmid_ids:
+                print(f"Found {len(pmid_ids)} item(s) for {doi}.")
+                dois_pmid_dic[doi] = pmid_ids
+            else:
+                print(f"No items found for {doi}.\n")
+
+
+        # Sleep for 3 seconds
+        time.sleep(3)
         
-        processed_dois = idx + len(batch_dois)
-        elapsed_time = time.time() - start_time
-        remaining_time = (total_dois - processed_dois) * (elapsed_time / processed_dois)
-        print(f"Processed {processed_dois} DOIs out of {total_dois} at {processed_dois / elapsed_time:.2f} DOIs/second. Expected time remaining: {remaining_time:.2f} seconds.")
-        
-        time.sleep(3) # Sleep for 3 seconds
+        # Calculate and print the time taken for this batch
+        batch_time = time.time() - start_time
+        print(f"Batch {batch_num + 1}/{total_batches} took {batch_time:.2f} seconds.")
 
-    return doi_to_pmid
+        # Estimate the remaining time
+        remaining_batches = total_batches - batch_num - 1
+        remaining_time = batch_time * remaining_batches
+        print(f"Estimated remaining time: {remaining_time / 60:.2f} minutes.")
+
+    # Return the result
+    return dois_pmid_dic
+
 
 
 def save_to_json(dictionary, filename):
@@ -107,40 +133,47 @@ doi_dict = find_dois_from_large_file(large_file_path)
 
 unique_dois = extract_unique_dois(doi_dict)
 
-my_doi_to_pmid = dois_to_pmids(unique_dois)
+
+
+unique_dois_small = unique_dois[1:30]
+
+my_doi_to_pmid = fetch_pmids(unique_dois_small)
+
+
 
 # if the doi in my_doi_to_pmid has got a corresponding pmid, then this pmid will be added to the list of the original dictionary at the respective place (not replaced, but added)
-for key, values in doi_dict.items():
-    for value in values:
-        if value in my_doi_to_pmid:
-            doi_dict[key].append(my_doi_to_pmid[value])
+new_dict = {}
+for key, dois in doi_dict.items():
+    for doi in dois:
+        doi_value = doi if isinstance(doi, str) else doi[0]
+        if doi_value in my_doi_to_pmid:
+            new_dict[key] = my_doi_to_pmid[doi_value]
+
 
 # remove keys that have no info (neither doi nor pmid):
-doi_dict = {key: value for key, value in doi_dict.items() if value}
+new_dict = {key: value for key, value in new_dict.items() if value}
 
-save_to_json(doi_dict, output_file)
+save_to_json(new_dict, output_file)
 
 
 
 # Print some stats: 
-doi_count = 0
 pmid_count = 0
-unique_dois = set()
 unique_pmids = set()
 
-for values in doi_dict.values():
+for values in new_dict.values():
     for value in values:
-        if value.startswith('doi:'):
-            unique_dois.add(value)
-        elif value.isdigit():
-            unique_pmids.add(value)
-
-doi_count = len(unique_dois)
+        unique_pmids.add(value)
+            
 pmid_count = len(unique_pmids)
 
-print(f"Tot number of unique DOIs is {doi_count}")
+print(f"Tot number of unique dois is {len(unique_dois)}")
 print(f"Tot number of unique PMIDs is {pmid_count}")
-print(f"among {len(doi_dict)} samples")
+print(f"among {len(new_dict)} samples")
+
+
+
+
 
 
 

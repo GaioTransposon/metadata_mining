@@ -9,6 +9,8 @@ Created on Tue Aug  8 15:40:36 2023
 
 # run as: 
 # python github/metadata_mining/scripts/extract_bioproject_request_pmcid.py --large_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info' --output_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject' 
+# takes about 8h ! 
+
 
 import os
 import re
@@ -89,11 +91,13 @@ def fetch_pmcids(bioprojects_set):
 
             # Fetch the related articles for the BioProject ID
             query = f"{bioproject}[BioProject]"
-            handle = Entrez.esearch(db="pmc", term=query)
+            handle = Entrez.esearch(db="pmc", term=query)    
             record = Entrez.read(handle)
             handle.close()
 
-            pmc_ids = record['IdList']
+            # pmc_ids = record['IdList'] # old
+            pmc_ids = ['PMC' + pmc_id for pmc_id in record['IdList']]
+
             bioprojects_pmc_dic[bioproject] = pmc_ids
 
         # Sleep for 3 seconds
@@ -135,24 +139,18 @@ output_file = os.path.expanduser(args.output_file)
 # output_file = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject' 
 
 
-
-
-
-
-
 bioprojects_dict = find_bioprojects_from_large_file(large_file_path)
 
 unique_bioprojects = extract_unique_bioprojects(bioprojects_dict)
 
 # # for testing purpses
-# # unique_bioprojects = set(itertools.islice(unique_bioprojects, 4000))
+unique_bioprojects = set(itertools.islice(unique_bioprojects, 600))
+
 
 bioprojects_pmcid_dic = fetch_pmcids(unique_bioprojects)
 
+
 # I think what it really takes to stay in science is naivity to the point of being overly hopeful and optimistic. Dumb. In other words. 
-
-
-
 
 
 
