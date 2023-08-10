@@ -8,7 +8,7 @@ Created on Tue Aug  8 15:40:36 2023
 
 
 # run as: 
-# python github/metadata_mining/scripts/extract_bioproject_request_pmcid.py --large_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info' --output_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject' 
+# python ~/github/metadata_mining/scripts/extract_bioproject_request_pmcid.py --large_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info' --output_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject' --errors_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject_errors'
 # takes about 8h ! 
 
 
@@ -63,57 +63,102 @@ def extract_unique_bioprojects(dictionary):
     return list(unique_bioprojects)
 
 
-
 def fetch_pmcids(bioprojects_set):
-    # Convert the set to a list
     bioprojects_list = list(bioprojects_set)
-
-    # Set the batch size
     batch_size = 200
     total_batches = (len(bioprojects_list) + batch_size - 1) // batch_size
-
     bioprojects_pmc_dic = {}
+    error_bioprojects = [] # List to store BioProjects that resulted in an error
 
-    # Make sure to include your email address, as NCBI requires it for tracking purposes
     Entrez.email = "daniela.gaio@mls.uzh.ch"
 
     for batch_num in range(total_batches):
         start_time = time.time()
-
-        # Determine the start and end indices for this batch
         start_idx = batch_num * batch_size
         end_idx = min((batch_num + 1) * batch_size, len(bioprojects_list))
 
-        # Process the bioprojects in this batch
         for i in range(start_idx, end_idx):
             bioproject = bioprojects_list[i]
             print(f"Processing {bioproject}...")
-
-            # Fetch the related articles for the BioProject ID
             query = f"{bioproject}[BioProject]"
-            handle = Entrez.esearch(db="pmc", term=query)    
-            record = Entrez.read(handle)
-            handle.close()
+            try:
+                handle = Entrez.esearch(db="pmc", term=query)    
+                record = Entrez.read(handle)
+                handle.close()
+                pmc_ids = ['PMC' + pmc_id for pmc_id in record['IdList']]
+                bioprojects_pmc_dic[bioproject] = pmc_ids
+            except RuntimeError as e:
+                print(f"An error occurred while processing {bioproject}: {e}")
+                error_bioprojects.append(bioproject) # Add the BioProject ID to the error list
 
-            # pmc_ids = record['IdList'] # old
-            pmc_ids = ['PMC' + pmc_id for pmc_id in record['IdList']]
-
-            bioprojects_pmc_dic[bioproject] = pmc_ids
-
-        # Sleep for 3 seconds
         time.sleep(3)
-        
-        # Calculate and print the time taken for this batch
         batch_time = time.time() - start_time
         print(f"Batch {batch_num + 1}/{total_batches} took {batch_time:.2f} seconds.")
-
-        # Estimate the remaining time
         remaining_batches = total_batches - batch_num - 1
         remaining_time = batch_time * remaining_batches
         print(f"Estimated remaining time: {remaining_time / 60:.2f} minutes.")
 
-    # Return the result
-    return bioprojects_pmc_dic
+    print(f"Errors occurred with the following BioProject IDs: {error_bioprojects}")
+    return bioprojects_pmc_dic, error_bioprojects # You can return the error list along with the dictionary
+
+def save_errors_to_file(errors, filename):
+    with open(filename, 'w') as file:
+        for error in errors:
+            file.write(f"{error}\n")
+
+
+# =============================================================================
+# def fetch_pmcids(bioprojects_set):
+#     # Convert the set to a list
+#     bioprojects_list = list(bioprojects_set)
+# 
+#     # Set the batch size
+#     batch_size = 200
+#     total_batches = (len(bioprojects_list) + batch_size - 1) // batch_size
+# 
+#     bioprojects_pmc_dic = {}
+# 
+#     # Make sure to include your email address, as NCBI requires it for tracking purposes
+#     Entrez.email = "daniela.gaio@mls.uzh.ch"
+# 
+#     for batch_num in range(total_batches):
+#         start_time = time.time()
+# 
+#         # Determine the start and end indices for this batch
+#         start_idx = batch_num * batch_size
+#         end_idx = min((batch_num + 1) * batch_size, len(bioprojects_list))
+# 
+#         # Process the bioprojects in this batch
+#         for i in range(start_idx, end_idx):
+#             bioproject = bioprojects_list[i]
+#             print(f"Processing {bioproject}...")
+# 
+#             # Fetch the related articles for the BioProject ID
+#             query = f"{bioproject}[BioProject]"
+#             handle = Entrez.esearch(db="pmc", term=query)    
+#             record = Entrez.read(handle)
+#             handle.close()
+# 
+#             # pmc_ids = record['IdList'] # old
+#             pmc_ids = ['PMC' + pmc_id for pmc_id in record['IdList']]
+# 
+#             bioprojects_pmc_dic[bioproject] = pmc_ids
+# 
+#         # Sleep for 3 seconds
+#         time.sleep(3)
+#         
+#         # Calculate and print the time taken for this batch
+#         batch_time = time.time() - start_time
+#         print(f"Batch {batch_num + 1}/{total_batches} took {batch_time:.2f} seconds.")
+# 
+#         # Estimate the remaining time
+#         remaining_batches = total_batches - batch_num - 1
+#         remaining_time = batch_time * remaining_batches
+#         print(f"Estimated remaining time: {remaining_time / 60:.2f} minutes.")
+# 
+#     # Return the result
+#     return bioprojects_pmc_dic
+# =============================================================================
 
 
 
@@ -128,15 +173,18 @@ def save_to_json(dictionary, filename):
 parser = argparse.ArgumentParser(description='Find PMIDs in the large file.')
 parser.add_argument('--large_file', type=str, required=True, help='Path to the large input file')
 parser.add_argument('--output_file', type=str, required=True, help='Output file')
+parser.add_argument('--errors_file', type=str, required=False, help='errors file')
 args = parser.parse_args()
 
 large_file_path = os.path.expanduser(args.large_file)
 output_file = os.path.expanduser(args.output_file)
+errors_file = os.path.expanduser(args.errors_file) if args.errors_file else None
 
 
 # # for testing purposes 
 # large_file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info'
 # output_file = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject' 
+# errors_file = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject_errors' 
 
 
 bioprojects_dict = find_bioprojects_from_large_file(large_file_path)
@@ -144,10 +192,16 @@ bioprojects_dict = find_bioprojects_from_large_file(large_file_path)
 unique_bioprojects = extract_unique_bioprojects(bioprojects_dict)
 
 # # for testing purpses
-# unique_bioprojects = set(itertools.islice(unique_bioprojects, 600))
+unique_bioprojects = set(itertools.islice(unique_bioprojects, 4000))
 
 
-bioprojects_pmcid_dic = fetch_pmcids(unique_bioprojects)
+
+bioprojects_pmcid_dic, error_bioprojects = fetch_pmcids(unique_bioprojects)
+
+if error_bioprojects:
+    error_filename = errors_file if errors_file else 'default_errors.txt' # Default file name if errors_file is not provided
+    save_errors_to_file(error_bioprojects, error_filename)
+    print(f"Errors have been saved to {error_filename}")
 
 
 # I think what it really takes to stay in science is naivity to the point of being overly hopeful and optimistic. Dumb. In other words. 

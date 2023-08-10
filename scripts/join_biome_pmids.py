@@ -32,6 +32,46 @@ output_file = "sample.info_pmid_doi_biome.csv"
 
 
 
+
+
+# open pmc dictionaries and get corresponding pmids:
+# something like: 
+from Bio import Entrez
+
+# Make sure to include your email address, as NCBI requires it for tracking purposes
+Entrez.email = "your_email@example.com"
+
+# List of PMC IDs
+pmc_ids = ["PMC1234567", "PMC7654321"]
+
+# Join the PMC IDs with a comma
+pmc_ids_str = ",".join(pmc_ids)
+
+# Fetch the corresponding PMIDs using the elink utility
+handle = Entrez.elink(dbfrom="pmc", db="pubmed", id=pmc_ids_str)
+result = Entrez.read(handle)
+handle.close()
+
+# Extract and print the PMIDs
+for linkset in result:
+    pmids = [link["Id"] for link in linkset["LinkSetDb"][0]["Link"]]
+    print(pmids)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # open and transform also to dictionary: 
 biomes_df = pd.read_csv(biomes_df, sep='\t')
 
