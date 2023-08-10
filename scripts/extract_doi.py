@@ -6,8 +6,12 @@ Created on Mon Aug  7 13:28:27 2023
 @author: dgaio
 """
 
-# run as: 
-# python github/metadata_mining/scripts/extract_doi.py --large_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info' --output_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_doi' 
+
+# # run as: 
+# python ~/github/metadata_mining/scripts/extract_doi.py  \
+#         --large_file_subset '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_subset' \
+#             --output_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_doi'
+
 
 import os
 import re
@@ -116,24 +120,22 @@ def save_to_json(dictionary, filename):
 
 
 parser = argparse.ArgumentParser(description='Find PMIDs in the large file.')
-parser.add_argument('--large_file', type=str, required=True, help='Path to the large input file')
+parser.add_argument('--large_file_subset', type=str, required=True, help='Path to the large input file subset')
 parser.add_argument('--output_file', type=str, required=True, help='Output file')
 args = parser.parse_args()
 
-large_file_path = os.path.expanduser(args.large_file)
+large_file_subset = os.path.expanduser(args.large_file_subset)
 output_file = os.path.expanduser(args.output_file)
 
 
 # # for testing purposes 
-# large_file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info'
+# large_file_subset = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_subset'
 # output_file = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_doi' 
 
 
-doi_dict = find_dois_from_large_file(large_file_path)
+doi_dict = find_dois_from_large_file(large_file_subset)
 
 unique_dois = extract_unique_dois(doi_dict)
-
-#unique_dois_small = unique_dois[1:30]
 
 my_doi_to_pmid = fetch_pmids(unique_dois)
 
@@ -146,7 +148,8 @@ for key, dois in doi_dict.items():
         doi_value = doi if isinstance(doi, str) else doi[0]
         if doi_value in my_doi_to_pmid:
             new_dict[key] = my_doi_to_pmid[doi_value]
-
+            
+            
 
 # remove keys that have no info (neither doi nor pmid):
 new_dict = {key: value for key, value in new_dict.items() if value}

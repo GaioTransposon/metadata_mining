@@ -17,8 +17,6 @@ Created on Thu Aug 10 10:58:43 2023
 
 
 import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np 
 import argparse  
 import os 
 import json

@@ -7,9 +7,12 @@ Created on Tue Aug  8 15:40:36 2023
 """
 
 
-# run as: 
-# python ~/github/metadata_mining/scripts/extract_bioproject_request_pmcid.py --large_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info' --output_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject' --errors_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject_errors'
-# takes about 8h ! 
+# # run as: 
+# python ~/github/metadata_mining/scripts/extract_bioproject_request_pmcid.py  \
+#         --large_file_subset '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_subset' \
+#             --output_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject' \
+#                 --errors_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject_errors'
+
 
 
 import os
@@ -19,6 +22,8 @@ import argparse
 from Bio import Entrez
 import json
 import itertools
+
+
 
 def find_bioprojects_from_large_file(file_path):
     bioproject_dict = {}
@@ -79,7 +84,7 @@ def fetch_pmcids(bioprojects_set):
 
         for i in range(start_idx, end_idx):
             bioproject = bioprojects_list[i]
-            print(f"Processing {bioproject}...")
+            #print(f"Processing {bioproject}...")
             query = f"{bioproject}[BioProject]"
             try:
                 handle = Entrez.esearch(db="pmc", term=query)    
@@ -170,33 +175,38 @@ def save_to_json(dictionary, filename):
 
 
 
-parser = argparse.ArgumentParser(description='Find PMIDs in the large file.')
-parser.add_argument('--large_file', type=str, required=True, help='Path to the large input file')
+parser = argparse.ArgumentParser(description='Find PMCs in the large file subset.')
+parser.add_argument('--large_file_subset', type=str, required=True, help='Path to the large_file_subset')
 parser.add_argument('--output_file', type=str, required=True, help='Output file')
 parser.add_argument('--errors_file', type=str, required=False, help='errors file')
 args = parser.parse_args()
 
-large_file_path = os.path.expanduser(args.large_file)
+large_file_subset = os.path.expanduser(args.large_file_subset)
 output_file = os.path.expanduser(args.output_file)
 errors_file = os.path.expanduser(args.errors_file) if args.errors_file else None
 
 
 # # for testing purposes 
-# large_file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info'
+# large_file_subset = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_subset'
 # output_file = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject' 
 # errors_file = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject_errors' 
 
 
-bioprojects_dict = find_bioprojects_from_large_file(large_file_path)
+bioprojects_dict = find_bioprojects_from_large_file(large_file_subset)
+
 
 unique_bioprojects = extract_unique_bioprojects(bioprojects_dict)
+len(unique_bioprojects)
 
-# # for testing purpses
-unique_bioprojects = set(itertools.islice(unique_bioprojects, 4000))
+# for testing purpses
+#unique_bioprojects = set(itertools.islice(unique_bioprojects, 400))
+
+len(unique_bioprojects)
 
 
 
 bioprojects_pmcid_dic, error_bioprojects = fetch_pmcids(unique_bioprojects)
+
 
 if error_bioprojects:
     error_filename = errors_file if errors_file else 'default_errors.txt' # Default file name if errors_file is not provided

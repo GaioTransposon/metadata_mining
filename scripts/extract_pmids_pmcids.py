@@ -77,7 +77,7 @@ def save_to_json(dictionary, filename):
         
 
 parser = argparse.ArgumentParser(description='Find PMIDs in the large file.')
-parser.add_argument('--large_file_subset', type=str, required=True, help='Path to the large input file')
+parser.add_argument('--large_file_subset', type=str, required=True, help='Path to the large input file subset')
 parser.add_argument('--output_file_pmid', type=str, required=True, help='Output file')
 parser.add_argument('--output_file_pmcid', type=str, required=True, help='Output file')
 args = parser.parse_args()
