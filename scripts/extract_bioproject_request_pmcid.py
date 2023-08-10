@@ -23,6 +23,7 @@ from Bio import Entrez
 import json
 import itertools
 from urllib.error import HTTPError
+import statistics
 
 
 
@@ -78,6 +79,8 @@ def fetch_pmcids(bioprojects_set):
 
     Entrez.email = "daniela.gaio@mls.uzh.ch"
 
+    batch_times = []
+    
     for batch_num in range(total_batches):
         start_time = time.time()
         start_idx = batch_num * batch_size
@@ -102,9 +105,11 @@ def fetch_pmcids(bioprojects_set):
 
         time.sleep(3)
         batch_time = time.time() - start_time
-        print(f"Batch {batch_num + 1}/{total_batches} took {batch_time:.2f} seconds.")
+        batch_times.append(batch_time)
+        average_batch_time = statistics.mean(batch_times)
         remaining_batches = total_batches - batch_num - 1
-        remaining_time = batch_time * remaining_batches
+        remaining_time = average_batch_time * remaining_batches
+        print(f"Batch {batch_num + 1}/{total_batches} took {batch_time:.2f} seconds.")
         print(f"Estimated remaining time: {remaining_time / 60:.2f} minutes.")
 
     print(f"Errors occurred with the following BioProject IDs: {error_bioprojects}")
