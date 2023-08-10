@@ -6,8 +6,12 @@ Created on Thu Jun 22 15:10:34 2023
 @author: dgaio
 """
 
-# run as: 
-# python github/metadata_mining/scripts/extract_pmids_pmcids.py --large_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info' --output_file_pmid '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid' --output_file_pmcid '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmcid' 
+# # run as: 
+# python ~/github/metadata_mining/scripts/extract_pmids_pmcids.py  \
+#         --large_file_subset '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_subset' \
+#             --output_file_pmid '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid' \
+#                 --output_file_pmcid '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmcid'
+
 
 
 import os
@@ -15,6 +19,7 @@ import re
 import time
 import argparse
 import json
+
 
 
 def find_pmids_and_pmcids_from_large_file(file_path):
@@ -60,6 +65,7 @@ def find_pmids_and_pmcids_from_large_file(file_path):
     return pmid_dict, pmcid_dict
 
 
+
 def filter_non_empty_values(original_dict):
     return {key: list(set(value)) for key, value in original_dict.items() if value}
 
@@ -71,22 +77,26 @@ def save_to_json(dictionary, filename):
         
 
 parser = argparse.ArgumentParser(description='Find PMIDs in the large file.')
-parser.add_argument('--large_file', type=str, required=True, help='Path to the large input file')
+parser.add_argument('--large_file_subset', type=str, required=True, help='Path to the large input file')
 parser.add_argument('--output_file_pmid', type=str, required=True, help='Output file')
 parser.add_argument('--output_file_pmcid', type=str, required=True, help='Output file')
 args = parser.parse_args()
 
-large_file_path = os.path.expanduser(args.large_file)
+large_file_subset = os.path.expanduser(args.large_file_subset)
 output_file_pmid = os.path.expanduser(args.output_file_pmid)
 output_file_pmcid = os.path.expanduser(args.output_file_pmcid)
 
 
 # for testing purposes: 
-# large_file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info'
+# large_file_subset = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info'
 # output_file_pmid = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid'
 # output_file_pmcid = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmcid'
 
-pmid_dict,pmcid_dict = find_pmids_and_pmcids_from_large_file(large_file_path)
+
+
+
+
+pmid_dict,pmcid_dict = find_pmids_and_pmcids_from_large_file(large_file_subset)
 
 
 
