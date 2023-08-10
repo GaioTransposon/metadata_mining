@@ -88,7 +88,7 @@ output_file_pmcid = os.path.expanduser(args.output_file_pmcid)
 
 
 # for testing purposes: 
-# large_file_subset = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info'
+# large_file_subset = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_subset'
 # output_file_pmid = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid'
 # output_file_pmcid = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmcid'
 

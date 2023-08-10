@@ -22,6 +22,7 @@ import argparse
 from Bio import Entrez
 import json
 import itertools
+from urllib.error import HTTPError
 
 
 
@@ -92,6 +93,9 @@ def fetch_pmcids(bioprojects_set):
                 handle.close()
                 pmc_ids = ['PMC' + pmc_id for pmc_id in record['IdList']]
                 bioprojects_pmc_dic[bioproject] = pmc_ids
+            except HTTPError as e:
+                print(f"HTTP Error occurred with {bioproject}: {e.code} - {e.reason}")
+                error_bioprojects.append(bioproject) # Add the BioProject ID to the error list
             except RuntimeError as e:
                 print(f"An error occurred while processing {bioproject}: {e}")
                 error_bioprojects.append(bioproject) # Add the BioProject ID to the error list
@@ -110,6 +114,9 @@ def save_errors_to_file(errors, filename):
     with open(filename, 'w') as file:
         for error in errors:
             file.write(f"{error}\n")
+
+
+
 
 
 # =============================================================================
