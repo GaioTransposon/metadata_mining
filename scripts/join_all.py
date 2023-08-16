@@ -6,6 +6,19 @@ Created on Thu Aug 10 23:24:40 2023
 @author: dgaio
 """
 
+# # run as: 
+# python ~/github/metadata_mining/scripts/join_all.py  \
+#         --work_dir '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/' \
+#             --biomes_df 'samples_biomes' \
+#                 --pmids_dict_path 'sample.info_pmid' \
+#                     --pmcids_dict_path 'sample.info_pmcid' \
+#                         --dois_pmids_dict_path 'sample.info_doi' \
+#                             --bioprojects_pmcid_dict_path 'sample.info_bioproject' \
+#                                 --output_file 'sample.info_biome_pmid_pmcid' \
+#                                     --figure 'sample.info_biome_pmid_pmcid.pdf' \
+#                                         --unique_pmids 'unique_pmids' \
+#                                             --unique_pmcids 'unique_pmcids'
+
 
 import os
 import re
@@ -16,42 +29,15 @@ import json
 from collections import defaultdict
 import xml.etree.ElementTree as ET
 from itertools import islice
+import pandas as pd
+import matplotlib.pyplot as plt
 
-
-
-# for testing purposes 
-biomes_df = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/samples_biomes' 
-
-pmids_dict_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid' 
-pmcids_dict_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmcid' 
-
-dois_pmids_dict_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_doi' 
-
-bioprojects_pmcid_dict_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject' 
-
-output_file = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_pmid_pmcid_biome.csv"
-
-
-
-
+#start_time = time.time()
 
 def read_json_file(file_path):
     with open(file_path, 'r') as file:
         return json.load(file)
     
-
-
-samples_biomes = read_json_file(biomes_df)
-    
-a = read_json_file(pmids_dict_path)
-b = read_json_file(dois_pmids_dict_path)
-
-
-c = read_json_file(pmcids_dict_path)
-d = read_json_file(bioprojects_pmcid_dict_path)
-    
-
-
 
 def merge_dicts(dict1, dict2):
     result = dict1.copy()
@@ -61,15 +47,6 @@ def merge_dicts(dict1, dict2):
         else:
             result[key] = value
     return result
-
-
-
-merged_a_b = merge_dicts(a, b)
-len(merged_a_b)
-merged_c_d = merge_dicts(c, d)
-len(merged_c_d)
-
-
 
 
 def unique_values(dictionary):
@@ -82,21 +59,8 @@ def unique_values(dictionary):
     return list(unique_vals)
 
 
-
-
-unique_c_d = unique_values(merged_c_d)
-len(unique_c_d) 
-# 1575
-
-
-
-
-
-
-
-
 def from_pmcids_to_pmids(pmcids):
-    Entrez.email = "your.email@example.com"
+    Entrez.email = "daniela.gaio@mls.uzh.ch"
     pmid_dict = {}
     
     n=0
@@ -123,108 +87,276 @@ def from_pmcids_to_pmids(pmcids):
     return pmid_dict
 
 
+   
+####################
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--work_dir', type=str, required=True, help='Path to the working directory where all files are')
+
+# Inputs: 
+parser.add_argument('--biomes_df', type=str, required=True, help='this is the sample file with biomes')
+
+parser.add_argument('--pmids_dict_path', type=str, required=True, help='pmids scraped from metadata')
+parser.add_argument('--pmcids_dict_path', type=str, required=True, help='pmcids scraped from metadata')
+
+parser.add_argument('--dois_pmids_dict_path', type=str, required=True, help='pmids obtained from dois (scraped from metadata)')
+
+parser.add_argument('--bioprojects_pmcid_dict_path', type=str, required=True, help='pmcids obtained from bioprojects (scraped from metadata)')
+
+# Outputs
+parser.add_argument('--output_file', type=str, required=True, help='name of output file')
+parser.add_argument('--figure', type=str, required=True, help='name of output plot')
+parser.add_argument('--unique_pmids', type=str, required=True, help='name of unique pmids file as output')
+parser.add_argument('--unique_pmcids', type=str, required=True, help='name of unique pmcids file as output')
+
+args = parser.parse_args()
+
+# Prepend work_dir to all the file paths
+biomes_df = os.path.join(args.work_dir, args.biomes_df)
+pmids_dict_path = os.path.join(args.work_dir, args.pmids_dict_path)
+pmcids_dict_path = os.path.join(args.work_dir, args.pmcids_dict_path)
+dois_pmids_dict_path = os.path.join(args.work_dir, args.dois_pmids_dict_path)
+bioprojects_pmcid_dict_path = os.path.join(args.work_dir, args.bioprojects_pmcid_dict_path)
+output_file = os.path.join(args.work_dir, args.output_file)
+figure = os.path.join(args.work_dir, args.figure)
+unique_pmids = os.path.join(args.work_dir, args.unique_pmids)
+unique_pmcids = os.path.join(args.work_dir, args.unique_pmcids)
 
 
 
-# pmids = ["34131077", "23456789","34131077", "000349299200040"]
-# pmcids = ["PMC8237688", "8237688", "PMC6121709"]  
+####################
+# for testing purposes 
+work_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/'
+
+biomes_df = work_dir + 'samples_biomes' 
+
+pmids_dict_path = work_dir + 'sample.info_pmid' 
+pmcids_dict_path = work_dir + 'sample.info_pmcid' 
+
+dois_pmids_dict_path = work_dir + 'sample.info_doi' 
+
+bioprojects_pmcid_dict_path = work_dir + 'sample.info_bioproject' 
+
+output_file = work_dir + "sample.info_biome_pmid_pmcid"
+figure = work_dir + "sample.info_biome_pmid_pmcid.pdf"
+unique_pmids = work_dir + "unique_pmids"
+unique_pmcids = work_dir + "unique_pmcids"
+####################
+####################
 
 
-z1 = from_pmids_to_pmcids(unique_a_b[1:10])
-z1
-
-
-from_pmids_to_pmcids(['18769457'])
 
 
 
-z2 = from_pmcids_to_pmids(unique_c_d[11:20])
+
+##################### Part 1. open dictionary files: 
+
+samples_biomes = read_json_file(biomes_df)
+    
+a = read_json_file(pmids_dict_path)
+b = read_json_file(dois_pmids_dict_path)
+
+
+c = read_json_file(pmcids_dict_path)
+d = read_json_file(bioprojects_pmcid_dict_path)
+    
+
+##################### Part 2. merge dictionaries
+
+merged_a_b = merge_dicts(a, b)
+len(merged_a_b)
+merged_c_d = merge_dicts(c, d)
+len(merged_c_d)
+
+
+##################### Part 3. 
+
+unique_a_b = unique_values(merged_a_b)
+len(unique_a_b) 
+# 250
+unique_c_d = unique_values(merged_c_d)
+len(unique_c_d) 
+# 1575
+
+
+#################### Part 4. transform unique pmcids to pmids 
+
+z2 = from_pmcids_to_pmids(unique_c_d) # test with: unique_c_d[1:100]
 z2
 
 
 
 
+#################### Part 5. Point of the situation: these 4 files to go on with: 
 
 
-# go on with :
-    
-
-# 1. samples_biomes # careful opening it, crashes
+# 1. samples_biomes # careful opening it, it crashes
 def head(dictionary, n=5):
     return dict(islice(dictionary.items(), n))
-
 print(head(samples_biomes, 10))  # Prints the first 10 items
 
 # 2. all pmids:
 merged_a_b
 
-# 3. all pmids:
+# 3. all pmcids:
 merged_c_d
     
-# 3. transaltions of unique pmcids to pmids: 
+# 3. translations of unique pmcids to pmids: 
 z2
+len(z2)
 
 
 
+#################### Part 6. Merge all into one dataframe and plot the content
 
 
+# only for testing: 
+# samples_biomes = {'sample1': 'animal', 'sample2': 'animal', 'sample3': 'soil'}
+# merged_a_b = {'sample1': ['123','234'], 'sample2': ['789']}  # shortened for brevity
+# merged_c_d = {'sample2': ['PMC567'], 'sample3': ['PMC00']}  # shortened for brevity
+# z2 = {'PMC567': 'new', 'PMCnew2': '123'}
 
+# Convert to dataframes
+df_biomes = pd.DataFrame(list(samples_biomes.items()), columns=['sample', 'biome'])
+df_pmids = pd.DataFrame(list(merged_a_b.items()), columns=['sample', 'pmid'])
+df_pmcids = pd.DataFrame(list(merged_c_d.items()), columns=['sample', 'pmcid'])
+
+# Merge dataframes
+merged_df = df_biomes.merge(df_pmids, on='sample', how='left').merge(df_pmcids, on='sample', how='left')
+
+def update_pmids(row):
+    pmids = row['pmid'] if isinstance(row['pmid'], list) else []
+    pmcids_translated = [z2.get(pmc, None) for pmc in row['pmcid']] if isinstance(row['pmcid'], list) else []
+    pmcids_translated = [x for x in pmcids_translated if x is not None]
+    return list(set(pmids + pmcids_translated))
+
+def update_pmcids(row):
+    pmids = row['pmid'] if isinstance(row['pmid'], list) else []
+    pmcids = row['pmcid'] if isinstance(row['pmcid'], list) else []
     
-
-# Function to combine information from multiple dictionaries
-def combine_info(combined_dict, *sample_infos):
-    for sample_info in sample_infos:
-        for sample, values in sample_info.items():
-            for value in values:
-                key = 'PMCIDs' if value.startswith('PMC') else 'PMIDs'
-                # No need to check for sample existence since samples_biomes contains all the samples
-                combined_dict[sample][key].append(value)
-    return combined_dict
-
-
-def get_unique_ids(sample_dict):
-    unique_pmids = set()
-    unique_pmcids = set()
+    # Check if any pmid corresponds to a key in z2
+    for pmid in pmids:
+        matching_pmcid = [k for k, v in z2.items() if v == pmid]
+        pmcids.extend(matching_pmcid)
     
-    for sample_info in sample_dict.values():
-        unique_pmids.update(sample_info['PMIDs'])
-        unique_pmcids.update(sample_info['PMCIDs'])
-    
-    return list(unique_pmids), list(unique_pmcids)
+    return list(set(pmcids))
+
+merged_df['pmid'] = merged_df.apply(update_pmids, axis=1)
+merged_df['pmcid'] = merged_df.apply(update_pmcids, axis=1)
+
+# Convert lists to comma-separated strings
+merged_df['pmid'] = merged_df['pmid'].apply(lambda x: ','.join(map(str, x)) if isinstance(x, list) else x)
+merged_df['pmcid'] = merged_df['pmcid'].apply(lambda x: ','.join(map(str, x)) if isinstance(x, list) else x)
+
+len(merged_df)
+print(merged_df)
 
 
-
-unique_pmids, unique_pmcids = get_unique_ids(z)
-print("Unique PMIDs:", unique_pmids)
-print("Unique PMCIDs:", unique_pmcids)
+# Save the original DataFrame (before editing)
+merged_df.to_csv(output_file, index=False)
 
 
-    
+#################### Part 7. Plot the content of the dataframe
 
 
-
-
-
-
-
-
-
-
-
+merged_df_original = merged_df
 
 
 
 
-combined_dict2 = combined_dict
 
 
 
-# Update combined_dict based on the mappings
-for key, value in combined_dict2.items():
-    for pmid in value['PMIDs']:
-        if pmid in pmids_to_pmcids and pmids_to_pmcids[pmid] not in value['PMCIDs']:
-            value['PMCIDs'].append(pmids_to_pmcids[pmid])
-    
-    for pmcid in value['PMCIDs']:
-        if pmcid in pmcids_to_pmids and pmcids_to_pmids[pmcid] not in value['PMIDs']:
-            value['PMIDs'].append(pmcids_to_pmids[pmcid])
+
+# Extract unique PMIDs and PMCIDs
+all_pmids = set(filter(None, ','.join(merged_df['pmid']).split(',')))
+all_pmcids = set(filter(None, ','.join(merged_df['pmcid']).split(',')))
+
+# Save unique PMIDs and PMCIDs
+with open('unique_pmids.txt', 'w') as f:
+    for pmid in all_pmids:
+        f.write(pmid + '\n')
+
+with open('unique_pmcids.txt', 'w') as f:
+    for pmcid in all_pmcids:
+        f.write(pmcid + '\n')
+
+
+
+
+
+
+
+merged_df = merged_df_original
+
+
+
+# for testing purposes: 
+# =============================================================================
+# # Sample dataframe
+# data = {
+#     'sample': ['1', '2', '3', '4','5'],
+#     'biome': ['animal', 'animal', 'water', 'water','soil'],
+#     'pmid': ['a,b','','','a','c'],
+#     'pmcid': ['x,z,y','y','','v,w','']
+# }
+# 
+# merged_df = pd.DataFrame(data)
+# =============================================================================
+
+# Functions to gather unique PMIDs and PMCIDs
+def gather_unique_ids(x):
+    return set(filter(None, ','.join(x).split(',')))
+
+# Create columns indicating presence of non-NaN data
+merged_df['pmid_present'] = merged_df['pmid'].apply(lambda x: 0 if x == '' else 1)
+merged_df['pmcid_present'] = merged_df['pmcid'].apply(lambda x: 0 if x == '' else 1)
+
+# Gather unique PMIDs and PMCIDs per biome
+biome_unique_pmids = merged_df.groupby('biome')['pmid'].apply(gather_unique_ids).reset_index()
+biome_unique_pmids['unique_pmids'] = biome_unique_pmids['pmid'].apply(len)
+biome_unique_pmcids = merged_df.groupby('biome')['pmcid'].apply(gather_unique_ids).reset_index()
+biome_unique_pmcids['unique_pmcids'] = biome_unique_pmcids['pmcid'].apply(len)
+
+# Group by biome and sum/aggregate the created columns
+biome_counts = merged_df.groupby('biome').agg({
+    'pmid_present': 'sum',
+    'pmcid_present': 'sum',
+    'sample': 'size'
+}).reset_index()
+
+# Merge the counts with the unique counts
+biome_counts = biome_counts.merge(biome_unique_pmids[['biome', 'unique_pmids']], on='biome').merge(biome_unique_pmcids[['biome', 'unique_pmcids']], on='biome')
+
+
+# Plot
+ax = biome_counts.set_index('biome').plot(kind='bar', figsize=(12,8))
+
+# Add counts on top of the bars with vertical rotation
+for p in ax.patches:
+    ax.annotate(str(p.get_height()), 
+                (p.get_x() + p.get_width() / 2., p.get_height()), 
+                ha='center', va='center', 
+                xytext=(0, 10), textcoords='offset points', 
+                rotation=90)
+
+plt.title('Count of Rows per Biome')
+plt.ylabel('Number of Rows/Unique IDs')
+plt.xlabel('Biome')
+plt.xticks(rotation=45)
+plt.legend(['PMID Present', 'PMCID Present', 'Total Rows', 'Unique PMIDs', 'Unique PMCIDs'])
+plt.tight_layout()
+plt.show()
+
+
+# Save the plot
+plt.savefig(figure, dpi=300, bbox_inches='tight')
+
+
+
+
+# elapsed_time = time.time() - start_time
+# print(f"Code ran in {elapsed_time:.2f} seconds ")
+
+
+
