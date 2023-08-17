@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Aug 10 23:24:40 2023
+Created on Thu Aug 17 14:49:47 2023
 
 @author: dgaio
 """
+
 
 # # run as: 
 # python ~/github/metadata_mining/scripts/join_all.py  \
@@ -17,7 +18,7 @@ Created on Thu Aug 10 23:24:40 2023
 #                                 --output_file 'sample.info_biome_pmid_pmcid' \
 #                                     --figure 'sample.info_biome_pmid_pmcid.pdf' \
 #                                         --unique_pmids_pmcids 'unique_pmids_pmcids' 
-## Code ran in 1268.51 seconds
+## Code ran in 1268.51 seconds (~20min)
 
 import os
 import time
@@ -119,21 +120,23 @@ unique_pmids_pmcids = os.path.join(args.work_dir, args.unique_pmids_pmcids)
 
 
 ####################
-# for testing purposes 
-work_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/'
-
-biomes_df = work_dir + 'samples_biomes' 
-
-pmids_dict_path = work_dir + 'sample.info_pmid' 
-pmcids_dict_path = work_dir + 'sample.info_pmcid' 
-
-dois_pmids_dict_path = work_dir + 'sample.info_doi' 
-
-bioprojects_pmcid_dict_path = work_dir + 'sample.info_bioproject' 
-
-output_file = work_dir + "sample.info_biome_pmid_pmcid"
-figure = work_dir + "sample.info_biome_pmid_pmcid.pdf"
-unique_pmids_pmcids = work_dir + "unique_pmids_pmcids"
+# =============================================================================
+# # for testing purposes 
+# work_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/'
+# 
+# biomes_df = work_dir + 'samples_biomes' 
+# 
+# pmids_dict_path = work_dir + 'sample.info_pmid' 
+# pmcids_dict_path = work_dir + 'sample.info_pmcid' 
+# 
+# dois_pmids_dict_path = work_dir + 'sample.info_doi' 
+# 
+# bioprojects_pmcid_dict_path = work_dir + 'sample.info_bioproject' 
+# 
+# output_file = work_dir + "sample.info_biome_pmid_pmcid"
+# figure = work_dir + "sample.info_biome_pmid_pmcid.pdf"
+# unique_pmids_pmcids = work_dir + "unique_pmids_pmcids"
+# =============================================================================
 ####################
 ####################
 
@@ -172,10 +175,22 @@ len(unique_c_d)
 # 1575
 
 
-#################### Part 4. transform unique pmcids to pmids 
+#################### Part 4. transform unique pmcids to pmids and replace in dictionary:
 
 z2 = from_pmcids_to_pmids(unique_c_d) # test with: unique_c_d[1:100]
 z2
+
+
+new_dict = {}
+for key, values in merged_c_d.items():
+    new_values = [z2.get(value, value) for value in values]
+    new_dict[key] = new_values
+print(new_dict)
+
+
+# check if all PMC values have been replaced:
+count = sum(1 for values in new_dict.values() for item in values if item.startswith('PMC'))
+print('If zero, all PMCIDs have been translated to PMIDs: ', count)
 
 
 
@@ -188,19 +203,100 @@ def head(dictionary, n=5):
     return dict(islice(dictionary.items(), n))
 print(head(samples_biomes, 10))  # Prints the first 10 items
 
-# 2. all pmids:
-merged_a_b
+# 2. all samples-pmids:
+merged_a_b_c_d = merge_dicts(merged_a_b, new_dict)
+print(head(merged_a_b_c_d, 10))  # Prints the first 10 items
 
-# 3. all pmcids:
-merged_c_d
-    
-# 3. translations of unique pmcids to pmids: 
-z2
-len(z2)
-# 1575
+
+
+
+
+
+
+
 
 
 #################### Part 6. Merge all into one dataframe and plot the content
+
+
+# Convert dictionaries to DataFrames
+df_samples = pd.DataFrame(list(samples_biomes.items()), columns=['sample', 'biome'])
+df_merged = pd.DataFrame(list(merged_a_b_c_d.items()), columns=['sample', 'pmid'])
+
+# Merge the two DataFrames on the 'sample' column
+merged_df = pd.merge(df_samples, df_merged, on='sample', how='outer')
+
+print(merged_df)
+
+
+
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# =============================================================================
+# # Sample dataframe
+# data = {
+#     'sample': ['1', '2', '3', '4','5'],
+#     'biome': ['animal', 'animal', 'water', 'water','soil'],
+#     'pmid': ['a,b','','','a','c'],
+#     'pmcid': ['x,z,y','y','','v,w','']
+# }
+# 
+# df = pd.DataFrame(data)
+# =============================================================================
+
+df = merged_df
+
+# Calculate counts
+total_samples_per_biome = df.groupby('biome').size()
+pmid_per_biome = df[df['pmid'].isna()].groupby('biome').size()
+
+def unique_pmids(pmid_lists):
+    # Filter out None or NaN values
+    valid_lists = pmid_lists.dropna()
+    
+    # Flatten the list of lists
+    flattened = [pmid for sublist in valid_lists for pmid in sublist]
+    
+    return len(set(flattened))
+
+unique_pmids_per_biome = df.groupby('biome')['pmid'].agg(unique_pmids)
+
+# Plot
+fig, ax = plt.subplots(figsize=(12, 6))
+
+bar_width = 0.3
+positions = np.arange(len(total_samples_per_biome))
+
+total_samples_per_biome.plot(kind='bar', position=0, width=bar_width, ax=ax, label='Total Samples', color='blue')
+pmid_per_biome.plot(kind='bar', position=1, width=bar_width, ax=ax, label='Samples with PMID', color='red')
+unique_pmids_per_biome.plot(kind='bar', position=2, width=bar_width, ax=ax, label='Unique PMIDs', color='green')
+
+# Add annotations
+for idx, rect in enumerate(ax.patches):
+    height = rect.get_height()
+    ax.text(rect.get_x() + rect.get_width()/2., height + 5, '%d' % int(height), ha='center', va='bottom', rotation=90)
+
+ax.set_ylabel('Count')
+ax.set_title('Biome-wise Analysis')
+ax.legend()
+
+plt.xticks(positions + bar_width, total_samples_per_biome.index, rotation=0)
+plt.tight_layout()
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
 
 
 # only for testing: 

@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Aug 10 23:24:40 2023
+Created on Thu Aug 17 12:26:21 2023
 
 @author: dgaio
 """
 
+
 # # run as: 
-# python ~/github/metadata_mining/scripts/join_all.py  \
+# python ~/github/metadata_mining/scripts/join_all2.py  \
 #         --work_dir '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/' \
-#             --biomes_df 'samples_biomes' \
-#                 --pmids_dict_path 'sample.info_pmid' \
-#                     --pmcids_dict_path 'sample.info_pmcid' \
-#                         --dois_pmids_dict_path 'sample.info_doi' \
-#                             --bioprojects_pmcid_dict_path 'sample.info_bioproject' \
-#                                 --output_file 'sample.info_biome_pmid_pmcid' \
-#                                     --figure 'sample.info_biome_pmid_pmcid.pdf' \
-#                                         --unique_pmids_pmcids 'unique_pmids_pmcids' 
-## Code ran in 1268.51 seconds
+#             --pmcids_to_pmids 'PMC-ids.csv' \
+#                 --biomes_df 'samples_biomes' \
+#                     --pmids_dict_path 'sample.info_pmid' \
+#                         --pmcids_dict_path 'sample.info_pmcid' \
+#                             --dois_pmids_dict_path 'sample.info_doi' \
+#                                 --bioprojects_pmcid_dict_path 'sample.info_bioproject' \
+#                                     --output_file 'sample.info_biome_pmid_pmcid' \
+#                                         --figure 'sample.info_biome_pmid_pmcid.pdf' \
+#                                             --unique_pmids_pmcids 'unique_pmids_pmcids' 
+# ## Code ran in ...
 
 import os
 import time
@@ -29,7 +31,7 @@ from itertools import islice
 import pandas as pd
 import matplotlib.pyplot as plt
 
-start_time = time.time()
+#start_time = time.time()
 
 def read_json_file(file_path):
     with open(file_path, 'r') as file:
@@ -92,6 +94,7 @@ parser.add_argument('--work_dir', type=str, required=True, help='Path to the wor
 
 # Inputs: 
 parser.add_argument('--biomes_df', type=str, required=True, help='this is the sample file with biomes')
+parser.add_argument('--pmcids_to_pmids', type=str, required=True, help='this is the file containing all pmcids to pmids translations')
 
 parser.add_argument('--pmids_dict_path', type=str, required=True, help='pmids scraped from metadata')
 parser.add_argument('--pmcids_dict_path', type=str, required=True, help='pmcids scraped from metadata')
@@ -109,6 +112,7 @@ args = parser.parse_args()
 
 # Prepend work_dir to all the file paths
 biomes_df = os.path.join(args.work_dir, args.biomes_df)
+pmcids_to_pmids = os.path.join(args.work_dir, args.pmcids_to_pmids)
 pmids_dict_path = os.path.join(args.work_dir, args.pmids_dict_path)
 pmcids_dict_path = os.path.join(args.work_dir, args.pmcids_dict_path)
 dois_pmids_dict_path = os.path.join(args.work_dir, args.dois_pmids_dict_path)
@@ -123,6 +127,13 @@ unique_pmids_pmcids = os.path.join(args.work_dir, args.unique_pmids_pmcids)
 work_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/'
 
 biomes_df = work_dir + 'samples_biomes' 
+pmcids_to_pmids1 = work_dir + 'PMC-ids.csv' 
+pmcids_to_pmids2 = work_dir + 'oa_comm_use_file_list.csv' 
+pmcids_to_pmids3 = work_dir + 'oa_non_comm_use_pdf.csv' 
+
+
+
+
 
 pmids_dict_path = work_dir + 'sample.info_pmid' 
 pmcids_dict_path = work_dir + 'sample.info_pmcid' 
@@ -142,7 +153,7 @@ unique_pmids_pmcids = work_dir + "unique_pmids_pmcids"
 
 
 
-##################### Part 1. open dictionary files: 
+##################### Part 1. Open dictionary files: 
 
 samples_biomes = read_json_file(biomes_df)
     
@@ -157,12 +168,13 @@ d = read_json_file(bioprojects_pmcid_dict_path)
 ##################### Part 2. merge dictionaries
 
 merged_a_b = merge_dicts(a, b)
-len(merged_a_b)
+len(merged_a_b) 
+# 16977
 merged_c_d = merge_dicts(c, d)
 len(merged_c_d)
+# 500260
 
-
-##################### Part 3. 
+##################### Part 3. get unique values of dictionaries 
 
 unique_a_b = unique_values(merged_a_b)
 len(unique_a_b) 
@@ -173,6 +185,122 @@ len(unique_c_d)
 
 
 #################### Part 4. transform unique pmcids to pmids 
+
+
+# =============================================================================
+# import csv
+# 
+# def from_pmcids_to_pmids_from_file(pmcids, file_path=pmcids_to_pmids):
+#     pmid_dict = {}
+# 
+#     # Build a dictionary from the CSV file
+#     with open(file_path, mode="r") as file:
+#         reader = csv.DictReader(file)
+#         for row in reader:
+#             pmid_dict[row['PMCID']] = row['PMID']
+# 
+#     # Use the dictionary to get the PMIDs for the given PMCIDs
+#     result = {}
+#     for pmcid in pmcids:
+#         if pmcid in pmid_dict:
+#             result[pmcid] = pmid_dict[pmcid]
+# 
+#     return result
+# 
+# 
+# result = from_pmcids_to_pmids_from_file(unique_c_d)
+# len(result)
+# =============================================================================
+
+
+
+import pandas as pd
+import csv
+
+
+def extract_pmcid_pmid_dataframe(*files):
+    dfs = []
+
+    # Mapping of possible column names to standard names
+    column_mappings = {'PMCID': 'PMCID', 'Accession ID': 'PMCID', 'PMID': 'PMID'}
+    
+    for file in files:
+        # Check which columns are available in the current file
+        available_cols = pd.read_csv(file, nrows=0).columns.intersection(column_mappings.keys()).tolist()
+        
+        if not available_cols:
+            continue  # If neither 'PMCID', 'Accession ID' nor 'PMID' are available, skip
+
+        # Read only the relevant columns using pandas
+        data = pd.read_csv(file, usecols=available_cols, dtype=str)
+
+        # Rename columns based on our mappings
+        data = data.rename(columns=column_mappings)
+
+        # Drop rows where any of the columns have NaN values
+        data = data.dropna(subset=['PMCID', 'PMID'])
+
+        dfs.append(data)
+
+    # Concatenate all DataFrames
+    df = pd.concat(dfs, ignore_index=True)
+
+    # Drop duplicates
+    df.drop_duplicates(inplace=True)
+    
+    return df
+
+
+
+# Test the function
+files = [pmcids_to_pmids1, pmcids_to_pmids2, pmcids_to_pmids3]
+result_df = extract_pmcid_pmid_dataframe(*files)
+print(len(result_df))
+
+print(result_df.tail(3))
+
+
+
+
+def translate_pmcid_to_pmid(pmcid_list, result_df):
+    # Filter the dataframe based on the pmcid_list
+    filtered_df = result_df[result_df['PMCID'].isin(pmcid_list)]
+    
+    # Convert the filtered dataframe to a dictionary
+    translation_dict = dict(zip(filtered_df['PMCID'], filtered_df['PMID']))
+    
+    return translation_dict
+
+
+translations = translate_pmcid_to_pmid(unique_c_d, result_df)
+print(dict(islice(translations.items(), 10)))
+print(len(translations))
+
+
+
+unique_items_count = len(set(item for sublist in b.values() for item in sublist))
+print(unique_items_count)  # This will print 2 for the provided example.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 z2 = from_pmcids_to_pmids(unique_c_d) # test with: unique_c_d[1:100]
 z2
@@ -344,6 +472,4 @@ plt.show()
 
 elapsed_time = time.time() - start_time
 print(f"Code ran in {elapsed_time:.2f} seconds ")
-
-
 

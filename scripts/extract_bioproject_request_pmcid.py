@@ -29,11 +29,12 @@ import statistics
 
 def find_bioprojects_from_large_file(file_path):
     bioproject_dict = {}
-    bioproject_pattern = re.compile(r"PRJNA\s?\d+|\bbioproject[:/\s]\s*(\d+)\b", re.IGNORECASE)
+    # Updated regex pattern
+    bioproject_pattern = re.compile(r"(PRJ[A-Z]+\s*\d+)|\bbioproject[:/\s]\s*(\d+)\b", re.IGNORECASE)
 
     start_time = time.time()
     sample_counter = 0
-    
+
     with open(file_path, 'r') as f:
         lines = f.readlines()
 
@@ -51,11 +52,13 @@ def find_bioprojects_from_large_file(file_path):
         else:
             matches = bioproject_pattern.findall(line)
             for match in matches:
-                match = match.replace(" ", "")  # Remove spaces if any
-                if match.startswith('PRJNA'):
-                    standardized_bioproject_id = match
-                else:
-                    standardized_bioproject_id = 'PRJNA' + match
+                # Extract both groups
+                full_id, digit_part = match
+                
+                if full_id:
+                    standardized_bioproject_id = full_id.replace(" ", "")
+                elif digit_part:
+                    standardized_bioproject_id = 'PRJNA' + digit_part
                 
                 bioproject_dict[sample_name].append(standardized_bioproject_id)  # get the entire Bioproject ID
 
@@ -121,69 +124,9 @@ def save_errors_to_file(errors, filename):
             file.write(f"{error}\n")
 
 
-
-
-
-# =============================================================================
-# def fetch_pmcids(bioprojects_set):
-#     # Convert the set to a list
-#     bioprojects_list = list(bioprojects_set)
-# 
-#     # Set the batch size
-#     batch_size = 200
-#     total_batches = (len(bioprojects_list) + batch_size - 1) // batch_size
-# 
-#     bioprojects_pmc_dic = {}
-# 
-#     # Make sure to include your email address, as NCBI requires it for tracking purposes
-#     Entrez.email = "daniela.gaio@mls.uzh.ch"
-# 
-#     for batch_num in range(total_batches):
-#         start_time = time.time()
-# 
-#         # Determine the start and end indices for this batch
-#         start_idx = batch_num * batch_size
-#         end_idx = min((batch_num + 1) * batch_size, len(bioprojects_list))
-# 
-#         # Process the bioprojects in this batch
-#         for i in range(start_idx, end_idx):
-#             bioproject = bioprojects_list[i]
-#             print(f"Processing {bioproject}...")
-# 
-#             # Fetch the related articles for the BioProject ID
-#             query = f"{bioproject}[BioProject]"
-#             handle = Entrez.esearch(db="pmc", term=query)    
-#             record = Entrez.read(handle)
-#             handle.close()
-# 
-#             # pmc_ids = record['IdList'] # old
-#             pmc_ids = ['PMC' + pmc_id for pmc_id in record['IdList']]
-# 
-#             bioprojects_pmc_dic[bioproject] = pmc_ids
-# 
-#         # Sleep for 3 seconds
-#         time.sleep(3)
-#         
-#         # Calculate and print the time taken for this batch
-#         batch_time = time.time() - start_time
-#         print(f"Batch {batch_num + 1}/{total_batches} took {batch_time:.2f} seconds.")
-# 
-#         # Estimate the remaining time
-#         remaining_batches = total_batches - batch_num - 1
-#         remaining_time = batch_time * remaining_batches
-#         print(f"Estimated remaining time: {remaining_time / 60:.2f} minutes.")
-# 
-#     # Return the result
-#     return bioprojects_pmc_dic
-# =============================================================================
-
-
-
 def save_to_json(dictionary, filename):
     with open(filename, 'w') as file:
         json.dump(dictionary, file)
-
-
 
 
 
@@ -199,7 +142,7 @@ errors_file = os.path.expanduser(args.errors_file) if args.errors_file else None
 
 
 # # for testing purposes 
-# large_file_subset = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_subset'
+# large_file_subset = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_subset_test'
 # output_file = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject' 
 # errors_file = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_bioproject_errors' 
 
@@ -216,7 +159,6 @@ len(unique_bioprojects)
 len(unique_bioprojects)
 
 
-
 bioprojects_pmcid_dic, error_bioprojects = fetch_pmcids(unique_bioprojects)
 
 
@@ -226,8 +168,7 @@ if error_bioprojects:
     print(f"Errors have been saved to {error_filename}")
 
 
-# I think what it really takes to stay in science is naivity to the point of being overly hopeful and optimistic. Dumb. In other words. 
-
+# I think what it really takes to stay in science is naivity to the point of being overly hopeful and optimistic. Dumb. Just in other words. 
 
 
 # Create last dictionary
@@ -249,27 +190,12 @@ for key, bioprojects in a.items():
 save_to_json(new_dic, output_file)
 
 
-
-
 # Stats:
-unique_bioprojectss = set()
-unique_pmcidss = set()
+    
+print(f"Total number of (unique) bioprojects: {len(bioprojects_pmcid_dic)}")
+unique_pmids = len(set([pmid for sublist in new_dic.values() for pmid in sublist]))
+print(f"Number of PMCIDs found: {sum(len(v) for v in new_dic.values())}, of which unique: {unique_pmids}")
 
-# Iterate through bioprojects_dict to collect unique BioProjects
-for bioprojects in bioprojects_dict.values():
-    for bioproject in bioprojects:
-        if bioproject.startswith('PRJNA'):
-            unique_bioprojectss.add(bioproject)
-
-# Iterate through bioprojects_pmcid_dic to collect unique PMCIDs
-for pmcids in bioprojects_pmcid_dic.values():
-    unique_pmcidss.update(pmcids)  # Using update to add all PMCIDs in the list to the set
-
-# Printing the results
-print(f"Total number of samples with BioProjects: {len(bioprojects_dict)}")
-print(f" of which unique BioProjects: {len(unique_bioprojectss)}")
-print(f"Number of PMCIDs found: {len(new_dic)}")
-print(f" of which unique PMCIDs: {len(unique_pmcidss)}")
 
 
 
