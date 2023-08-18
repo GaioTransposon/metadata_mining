@@ -1,34 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Aug 17 14:49:47 2023
+Created on Fri Aug 18 14:45:40 2023
 
 @author: dgaio
 """
+
 
 
 # # run as: 
 # python ~/github/metadata_mining/scripts/join_all.py  \
 #         --work_dir '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/' \
 #             --biomes_df 'samples_biomes' \
-#                 --pmids_dict_path 'sample.info_pmid' \
-#                     --pmcids_dict_path 'sample.info_pmcid' \
-#                         --dois_pmids_dict_path 'sample.info_doi' \
-#                             --bioprojects_pmcid_dict_path 'sample.info_bioproject' \
-#                                 --output_file 'sample.info_biome_pmid.csv' \
-#                                     --figure 'sample.info_biome_pmid.pdf' \
-## Code ran in 1268.51 seconds (~20min)
+#                 --pmcids_to_pmids1 'PMC-ids.csv' \
+#                     --pmcids_to_pmids2 'oa_comm_use_file_list.csv' \
+#                         --pmcids_to_pmids3 'oa_non_comm_use_pdf.csv' \
+#                             --pmids_dict_path 'sample.info_pmid' \
+#                                 --pmcids_dict_path 'sample.info_pmcid' \
+#                                     --dois_pmids_dict_path 'sample.info_doi' \
+#                                         --bioprojects_pmcid_dict_path 'sample.info_bioproject' \
+#                                             --output_file 'sample.info_biome_pmid.csv' \
+#                                                 --figure 'sample.info_biome_pmid.pdf' \
+# # Code ran in 1268.51 seconds (~20min)
 
 import os
 import time
 import argparse
-from Bio import Entrez
 import json
-import xml.etree.ElementTree as ET
 from itertools import islice
 import pandas as pd
 import matplotlib.pyplot as plt
+import csv
 import numpy as np
+
 
 start_time = time.time()
 
@@ -57,67 +61,47 @@ def unique_values(dictionary):
     return list(unique_vals)
 
 
-def from_pmcids_to_pmids(pmcids):
-    # Convert the input to a list (if it's not)
-    pmcids_list = list(pmcids)
+def extract_pmcid_pmid_using_files(*files):
+    dfs = []
 
-    n=0
-    # Set the batch size
-    batch_size = 200
-    total_batches = (len(pmcids_list) + batch_size - 1) // batch_size
+    # Mapping of possible column names to standard names
+    column_mappings = {'PMCID': 'PMCID', 'Accession ID': 'PMCID', 'PMID': 'PMID'}
+    
+    for file in files:
+        # Check which columns are available in the current file
+        available_cols = pd.read_csv(file, nrows=0).columns.intersection(column_mappings.keys()).tolist()
+        
+        if not available_cols:
+            continue  # If neither 'PMCID', 'Accession ID' nor 'PMID' are available, skip
 
-    pmid_dict = {}
+        # Read only the relevant columns using pandas
+        data = pd.read_csv(file, usecols=available_cols, dtype=str)
 
-    # Provide the required email
-    Entrez.email = "daniela.gaio@mls.uzh.ch"
+        # Rename columns based on our mappings
+        data = data.rename(columns=column_mappings)
 
-    for batch_num in range(total_batches):
-        start_time = time.time()
+        # Drop rows where any of the columns have NaN values
+        data = data.dropna(subset=['PMCID', 'PMID'])
 
-        # Determine the start and end indices for this batch
-        start_idx = batch_num * batch_size
-        end_idx = min((batch_num + 1) * batch_size, len(pmcids_list))
+        dfs.append(data)
 
-        # Process the PMCIDs in this batch
-        for i in range(start_idx, end_idx):
-            pmcid = pmcids_list[i]
-            #print(f"Processing {pmcid}...")
+    # Concatenate all DataFrames
+    df = pd.concat(dfs, ignore_index=True)
 
-            n+=1 
-            
-            
-            numeric_pmcid = pmcid.replace('PMC', '', 1)  # Remove 'PMC' prefix if it appears at the beginning
-            handle = Entrez.elink(dbfrom="pmc", db="pubmed", id=numeric_pmcid, retmode="xml")
-            response = handle.read()
-            handle.close()
-            root = ET.fromstring(response)
+    # Drop duplicates
+    df.drop_duplicates(inplace=True)
+    
+    return df
 
-            pmid = None
-            for linksetdb in root.findall(".//LinkSetDb"):
-                if linksetdb.findtext("DbTo") == 'pubmed':
-                    pmid = linksetdb.findtext(".//Id")
-                    break
 
-            if pmid:
-                #print(f"Found PMID {pmid} for {pmcid}.")
-                pmid_dict[pmcid] = pmid
-            else:
-                print(f"No PMID found for {pmcid}.\n")
-
-        # Sleep for a short period to avoid overwhelming the service
-        time.sleep(3)
-        print(n, ' PMCIDs processed out of ', len(pmcids_list))
-
-        # Calculate and print the time taken for this batch
-        batch_time = time.time() - start_time
-        print(f"Batch {batch_num + 1}/{total_batches} took {batch_time:.2f} seconds.")
-
-        # Estimate the remaining time
-        remaining_batches = total_batches - batch_num - 1
-        remaining_time = batch_time * remaining_batches
-        print(f"Estimated remaining time: {remaining_time / 60:.2f} minutes.")
-
-    return pmid_dict
+def translate_pmcid_to_pmid(pmcid_list, result_df):
+    # Filter the dataframe based on the pmcid_list
+    filtered_df = result_df[result_df['PMCID'].isin(pmcid_list)]
+    
+    # Convert the filtered dataframe to a dictionary
+    translation_dict = dict(zip(filtered_df['PMCID'], filtered_df['PMID']))
+    
+    return translation_dict
 
    
 ####################
@@ -127,6 +111,9 @@ parser.add_argument('--work_dir', type=str, required=True, help='Path to the wor
 
 # Inputs: 
 parser.add_argument('--biomes_df', type=str, required=True, help='this is the sample file with biomes')
+parser.add_argument('--pmcids_to_pmids1', type=str, required=True, help='pmcids_to_pmids1')
+parser.add_argument('--pmcids_to_pmids2', type=str, required=True, help='pmcids_to_pmids2')
+parser.add_argument('--pmcids_to_pmids3', type=str, required=True, help='pmcids_to_pmids3')
 
 parser.add_argument('--pmids_dict_path', type=str, required=True, help='pmids scraped from metadata')
 parser.add_argument('--pmcids_dict_path', type=str, required=True, help='pmcids scraped from metadata')
@@ -143,6 +130,9 @@ args = parser.parse_args()
 
 # Prepend work_dir to all the file paths
 biomes_df = os.path.join(args.work_dir, args.biomes_df)
+pmcids_to_pmids1 = os.path.join(args.work_dir, args.pmcids_to_pmids1)
+pmcids_to_pmids2 = os.path.join(args.work_dir, args.pmcids_to_pmids2)
+pmcids_to_pmids3 = os.path.join(args.work_dir, args.pmcids_to_pmids3)
 pmids_dict_path = os.path.join(args.work_dir, args.pmids_dict_path)
 pmcids_dict_path = os.path.join(args.work_dir, args.pmcids_dict_path)
 dois_pmids_dict_path = os.path.join(args.work_dir, args.dois_pmids_dict_path)
@@ -156,6 +146,9 @@ figure = os.path.join(args.work_dir, args.figure)
 work_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/'
 
 biomes_df = work_dir + 'samples_biomes' 
+pmcids_to_pmids1 = work_dir + 'PMC-ids.csv' 
+pmcids_to_pmids2 = work_dir + 'oa_comm_use_file_list.csv' 
+pmcids_to_pmids3 = work_dir + 'oa_non_comm_use_pdf.csv' 
 
 pmids_dict_path = work_dir + 'sample.info_pmid' 
 pmcids_dict_path = work_dir + 'sample.info_pmcid' 
@@ -204,8 +197,19 @@ len(unique_c_d)
 
 #################### Part 4. transform unique pmcids to pmids and replace in dictionary:
 
-z2 = from_pmcids_to_pmids(unique_c_d) # test with: unique_c_d[1:100]
-z2
+
+files = [pmcids_to_pmids1, pmcids_to_pmids2, pmcids_to_pmids3]
+pmcids_pmids_files = extract_pmcid_pmid_using_files(*files)
+print(len(pmcids_pmids_files))
+print(pmcids_pmids_files.tail(3))
+
+
+translations = translate_pmcid_to_pmid(unique_c_d, pmcids_pmids_files)
+print(dict(islice(translations.items(), 10)))
+print(len(translations))
+
+
+z2 = translations
 
 
 new_dict = {}
@@ -248,7 +252,6 @@ merged_all.to_csv(output_file, index=False)
 
 
 #################### Part 6. Plot the content
-
 
 # =============================================================================
 # # Sample dataframe
@@ -309,8 +312,5 @@ plt.show()
 
 elapsed_time = time.time() - start_time
 print(f"Code ran in {elapsed_time:.2f} seconds ")
-
-
-
 
 
