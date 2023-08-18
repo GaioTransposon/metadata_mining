@@ -151,22 +151,24 @@ output_file = os.path.join(args.work_dir, args.output_file)
 figure = os.path.join(args.work_dir, args.figure)
 
 
-####################
-# for testing purposes 
-work_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/'
-
-biomes_df = work_dir + 'samples_biomes' 
-
-pmids_dict_path = work_dir + 'sample.info_pmid' 
-pmcids_dict_path = work_dir + 'sample.info_pmcid' 
-
-dois_pmids_dict_path = work_dir + 'sample.info_doi' 
-
-bioprojects_pmcid_dict_path = work_dir + 'sample.info_bioproject' 
-
-output_file = work_dir + "sample.info_biome_pmid.csv"
-figure = work_dir + "sample.info_biome_pmid.pdf"
-####################
+# =============================================================================
+# ####################
+# # for testing purposes 
+# work_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/'
+# 
+# biomes_df = work_dir + 'samples_biomes' 
+# 
+# pmids_dict_path = work_dir + 'sample.info_pmid' 
+# pmcids_dict_path = work_dir + 'sample.info_pmcid' 
+# 
+# dois_pmids_dict_path = work_dir + 'sample.info_doi' 
+# 
+# bioprojects_pmcid_dict_path = work_dir + 'sample.info_bioproject' 
+# 
+# output_file = work_dir + "sample.info_biome_pmid.csv"
+# figure = work_dir + "sample.info_biome_pmid.pdf"
+# ####################
+# =============================================================================
 
 
 
