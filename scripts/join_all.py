@@ -17,7 +17,7 @@ Created on Thu Aug 17 14:49:47 2023
 #                             --bioprojects_pmcid_dict_path 'sample.info_bioproject' \
 #                                 --output_file 'sample.info_biome_pmid.csv' \
 #                                     --figure 'sample.info_biome_pmid.pdf' \
-## Code ran in 1268.51 seconds (~20min)
+## Code takes ca 40' to run 
 
 import os
 import time

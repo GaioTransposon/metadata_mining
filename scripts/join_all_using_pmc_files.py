@@ -6,10 +6,15 @@ Created on Fri Aug 18 14:45:40 2023
 @author: dgaio
 """
 
-
+# # Before running: 
+# # from Terminal within MicrobeAtlasProject: 
+# wget https://ftp.ncbi.nlm.nih.gov/pub/pmc/PMC-ids.csv.gz
+# wget https://ftp.ncbi.nlm.nih.gov/pub/pmc/oa_comm_use_file_list.csv
+# wget https://ftp.ncbi.nlm.nih.gov/pub/pmc/oa_non_comm_use_pdf.csv  
+# gzip -d PMC-ids.csv.gz  
 
 # # run as: 
-# python ~/github/metadata_mining/scripts/join_all.py  \
+# python ~/github/metadata_mining/scripts/join_all_using_pmc_files.py  \
 #         --work_dir '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/' \
 #             --biomes_df 'samples_biomes' \
 #                 --pmcids_to_pmids1 'PMC-ids.csv' \
@@ -20,7 +25,7 @@ Created on Fri Aug 18 14:45:40 2023
 #                                     --dois_pmids_dict_path 'sample.info_doi' \
 #                                         --bioprojects_pmcid_dict_path 'sample.info_bioproject' \
 #                                             --output_file 'sample.info_biome_pmid.csv' \
-#                                                 --figure 'sample.info_biome_pmid.pdf' \
+#                                                 --figure 'sample.info_biome_pmid.pdf' 
 # # Code ran in 1268.51 seconds (~20min)
 
 import os
@@ -30,7 +35,6 @@ import json
 from itertools import islice
 import pandas as pd
 import matplotlib.pyplot as plt
-import csv
 import numpy as np
 
 
