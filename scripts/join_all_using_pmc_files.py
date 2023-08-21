@@ -7,7 +7,7 @@ Created on Fri Aug 18 14:45:40 2023
 """
 
 # # Before running: 
-# # from Terminal within MicrobeAtlasProject: 
+# # from Terminal within MicrobeAtlasProject/: 
 # wget https://ftp.ncbi.nlm.nih.gov/pub/pmc/PMC-ids.csv.gz
 # wget https://ftp.ncbi.nlm.nih.gov/pub/pmc/oa_comm_use_file_list.csv
 # wget https://ftp.ncbi.nlm.nih.gov/pub/pmc/oa_non_comm_use_pdf.csv  
@@ -26,7 +26,6 @@ Created on Fri Aug 18 14:45:40 2023
 #                                         --bioprojects_pmcid_dict_path 'sample.info_bioproject' \
 #                                             --output_file 'sample.info_biome_pmid.csv' \
 #                                                 --figure 'sample.info_biome_pmid.pdf' 
-# # Code ran in 1268.51 seconds (~20min)
 
 import os
 import time
@@ -188,8 +187,8 @@ len(merged_a_b)
 merged_c_d = merge_dicts(c, d)
 len(merged_c_d)
 
-
-#merged_c_d = {k: merged_c_d[k] for k in list(merged_c_d)[:5000]}
+# # for testing purposes
+# merged_c_d = {k: merged_c_d[k] for k in list(merged_c_d)[:5000]}
 
 ##################### Part 3. 
 
