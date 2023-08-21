@@ -16,7 +16,7 @@ Created on Fri Jun 30 13:00:41 2023
 # python ~/github/metadata_mining/scripts/get_ncbi_metadata.py  \
 #         --work_dir '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/' \
 #             --sample_info_biome_pmid "sample.info_biome_pmid.csv" \
-#                 --xml_files_dir "ncbi_metadata_dir/test2" \
+#                 --xml_files_dir "ncbi_metadata_dir" \
 #                         --output_file "sample.info_biome_pmid_title_abstract.csv" \
 #                             --pmids_not_found_file "pmids_not_found_file.pkl" \
 #                                 --figure "sample.info_biome_pmid_title_abstract.pdf"
