@@ -51,8 +51,8 @@ figure = os.path.join(args.work_dir, args.figure)
 # # for testing purposes
 # work_dir = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/"
 # sample_info_biome_pmid = os.path.join(work_dir, "sample.info_biome_pmid.csv")
-# output_file = os.path.join(work_dir, "ncbi_metadata_selection2.csv")
-# figure = os.path.join(work_dir, "ncbi_metadata_selection2.pdf")
+# output_file = os.path.join(work_dir, "sample.info_biome_pmid_title_abstract.csv")
+# figure = os.path.join(work_dir, "sample.info_biome_pmid_title_abstract.pdf")
 # ###################
 
 
@@ -185,50 +185,6 @@ print("Output file succesfully written")
 
 
 ############ 5. Plot: 
-    
-
-# Filtering out rows with None in title or abstract
-filtered_df = merged_df.dropna(subset=['title', 'abstract'])
-
-# Grouping by biome and sample to get the unique pmids count
-grouped = filtered_df.groupby(['biome', 'sample']).agg({
-    'pmid': 'nunique'
-}).reset_index()
-
-# Adding the has_min_1_t+a column
-grouped['has_min_1_t+a'] = (grouped['pmid'] >= 1).astype(int)
-
-# Aggregating again on biome
-biome_summary = grouped.groupby('biome').agg({
-    'sample': 'count',
-    'has_min_1_t+a': 'sum'
-}).reset_index()
-
-
-
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-# Using Seaborn for the bar plot
-plt.figure(figsize=(12, 8))
-plot = sns.barplot(data=biome_summary, x='biome', y='has_min_1_t+a', palette="viridis")
-
-# Adding the count annotations on top of the bars
-for p in plot.patches:
-    plot.annotate(f'{int(p.get_height())}',
-                  (p.get_x() + p.get_width() / 2., p.get_height()),
-                  ha='center', va='center', 
-                  xytext=(0, 9),
-                  textcoords='offset points')
-
-plt.title('Number of samples with at least one title and abstract per biome')
-plt.ylabel('Count of samples')
-plt.xlabel('Biome')
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.show()
-
 
 
 # 1. Filter out rows where the title or abstract is NaN
@@ -244,30 +200,6 @@ pmid_counts = filtered_df.groupby('biome')['pmid'].nunique().reset_index().renam
 biome_summary = sample_counts.merge(pmid_counts, on='biome')
 
 # 4. Plot
-plt.figure(figsize=(12, 8))
-
-# First, plot the samples_with_t+a bars
-bars1 = plt.bar(biome_summary['biome'], biome_summary['samples_with_t+a'], label='Samples with Title & Abstract', color='b')
-
-# Then, plot the unique_pmids as a stacked bar on top
-bars2 = plt.bar(biome_summary['biome'], biome_summary['unique_pmids'], bottom=biome_summary['samples_with_t+a'], label='Unique PMIDs', color='r')
-
-# Add annotations on top of the bars
-for bar in bars1:
-    yval = bar.get_height()
-    plt.text(bar.get_x() + bar.get_width()/2, yval + 5, round(yval, 2), ha="center", va="bottom")
-
-for bar in bars2:
-    yval = bar.get_height()
-    plt.text(bar.get_x() + bar.get_width()/2, yval + bar.get_y() + 5, round(yval, 2), ha="center", va="bottom")
-
-plt.title('Comparison of samples with title & abstract vs unique PMIDs per biome')
-plt.ylabel('Count')
-plt.xlabel('Biome')
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.legend(title="Metrics")
-plt.show()
 
 
 plt.figure(figsize=(15, 10))  # Increase figure size
@@ -293,8 +225,13 @@ plt.xlabel('Biome')
 plt.xticks(rotation=45)
 plt.tight_layout()
 plt.legend(title="Metrics")
+
+# Save the plot
+plt.savefig(figure, dpi=300, bbox_inches='tight')
+
 plt.show()
 
+print("Plotted !")
 
 
 
