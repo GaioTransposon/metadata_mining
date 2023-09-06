@@ -72,7 +72,6 @@ type(unique_pmids)
 ############ 3. get info from Entrez 
 
 
-
 def extract_all_text(element):
     if element is None:
         return None
@@ -81,7 +80,7 @@ def extract_all_text(element):
     for t in element.itertext():
         if t:
             texts.append(t.strip())
-    return "".join(texts).strip()
+    return " ".join(texts).strip()  # Notice the space inside " ".join()
 
 
 
@@ -162,6 +161,8 @@ print(f"PMIDs processed: {len(df_retrieved)}")
 print(f"PMIDs without title: {len(pmids_no_title)}")
 print(f"PMIDs without abstract: {len(pmids_no_abstract)}")
 print(f"PPMIDs without title and abstract: {len(pmids_no_title_no_abstract)}")
+
+
 
 
 
