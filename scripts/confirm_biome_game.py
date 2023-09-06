@@ -31,7 +31,7 @@ def get_sub_df_with_lowest_count(df, gold_dict, iteration):
     min_count = float('inf')
     min_biome = None
     for biome in df['biome'].unique():
-        if biome == 'unknown' and iteration % 10 != 0:  # Skip 'unknown' most of the time
+        if biome == 'unknown' and iteration % 10 != 0:  # Skip 'unknown' most of the time (this is because most unknowns turn out to be animal)
             continue
         if biome not in gold_dict:
             gold_dict[biome] = []
