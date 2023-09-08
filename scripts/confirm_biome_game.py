@@ -58,7 +58,6 @@ def main():
 
     # Optionally, merge this information back into the original DataFrame, if needed.
     merged_df = pd.merge(df[['pmid', 'title', 'abstract']].drop_duplicates(), grouped_df, on='pmid')
-
     
     # Replace 'aquatic' with 'water' in the 'biome' column
     merged_df['biome'] = merged_df['biome'].replace('aquatic', 'water')
@@ -68,6 +67,9 @@ def main():
     
     gold_dict_filename = GOLD_DICT_PATH
     gold_dict = load_gold_dict(gold_dict_filename)
+    
+    if 'laboratory' not in gold_dict:
+        gold_dict['laboratory'] = []
     
     # Remove PMIDs already in gold_dict from DataFrame
     already_processed_pmids = [pmid for pmid_list in gold_dict.values() for pmid in pmid_list]
@@ -88,7 +90,7 @@ def main():
         row = sub_df.iloc[0]
 
         question = f"\n\n\nIs the biome: {row['biome']}?"
-        print(f"\nTitle: {row['title']}")
+        print(f"\n\n\n\n\n\nTitle: {row['title']}")
         print(f"\nAbstract: {row['abstract']}\n\n")
         answer = input(question + " (y/n/q): ")
 
@@ -101,8 +103,8 @@ def main():
             gold_dict[row['biome']].append(row['pmid'])
             df = df[df['pmid'] != row['pmid']]
         else:
-            new_biome = input("Which biome is it? (a for animal, w for water, s for soil, p for plant, u for unknown): ")
-            biome_map = {'a': 'animal', 'w': 'water', 's': 'soil', 'p': 'plant', 'u': 'unknown'}
+            new_biome = input("Which biome is it? (a for animal, w for water, s for soil, p for plant, l for laboratory, u for unknown): ")
+            biome_map = {'a': 'animal', 'w': 'water', 's': 'soil', 'p': 'plant', 'l': 'laboratory', 'u': 'unknown'} 
             new_biome_str = biome_map[new_biome]
             if new_biome_str not in gold_dict:
                 gold_dict[new_biome_str] = []
@@ -122,6 +124,4 @@ if __name__ == "__main__":
 
 
 
-        
-    
 
