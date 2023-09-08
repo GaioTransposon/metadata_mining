@@ -167,20 +167,59 @@ print(f"PPMIDs without title and abstract: {len(pmids_no_title_no_abstract)}")
 
 
 
-############ 4. Merge ncbi metadata to our original dataframe:  
+############ 4. Merge ncbi metadata to our original dataframe and select 1 (oldest) pmid per sample: 
 
+def select_pmid(group):
+    sorted_group = group.sort_values('pmid')
+    oldest_was_skipped = False
+    skip_reason = None
 
-# Step 1: Expand the 's' dataframe
-s_exploded = s.explode('pmid')
+    for idx, row in sorted_group.iterrows():
+        title = row['title'].lower()
+        matched_keyword = next((keyword for keyword in exclude_keywords if keyword in title), None)
+        
+        if not matched_keyword:
+            if oldest_was_skipped:
+                skipped_and_picked.append((sorted_group.iloc[0]['pmid'], sorted_group.iloc[0]['title'], 
+                                           row['pmid'], row['title'], skip_reason))
+            return row
+        elif idx == sorted_group.index[0]:
+            oldest_was_skipped = True
+            skip_reason = matched_keyword
 
-# Step 2: Merge with 'df_accommodate_metadata'
-merged_df = s_exploded.merge(df_retrieved, on='pmid', how='left')
+    return sorted_group.iloc[0]
 
-# Step 3: Post-process (if needed)
-merged_df = merged_df[['sample', 'biome', 'pmid', 'title', 'abstract']]  # Reorder columns
+# Define the exclusion list
+exclude_keywords = ["protocol", "protocols", "method", "methods", "procedure", "procedures", "library", "libraries"]
+
+# Initialize the results list
+skipped_and_picked = []
+
+# Process
+selected = (
+    s.explode('pmid')
+    .merge(df_retrieved, on='pmid', how='left')
+    .reindex(columns=['sample', 'biome', 'pmid', 'title', 'abstract'])
+    .dropna(subset=['title', 'abstract'])
+    .groupby('sample').apply(select_pmid).reset_index(drop=True)
+)
+
+skipped_and_picked_df = (
+    pd.DataFrame(skipped_and_picked, columns=['Skipped_PMID', 'Skipped_Title', 'Picked_PMID', 'Picked_Title', 'Reason_For_Skip_oldest_pmid'])
+    .drop_duplicates(subset=['Skipped_PMID', 'Picked_PMID'])
+)
+
+print('''For these samples, the second oldest pmid has been picked,\n 
+      rather than the oldest, as the oldest contained lab-related terms\n 
+      (indicative of protocol description''')
+print(skipped_and_picked_df)
+
+print("Unique pmids per biome:")
+print(selected.groupby('biome')['pmid'].nunique())
+
 
 # Save
-merged_df.to_csv(os.path.join(output_file), index=False)
+selected.to_csv(os.path.join(output_file), index=False)
 print("Output file succesfully written")
 
 
@@ -188,16 +227,13 @@ print("Output file succesfully written")
 ############ 5. Plot: 
 
 
-# 1. Filter out rows where the title or abstract is NaN
-filtered_df = merged_df.dropna(subset=['title', 'abstract'])
+# 1. For each biome, count the number of samples with at least one associated PMID
+sample_counts = selected.groupby('biome')['sample'].nunique().reset_index().rename(columns={'sample': 'samples_with_t+a'})
 
-# 2. For each biome, count the number of samples with at least one associated PMID
-sample_counts = filtered_df.groupby('biome')['sample'].nunique().reset_index().rename(columns={'sample': 'samples_with_t+a'})
+# 2. Count the number of unique PMIDs per biome
+pmid_counts = selected.groupby('biome')['pmid'].nunique().reset_index().rename(columns={'pmid': 'unique_pmids'})
 
-# 3. Count the number of unique PMIDs per biome
-pmid_counts = filtered_df.groupby('biome')['pmid'].nunique().reset_index().rename(columns={'pmid': 'unique_pmids'})
-
-# Merge the two dataframes
+# 3. Merge the two dataframes
 biome_summary = sample_counts.merge(pmid_counts, on='biome')
 
 # 4. Plot
