@@ -165,8 +165,6 @@ print(f"PPMIDs without title and abstract: {len(pmids_no_title_no_abstract)}")
 
 
 
-
-
 ############ 4. Merge ncbi metadata to our original dataframe and select 1 (oldest) pmid per sample: 
 
 def select_pmid(group):
@@ -269,6 +267,185 @@ plt.savefig(figure, dpi=300, bbox_inches='tight')
 plt.show()
 
 print("Plotted !")
+
+
+
+
+
+
+
+
+
+
+
+
+# Step 1: Expand the 's' dataframe
+s_exploded = s.explode('pmid')
+
+# Step 2: Merge 
+merged_df = s_exploded.merge(df_retrieved, on='pmid', how='left')
+
+# Step 3: Reorder columns
+ordered_df = merged_df[['sample', 'biome', 'pmid', 'title', 'abstract']]
+
+# Step 4: Filter out rows where the title or abstract is NaN
+filtered_df = ordered_df.dropna(subset=['title', 'abstract'])
+
+
+
+
+
+
+
+z = filtered_df[1:200]
+
+
+
+
+
+df = z
+
+mylist = ['ERS492621']
+
+a = df['sample'].isin(mylist)
+df = df[a]
+
+
+
+
+
+
+import torch
+print("Number of GPUs available:", torch.cuda.device_count())
+import transformers
+from transformers import BertTokenizer, BertModel
+from transformers import BartTokenizer, BartForConditionalGeneration
+import numpy as np
+
+
+tokenizer = AutoTokenizer.from_pretrained("dmis-lab/biobert-large-cased-v1.1-squad")
+
+# Load pre-trained BERT model and tokenizer
+model_name = 'bert-base-uncased'
+tokenizer = BertTokenizer.from_pretrained(model_name)
+model = BertModel.from_pretrained(model_name)
+# or: model = AutoModelForQuestionAnswering.from_pretrained("dmis-lab/biobert-large-cased-v1.1-squad")
+
+
+
+
+
+
+
+import torch
+import transformers
+from transformers import AutoTokenizer, AutoModelForCausalLM
+# conda install -c conda-forge accelerate
+
+
+model_name = "meta-llama/Llama-2-7b-chat-hf"    #other possibilities: meta-llama/Llama-2-70b      #or: meta-llama/Llama-2-70b-chat-hf
+base_model_path="./huggingface/llama7B"
+
+with open('huggingface_token.txt', 'r') as file:
+    my_huggingface_token = file.read().strip()
+
+
+tokenizer = AutoTokenizer.from_pretrained(model_name, token=my_huggingface_token)
+model = AutoModelForCausalLM.from_pretrained(model_name, token=my_huggingface_token,
+                                             #device_map='auto', # for this to run we need the package accelerate which is now installing 
+                                             torch_dtype=torch.float16)
+
+
+
+#Save the model and the tokenizer to your PC
+model.save_pretrained(base_model_path, from_pt=True) 
+tokenizer.save_pretrained(base_model_path, from_pt=True)
+# done 
+
+
+
+
+
+
+
+from transformers import  LlamaForCausalLM, LlamaTokenizer, pipeline
+
+
+model_uploaded = LlamaForCausalLM.from_pretrained(base_model_path)
+tokenizer_uploaded = LlamaTokenizer.from_pretrained(base_model_path)
+# this last gave a problem:
+# UnboundLocalError: cannot access local variable 'sentencepiece_model_pb2' where it is not associated with a value
+
+
+
+
+
+
+
+
+
+
+
+from transformers import pipeline
+
+
+llama_pipeline = pipeline(
+    "text-generation",
+    model=model, 
+    tokenizer=tokenizer,
+    torch_dtype=torch.float16,
+    device_map="auto")
+    
+
+
+
+def get_llama_response(prompt: str) -> None:
+    """
+    Generate a response from the Llama model.
+
+    Parameters:
+        prompt (str): The user's input/question for the model.
+
+    Returns:
+        None: Prints the model's response.
+    """
+    sequences = llama_pipeline(
+        prompt,
+        do_sample=True,
+        top_k=10,
+        num_return_sequences=1,
+        eos_token_id=tokenizer.eos_token_id,
+        max_length=256,
+    )
+    print("Chatbot:", sequences[0]['generated_text'])
+
+
+
+if torch.cuda.is_available():
+    torch.set_default_tensor_type(torch.cuda.HalfTensor)
+
+prompt = 'I liked "Breaking Bad" and "Band of Brothers". Do you have any recommendations of other shows I might like?\n'
+get_llama_response(prompt)
+
+
+
+
+
+
+
+
+
+
+
+print(model.device) # model is in cuda or cpu 
+
+
+    
+    
+    
+    
+
+
 
 
 
