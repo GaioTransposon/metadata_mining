@@ -11,6 +11,44 @@ import os
 import openai
 import pandas as pd
 import numpy as np  
+from collections import Counter
+import argparse  
+
+
+
+####################
+
+parser = argparse.ArgumentParser(description='Process XML files.')
+
+parser.add_argument('--work_dir', type=str, required=True, help='path to work directory')
+parser.add_argument('--input', type=str, required=True, help='path to input df')
+parser.add_argument('--output_file', type=str, required=True, help='name of output file')
+
+args = parser.parse_args()
+
+# Prepend work_dir to all the file paths
+sample_info_biome_pmid_title_abstract = os.path.join(args.work_dir, args.input)
+output_file = os.path.join(args.work_dir, args.output_file)
+
+
+# # for testing purposes
+# work_dir = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/"
+# sample_info_biome_pmid_title_abstract = os.path.join(work_dir, "sample.info_biome_pmid_title_abstract.csv")
+# output_file = os.path.join(work_dir, "training_data_pmids_based.csv")
+# ###################
+
+
+
+############ 1. open input df
+sample_info_biome_pmid_title_abstract = pd.read_csv(sample_info_biome_pmid_title_abstract)
+
+
+
+
+
+
+
+
 
 # get key 
 file_path = "/Users/dgaio/my_api_key"  # Replace with the actual file path
@@ -32,7 +70,7 @@ except IOError:
 
 
 # 1. Filter out samples with just 1 pmid
-filtered_df2 = filtered_df.groupby('sample').filter(lambda x: len(x) > 1)
+filtered_df2 = sample_info_biome_pmid_title_abstract.groupby('sample').filter(lambda x: len(x) > 1)
 
 
 # 2. Keep only 'pmid' and 'title' columns
@@ -54,6 +92,7 @@ z = filtered_df2
 # Create the desired list
 result = [f"'{pmid}': '{title}'" for pmid, title in zip(z['pmid'], z['title'])]
 #print(result)
+len(result)
 
 for item in result:
     print(item)
@@ -81,7 +120,7 @@ def split_list_by_tokens(input_list, max_tokens):
     
     return chunks
 
-chunks = split_list_by_tokens(result, 2500)
+chunks = split_list_by_tokens(result, 1000) # chunk of 2500 gave ca 2x > gpt output. input n=2345 --> output n=4621 ! unique pmids! like it's making stuff up! 
 len(chunks)
 
 # Find the chunk with the maximum number of items
@@ -154,10 +193,10 @@ max_tokens+44+(178*6)
 
 
 
-# run at 17:56
+# run at 17:56 # run again on 20230929
 
 # Iterate over content_strings for openai calls
-responses = []
+responses_1000_chunk = []
 n=0
 
 for content_string in content_strings:
@@ -182,49 +221,138 @@ for content_string in content_strings:
         frequency_penalty=0,
         presence_penalty=0
     )
-    responses.append(response)
+    responses_1000_chunk.append(response)
     
     
     
-responses[2]    
+responses_1000_chunk
 
 
 
 
-from collections import Counter
 
-for response in responses:
+
+
+extracted_contents_1000_chunk = []
+key_terms = ['animal', 'plant', 'water', 'soil', 'unknown']
+
+for response in responses_1000_chunk:
     content = response.choices[0].message['content'].strip().splitlines()
-    
-    counts = {
-        'animal': sum(1 for line in content if 'animal' in line.lower()),
-        'plant': sum(1 for line in content if 'plant' in line.lower()),
-        'water': sum(1 for line in content if 'water' in line.lower()),
-        'soil': sum(1 for line in content if 'soil' in line.lower()),
-        'unknown': sum(1 for line in content if 'unknown' in line.lower()),
-    }
+
+    # Count the occurrences of key terms
+    counts = Counter()
+    for line in content:
+        for term in key_terms:
+            if term in line.lower():
+                counts[term] += 1
 
     print(f"Length of content: {len(content)}")
     print(f"Occurrences - Animal: {counts['animal']}, Plant: {counts['plant']}, Water: {counts['water']}, Soil: {counts['soil']}, Unknown: {counts['unknown']}\n")
 
-
-
-
-extracted_contents = []
-
-for response in responses:
-    content = response.choices[0].message['content'].strip().splitlines()
-    print(len(content))
-    extracted_contents.extend(content)
+    # Extend the extracted contents list
+    extracted_contents_1000_chunk.extend(content)
 
 # At this point, extracted_contents contains all the desired content from the openai calls
-len(extracted_contents)
+print("Total extracted contents:", len(extracted_contents_1000_chunk))
+
+
+
+# =============================================================================
+# # Extract unique PMIDs
+# unique_pmids_out = set()
+# for item in extracted_contents_1000_chunk:
+#     pmid = item.split('.')[0]
+#     unique_pmids_out.add(pmid)
+# 
+# # Print the number of unique PMIDs and unique items in the list
+# print("Number of unique PMIDs:", len(unique_pmids_out))
+# print("Number of unique items in the list:", len(set(extracted_contents_1000_chunk)))
+# =============================================================================
 
 
 
 
-content_strings[0]
-responses[0]
+
+
+# Extract PMIDs and values from extracted_contents_1000_chunk
+pmid_values = [item.split(': ') for item in extracted_contents_1000_chunk]
+pmid_df = pd.DataFrame(pmid_values, columns=['pmid', 'value'])
+
+
+def remove_single_quotes(df, column_name='value'):
+    df_copy = df.copy()
+    df_copy.loc[:, column_name] = df_copy[column_name].str.replace("'", "", regex=False)
+    return df_copy
+
+
+pmid_df = remove_single_quotes(pmid_df, 'value')
+print(pmid_df)
+
+
+
+
+
+# Convert the 'pmid' column to int for matching
+pmid_df['pmid'] = pmid_df['pmid'].str.replace("'", "").astype(int)
+
+
+
+
+
+
+
+sample_info_biome_pmid_title_abstract_copy = sample_info_biome_pmid_title_abstract.copy()
+# Convert the 'pmid' column of filtered_df2 to int for matching
+sample_info_biome_pmid_title_abstract_copy['pmid'] = sample_info_biome_pmid_title_abstract_copy['pmid'].astype(int)
+
+# Now merge
+merged_df = pd.merge(sample_info_biome_pmid_title_abstract_copy, pmid_df, on='pmid', how='left')
+
+
+
+zz = merged_df
+print(zz)
+
+
+
+# Function to determine the majority value
+def get_majority_value(group):
+    count = group.value_counts()
+    
+    if len(count) == 0:  # if there are no non-null values in the group
+        return None
+
+    if count.index[0] == 'unknown':
+        # Return the second majority vote if 'unknown' is the majority
+        return count.index[1] if len(count) > 1 else count.index[0]
+    return count.index[0]
+
+# Get majority value for each group
+majority_series = zz.groupby('sample')['value'].apply(get_majority_value)
+
+zzz = zz.copy()
+
+# Map the majority values to the original dataframe
+zzz['majority'] = zzz['sample'].map(majority_series)
+print(zzz)
+
+
+
+zzzz = zzz.copy()
+
+
+# Using the previous zz_copy
+# 1. Remove rows where value doesn't match majority unless majority is None
+zzzz = zzzz[((zzzz['value'] == zzzz['majority']) | (zzzz['majority'].isnull()))]
+
+# 2. Select the oldest pmid per sample
+zzzz = zzzz.sort_values('pmid').groupby('sample').first().reset_index()
+
+# 3. Drop the 'value' column
+zzzz.drop('value', axis=1, inplace=True)
+
+# 4. Rename the 'majority' column to 'biome_gpt'
+zzzz.rename(columns={'majority': 'biome_gpt'}, inplace=True)
 
 
 
@@ -236,7 +364,38 @@ responses[0]
 
 
 
+samples_with_1pmid = sample_info_biome_pmid_title_abstract_copy.groupby('sample').filter(lambda x: len(x) == 1)
 
 
+len(samples_with_1pmid)
+len(zzzz)
+
+
+
+
+
+
+# Add a missing column to the first DataFrame with the fill value
+samples_with_1pmid['biome_gpt'] = 'not_enquired'
+
+# Concatenate the two DataFrames
+final = pd.concat([samples_with_1pmid, zzzz], axis=0, ignore_index=True)
+
+print(final)
+len(final)
+
+
+
+# Save
+final.to_csv(os.path.join(output_file), index=False)
+print("Output file succesfully written")
+
+
+
+
+# test = final[final['biome'] == 'plant']
+# uu = test['pmid'].value_counts()
+# print(uu)
+# len(uu)
 
 
