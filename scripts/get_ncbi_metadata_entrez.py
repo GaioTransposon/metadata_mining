@@ -216,11 +216,6 @@ print("Unique pmids per biome:")
 print(selected.groupby('biome')['pmid'].nunique())
 
 
-# Save
-selected.to_csv(os.path.join(output_file), index=False)
-print("Output file succesfully written")
-
-
 
 ############ 5. Plot: 
 
@@ -285,8 +280,9 @@ ordered_df = merged_df[['sample', 'biome', 'pmid', 'title', 'abstract']]
 filtered_df = ordered_df.dropna(subset=['title', 'abstract'])
 
 
-
-
+# Save
+filtered_df.to_csv(os.path.join(output_file), index=False)
+print("Output file succesfully written")
 
 
 
