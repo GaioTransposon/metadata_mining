@@ -51,7 +51,7 @@ sample_info_biome_pmid_title_abstract = pd.read_csv(sample_info_biome_pmid_title
 
 
 # get key 
-file_path = "/Users/dgaio/my_api_key"  # Replace with the actual file path
+file_path = "/Users/dgaio/my_api_key"  
 try:
     with open(file_path, "r") as file:
         openai.api_key = file.read().strip()
@@ -130,21 +130,6 @@ max_length_chunk = max(chunks, key=len)
 max_length = len(max_length_chunk)
 
 print(f"The maximum number of items in a chunk is: {max_length}")
-
-
-
-
-# Empty list to store content_strings for each chunk
-content_strings = []
-
-# Joining the content within each chunk
-for i, chunk in enumerate(chunks, 1):
-    print(f"Chunk {i} Content (Number of items: {len(chunk)}):")
-    content_string = "\n".join(chunk)
-    content_strings.append(content_string)  # Store the content_string
-    print(f"Chunk {i} Content:")
-    print(content_string)
-    print("----")
 
 
 
