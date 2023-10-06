@@ -14,6 +14,7 @@ import numpy as np
 from collections import Counter
 import argparse  
 import pickle
+import re
 
 
 
@@ -224,26 +225,65 @@ for content_string in content_strings:
 ########### # 5. extract gpt output
 
 extracted_contents_gpt_responses = []
-key_terms = ['animal', 'plant', 'water', 'soil', 'unknown']
 
 for response in gpt_responses:
     content = response.choices[0].message['content'].strip().splitlines()
-
-    # Count the occurrences of key terms
-    counts = Counter()
-    for line in content:
-        for term in key_terms:
-            if term in line.lower():
-                counts[term] += 1
-
-    print(f"Length of content: {len(content)}")
-    print(f"Occurrences - Animal: {counts['animal']}, Plant: {counts['plant']}, Water: {counts['water']}, Soil: {counts['soil']}, Unknown: {counts['unknown']}\n")
-
-    # Extend the extracted contents list
+    print(content)
     extracted_contents_gpt_responses.extend(content)
 
-# At this point, extracted_contents contains all the desired content from the openai calls
-print("Total extracted contents:", len(extracted_contents_gpt_responses))
+
+key_terms = ['animal', 'plant', 'water', 'soil', 'unknown']
+
+
+# clean the output. because it does happen that gpt includes the sample name in its answer...
+def extract_samples_from_response(response):
+    # Define regex patterns
+    patterns = [
+        r'(\w+): (\w+)',  # For "SRS699624: water"
+        r'Sample ID (\w+): \'(\w+)\'',  # For "Sample ID ERS2553522: 'plant'"
+        r'sample_ID=(\w+): (\w+)',  # For "sample_ID=SRS2175714: soil"
+    ]
+
+    sample_info = {}
+    biome_counts = {term: 0 for term in key_terms}
+
+    for pattern in patterns:
+        matches = re.findall(pattern, response)
+        for match in matches:
+            sample_id, biome = match
+            # In case there are biomes like 'animal (fish)', extract only the first word.
+            biome = biome.split()[0]
+            sample_info[sample_id] = biome
+            if biome in key_terms:
+                biome_counts[biome] += 1
+    
+    # For the format "Sample ID: SRS4701369" & "Answer: soil"
+    samples = re.findall(r'Sample ID: (\w+)', response)
+    answers = re.findall(r'Answer: (\w+)', response)
+    if len(samples) == len(answers):
+        for sample, answer in zip(samples, answers):
+            sample_info[sample] = answer
+            if answer in key_terms:
+                biome_counts[answer] += 1
+
+    return sample_info, biome_counts
+
+data = {}
+total_biome_counts = {term: 0 for term in key_terms}
+for response in extracted_contents_gpt_responses:
+    extracted_data, biome_counts = extract_samples_from_response(response)
+    data.update(extracted_data)
+    for biome, count in biome_counts.items():
+        total_biome_counts[biome] += count
+
+print(data)
+print(total_biome_counts)
+
+# Convert the dictionary into a DataFrame
+cleaned_responses_df = pd.DataFrame(list(data.items()), columns=['sample', 'gpt_generated_biome'])
+
+print(cleaned_responses_df)
+
 ###########
 
 
@@ -255,19 +295,31 @@ print("Total extracted contents:", len(extracted_contents_gpt_responses))
 ########### # 6. plot output: comparing curated_biome vs gpt_generated_biome
 
 
-# clean the output. because it does happen that gpt includes the sample name in its answer...
-cleaned_responses = [resp.replace("sample_ID=", "").split(":") for resp in extracted_contents_gpt_responses]
-cleaned_responses_df = pd.DataFrame(cleaned_responses, columns=['sample', 'gpt_generated_biome']).applymap(str.strip)
-print(cleaned_responses_df)
+
 
 
 # open df [and merge gold_dict to compare previous biomes to the manually curated ones (this will be moved to confirm_biome_game)]
 input_df = pd.read_csv(input_df)
+input_df.columns
+input_df['biome'] = input_df['biome'].replace('aquatic', 'water')
+input_df = input_df[['sample', 'biome']]
+
+
 gold_dict_input_df = pd.merge(gold_dict_df, input_df, on='sample', how='inner')
+gold_dict_input_df.columns
 
-
-m = pd.merge(cleaned_responses_df, gold_dict_df, on='sample', how='inner')
+m = pd.merge(cleaned_responses_df, gold_dict_input_df, on='sample', how='inner') 
+m.columns
 m
+
+len(m)
+m = m.drop_duplicates()
+len(m)
+
+
+
+
+
 
 ###########
 
@@ -276,16 +328,28 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 
-# Generate the confusion matrix
-matrix = confusion_matrix(m['curated_biome'], m['gpt_generated_biome'])
+
+
+# Identify unique labels from both columns
+labels = sorted(list(set(m['curated_biome']).union(set(m['gpt_generated_biome']))))
+
+# Generate the confusion matrix with explicit label ordering
+matrix = confusion_matrix(m['curated_biome'], m['gpt_generated_biome'], labels=labels)
+
+# Normalize the matrix to get percentages
+normalized_matrix = matrix.astype('float') / matrix.sum(axis=1)[:, np.newaxis] * 100
+
+# Create combined annotations with percentages and raw counts
+annotations = [["{0:.2f}%\n(n={1})".format(normalized_matrix[i, j], matrix[i, j]) 
+                for j in range(len(matrix[i]))] for i in range(len(matrix))]
 
 # Plot the heatmap
 plt.figure(figsize=(10,7))
-sns.heatmap(matrix, annot=True, cmap='Blues', 
-            xticklabels=m['curated_biome'].unique(), 
-            yticklabels=m['gpt_generated_biome'].unique())
-plt.xlabel('True Label')
-plt.ylabel('Predicted Label')
+sns.heatmap(matrix, annot=annotations, fmt='', cmap='Blues', 
+            xticklabels=labels, 
+            yticklabels=labels)
+plt.xlabel('Curated biome')
+plt.ylabel('GPT-generated biome')
 plt.title('Confusion Matrix for GPT Predictions vs Curated Biomes')
 plt.show()
 
@@ -294,7 +358,75 @@ plt.show()
 
 
 
+import matplotlib.pyplot as plt
 
+# Step 1: Filter dataframe and sort
+m_filtered = m[['sample', 'biome', 'curated_biome', 'gpt_generated_biome']]
+m_filtered = m_filtered.sort_values(by='curated_biome')
+
+# Step 2: Create color function
+def assign_color(value):
+    color_dict = {
+        'animal': 'pink',
+        'water': 'blue',
+        'soil': 'yellow',
+        'plant': 'green',
+        'unknown': 'lightgray'
+    }
+    return color_dict.get(value, 'white')  # Default to white if no match
+
+
+def plot_table(data):
+    colors = [[assign_color(cell) for cell in row] for _, row in data.iterrows()]
+
+    fig, ax = plt.subplots(figsize=(12, len(data)*0.5))
+    ax.axis('off')
+    
+    tbl = ax.table(cellText=data.values, cellColours=colors, 
+                   colLabels=data.columns, cellLoc='center', loc='center')
+    
+    tbl.auto_set_font_size(False)
+    tbl.set_fontsize(8)
+    tbl.auto_set_column_width(col=list(range(len(data.columns))))
+    plt.show()
+
+# Breaking the data into chunks of, for instance, 20 rows per figure
+n = 25  # Number of rows per chunk
+chunks = [m_filtered.iloc[i:i + n] for i in range(0, len(m_filtered), n)]
+
+for chunk in chunks:
+    plot_table(chunk)
+
+
+
+
+
+def fetch_metadata_from_sample(sample, directory_with_split_metadata):
+    folder_name = f"dir_{sample[-3:]}"
+    folder_path = os.path.join(directory_with_split_metadata, folder_name)  
+    metadata_file_path = os.path.join(folder_path, f"{sample}.txt")
+    with open(metadata_file_path, 'r') as f:
+        # Filter out lines that start with "experiment", "run", or are empty
+        metadata = "\n".join([line.strip() for line in f.readlines() if not line.startswith(("experiment", "run")) and line.strip() != ""])
+    return metadata
+
+
+# Filter rows where curated_biome doesn't match gpt_generated_biome
+mismatched_rows = m[m['curated_biome'] != m['gpt_generated_biome']].sort_values(by='curated_biome')
+
+mismatched_rows = mismatched_rows[mismatched_rows['curated_biome'] == 'plant']
+
+# Then proceed with your operations on the filtered dataframe
+
+# Fetch and print metadata for each mismatched sample
+for index, row in mismatched_rows.iterrows():
+    metadata_for_sample = fetch_metadata_from_sample(row['sample'], directory_with_split_metadata)
+    print(f"Sample: {row['sample']}")
+    print(f"Curated Biome: {row['curated_biome']}")
+    print(f"GPT Generated Biome: {row['gpt_generated_biome']}")
+    print("Metadata:")
+    print(metadata_for_sample)
+    print("="*40)  # Separating line for readability
 
 
 
