@@ -15,14 +15,12 @@ Created on Mon Aug 21 19:55:43 2023
 #                         --figure "sample.info_biome_pmid_title_abstract.pdf"
     
 
-
 path_to_dirs = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs"
 
 
 import pandas as pd
 import os
 import pickle
-
 
 
 GOLD_DICT_PATH = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gold_dict.pkl"
@@ -63,145 +61,6 @@ def display_biome_counts(gold_dict):
         count = sum(1 for _, biome_val in gold_dict.values() if biome_val == biome)
         print(f"{biome.capitalize()}: {count}")
 
-
-
-
-# =============================================================================
-# # Main game
-# def play_game(df):
-#     # Load gold_dict from a previous game or start with an empty one
-#     gold_dict = load_gold_dict()
-#     biomes_df = df.groupby('biome_gpt')
-# 
-#     # Count gold_dict samples for each biome
-#     gold_biome_counts = {biome: sum(1 for _, biome_val in gold_dict.values() if biome_val == biome) for biome in biomes_df.groups}
-# 
-#     # Continue the game until all samples are processed
-#     while True:
-#         # Select the biome with the least number of samples in gold_dict
-#         prioritized_biome = min(gold_biome_counts, key=gold_biome_counts.get)
-#         group = biomes_df.get_group(prioritized_biome)
-#         
-#         # If we've already processed all samples in this biome, update its count to a large value and move to the next biome
-#         if gold_biome_counts[prioritized_biome] >= len(group):
-#             gold_biome_counts[prioritized_biome] = float('inf')
-#             continue
-# 
-#         row = group.iloc[gold_biome_counts[prioritized_biome]]
-# 
-#         # Retrieve and display metadata
-#         metadata = fetch_metadata_from_sample(row['sample'])
-#         print('\n\n\n\n\n\n\n\n')
-#         print(metadata)
-# 
-#         # Ask second question
-#         ans = input(f"Is the biome of this sample: {prioritized_biome}? (y/n/q): ")
-#         
-#         # Allow the user to quit
-#         if ans.lower() == 'q':
-#             display_biome_counts(gold_dict)
-#             print("Exiting game...")
-#             break
-#         
-#         if ans == 'y':
-#             gold_dict[row['sample']] = (row['pmid'], prioritized_biome)
-#             save_gold_dict(gold_dict)
-#             gold_biome_counts[prioritized_biome] += 1
-#             continue
-# 
-#         # Ask for correct biome if the answer was 'n'
-#         biome_input = input("Which biome is it? (a for animal, w for water, s for soil, p for plant, l for lab, u for unknown): ")
-#         biome_mapping = {
-#             'a': 'animal',
-#             'w': 'water',
-#             's': 'soil',
-#             'p': 'plant',
-#             'l': 'lab',
-#             'u': 'unknown'
-#         }
-#         gold_dict[row['sample']] = (row['pmid'], biome_mapping.get(biome_input, 'unknown'))
-#         save_gold_dict(gold_dict)
-# 
-#         # Increment the count for the prioritized_biome
-#         gold_biome_counts[prioritized_biome] += 1
-# 
-#     return gold_dict
-# =============================================================================
-
-# =============================================================================
-# def play_game(df):
-#     # Load gold_dict from a previous game or start with an empty one
-#     gold_dict = load_gold_dict()
-#     biomes_df = df.groupby('biome_gpt')
-#     
-#     # Create a set of processed pmids
-#     processed_pmids = set(key for key, _ in gold_dict.items())
-# 
-#     # Count gold_dict samples for each biome
-#     gold_biome_counts = {biome: sum(1 for _, biome_val in gold_dict.values() if biome_val == biome) for biome in biomes_df.groups}
-# 
-#     # Continue the game until all samples are processed
-#     while True:
-#         # Select the biome with the least number of samples in gold_dict
-#         prioritized_biome = min(gold_biome_counts, key=gold_biome_counts.get)
-#         group = biomes_df.get_group(prioritized_biome)
-#         
-#         # If we've already processed all samples in this biome, update its count to a large value and move to the next biome
-#         if gold_biome_counts[prioritized_biome] >= len(group):
-#             gold_biome_counts[prioritized_biome] = float('inf')
-#             continue
-# 
-#         # Iterate over the rows until a unique pmid is found
-#         while gold_biome_counts[prioritized_biome] < len(group):
-#             row = group.iloc[gold_biome_counts[prioritized_biome]]
-#             if row['pmid'] not in processed_pmids:
-#                 break
-#             gold_biome_counts[prioritized_biome] += 1
-#         
-#         # If all rows in this group have been processed, move to the next iteration
-#         if gold_biome_counts[prioritized_biome] >= len(group):
-#             continue
-#         
-#         # Retrieve and display metadata
-#         metadata = fetch_metadata_from_sample(row['sample'])
-#         print('\n\n\n\n\n\n\n\n')
-#         print(metadata)
-# 
-#         # Ask second question
-#         ans = input(f"Is the biome of this sample: {prioritized_biome}? (y/n/q): ")
-#         
-#         # Allow the user to quit
-#         if ans.lower() == 'q':
-#             display_biome_counts(gold_dict)
-#             print("Exiting game...")
-#             break
-# 
-#         processed_pmids.add(row['pmid'])
-#         
-#         if ans == 'y':
-#             gold_dict[row['sample']] = (row['pmid'], prioritized_biome)
-#             save_gold_dict(gold_dict)
-#             gold_biome_counts[prioritized_biome] += 1
-#             continue
-# 
-#         # Ask for correct biome if the answer was 'n'
-#         biome_input = input("Which biome is it? (a for animal, w for water, s for soil, p for plant, l for lab, u for unknown): ")
-#         biome_mapping = {
-#             'a': 'animal',
-#             'w': 'water',
-#             's': 'soil',
-#             'p': 'plant',
-#             'l': 'lab',
-#             'u': 'unknown'
-#         }
-#         gold_dict[row['sample']] = (row['pmid'], biome_mapping.get(biome_input, 'unknown'))
-#         save_gold_dict(gold_dict)
-# 
-#         # Increment the count for the prioritized_biome
-#         gold_biome_counts[prioritized_biome] += 1
-# 
-#     return gold_dict
-# =============================================================================
 
 def play_game(df):
     # Load gold_dict and processed_pmids from a previous game or start with an empty ones

@@ -138,6 +138,7 @@ for _, row in shuffled_samples.iterrows():
     print("===================================")
 
 
+
 ###########
 
 ########### # 3. create chunks 
@@ -217,7 +218,7 @@ for content_string in content_strings:
                 "content": content_string
             }
         ],
-        temperature=1.00,
+        temperature=0.1,
         max_tokens=4096,   # just to keep in mind: max allowed is 4096
         top_p=0.75,
         frequency_penalty=0,
