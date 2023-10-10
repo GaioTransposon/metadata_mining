@@ -15,6 +15,8 @@ from collections import Counter
 import argparse  
 import pickle
 import re
+from datetime import datetime
+
 
 
 
@@ -37,12 +39,12 @@ directory_with_split_metadata = os.path.join(args.work_dir, args.directory_with_
 output_plot = os.path.join(args.work_dir, args.output_plot)
 
 
-# # for testing purposes
-# work_dir = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/"
-# input_gold_dict = os.path.join(work_dir, "gold_dict.pkl")
-# input_df = os.path.join(work_dir, "sample.info_biome_pmid_title_abstract.csv")
-# directory_with_split_metadata = os.path.join(work_dir, "sample.info_split_dirs")
-# output_plot = os.path.join(work_dir, "gpt_vs_curated_biomes.pdf")
+# for testing purposes
+work_dir = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/"
+input_gold_dict = os.path.join(work_dir, "gold_dict.pkl")
+input_df = os.path.join(work_dir, "sample.info_biome_pmid_title_abstract.csv")
+directory_with_split_metadata = os.path.join(work_dir, "sample.info_split_dirs")
+output_plot = os.path.join(work_dir, "gpt_vs_curated_biomes.pdf")
 # ###################
 
 
@@ -79,6 +81,11 @@ random_samples = gold_dict_df.groupby('curated_biome').apply(lambda x: x.sample(
 random_samples = random_samples[random_samples['curated_biome'] != 'unknown']
 print(random_samples)
 
+
+
+
+
+
 # 1. Utility to fetch metadata from folders
 def fetch_metadata_from_sample(sample, directory_with_split_metadata):
     folder_name = f"dir_{sample[-3:]}"
@@ -89,10 +96,12 @@ def fetch_metadata_from_sample(sample, directory_with_split_metadata):
     return metadata
 
 # 2. loop through: 
-shuffled_samples = random_samples.sample(frac=1).reset_index(drop=True)
+seed = 42
+shuffled_samples = random_samples.sample(frac=1, random_state=seed).reset_index(drop=True)
+len(shuffled_samples)
 
-# endings to filter out
-endings_to_remove = ["=", "nan", "not applicable", "missing"]
+# endings to filter out ("$" makes sure it will skip these if preceeded by a character or empty space)
+endings_to_remove = ["=$", "nan$", "not applicable$", "missing$", ". na$"]
 
 # loop through 
 metadata_dict = {}
@@ -111,7 +120,7 @@ for _, row in shuffled_samples.iterrows():
             should_keep = False
         else:
             for ending in endings_to_remove:
-                if stripped_line.lower().endswith(ending):
+                if re.search(ending, stripped_line, re.IGNORECASE):
                     print(f"Rejected line (ends with {ending}): {stripped_line}")
                     should_keep = False
                     break
@@ -127,6 +136,7 @@ for _, row in shuffled_samples.iterrows():
     print("Cleaned metadata:")
     print(cleaned_metadata)
     print("===================================")
+
 
 ###########
 
@@ -218,8 +228,17 @@ for content_string in content_strings:
     
 # 20231005: first request at 17:53 for 8 samples 2 chunks = requests)
 # 20231005: second request at 18:18 for 160 samples (30 chunks = requests)
-###########
+# 20231009: third request at 11:33 for 160 samples (28 chunks = requests)
+# 20231009_2: third request at 11:33 for 160 samples (30 chunks = requests)
 
+# now with seed=42 in the shuffling: 
+# 20231009_3: fourth request at 12:20 for 160 samples (28 chunks = requests)
+# 20231009_4: fifth request at 12:42 for 160 samples (28 chunks = requests)
+# 20231009_5: sixth request at 12:47 for 160 samples (28 chunks = requests)
+# 20231009_6: seventh request at 13:26 for 160 samples (28 chunks = requests)
+
+
+###########
 
 
 ########### # 5. extract gpt output
@@ -230,172 +249,73 @@ for response in gpt_responses:
     content = response.choices[0].message['content'].strip().splitlines()
     print(content)
     extracted_contents_gpt_responses.extend(content)
-
-
-key_terms = ['animal', 'plant', 'water', 'soil', 'unknown']
-
-
-# clean the output. because it does happen that gpt includes the sample name in its answer...
-def extract_samples_from_response(response):
-    # Define regex patterns
-    patterns = [
-        r'(\w+): (\w+)',  # For "SRS699624: water"
-        r'Sample ID (\w+): \'(\w+)\'',  # For "Sample ID ERS2553522: 'plant'"
-        r'sample_ID=(\w+): (\w+)',  # For "sample_ID=SRS2175714: soil"
-    ]
-
-    sample_info = {}
-    biome_counts = {term: 0 for term in key_terms}
-
-    for pattern in patterns:
-        matches = re.findall(pattern, response)
-        for match in matches:
-            sample_id, biome = match
-            # In case there are biomes like 'animal (fish)', extract only the first word.
-            biome = biome.split()[0]
-            sample_info[sample_id] = biome
-            if biome in key_terms:
-                biome_counts[biome] += 1
     
-    # For the format "Sample ID: SRS4701369" & "Answer: soil"
-    samples = re.findall(r'Sample ID: (\w+)', response)
-    answers = re.findall(r'Answer: (\w+)', response)
-    if len(samples) == len(answers):
-        for sample, answer in zip(samples, answers):
-            sample_info[sample] = answer
-            if answer in key_terms:
-                biome_counts[answer] += 1
-
-    return sample_info, biome_counts
-
-data = {}
-total_biome_counts = {term: 0 for term in key_terms}
-for response in extracted_contents_gpt_responses:
-    extracted_data, biome_counts = extract_samples_from_response(response)
-    data.update(extracted_data)
-    for biome, count in biome_counts.items():
-        total_biome_counts[biome] += count
-
-print(data)
-print(total_biome_counts)
-
-# Convert the dictionary into a DataFrame
-cleaned_responses_df = pd.DataFrame(list(data.items()), columns=['sample', 'gpt_generated_biome'])
-
-print(cleaned_responses_df)
-
-###########
-
-
-
-
-
-
-
-########### # 6. plot output: comparing curated_biome vs gpt_generated_biome
-
-
-
-
-
-# open df [and merge gold_dict to compare previous biomes to the manually curated ones (this will be moved to confirm_biome_game)]
-input_df = pd.read_csv(input_df)
-input_df.columns
-input_df['biome'] = input_df['biome'].replace('aquatic', 'water')
-input_df = input_df[['sample', 'biome']]
-
-
-gold_dict_input_df = pd.merge(gold_dict_df, input_df, on='sample', how='inner')
-gold_dict_input_df.columns
-
-m = pd.merge(cleaned_responses_df, gold_dict_input_df, on='sample', how='inner') 
-m.columns
-m
-
-len(m)
-m = m.drop_duplicates()
-len(m)
-
-
-
-
-
-
-###########
-
-
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix
-
-
-
-# Identify unique labels from both columns
-labels = sorted(list(set(m['curated_biome']).union(set(m['gpt_generated_biome']))))
-
-# Generate the confusion matrix with explicit label ordering
-matrix = confusion_matrix(m['curated_biome'], m['gpt_generated_biome'], labels=labels)
-
-# Normalize the matrix to get percentages
-normalized_matrix = matrix.astype('float') / matrix.sum(axis=1)[:, np.newaxis] * 100
-
-# Create combined annotations with percentages and raw counts
-annotations = [["{0:.2f}%\n(n={1})".format(normalized_matrix[i, j], matrix[i, j]) 
-                for j in range(len(matrix[i]))] for i in range(len(matrix))]
-
-# Plot the heatmap
-plt.figure(figsize=(10,7))
-sns.heatmap(matrix, annot=annotations, fmt='', cmap='Blues', 
-            xticklabels=labels, 
-            yticklabels=labels)
-plt.xlabel('Curated biome')
-plt.ylabel('GPT-generated biome')
-plt.title('Confusion Matrix for GPT Predictions vs Curated Biomes')
-plt.show()
-
-
-
-
-
-
-import matplotlib.pyplot as plt
-
-# Step 1: Filter dataframe and sort
-m_filtered = m[['sample', 'biome', 'curated_biome', 'gpt_generated_biome']]
-m_filtered = m_filtered.sort_values(by='curated_biome')
-
-# Step 2: Create color function
-def assign_color(value):
-    color_dict = {
-        'animal': 'pink',
-        'water': 'blue',
-        'soil': 'yellow',
-        'plant': 'green',
-        'unknown': 'lightgray'
-    }
-    return color_dict.get(value, 'white')  # Default to white if no match
-
-
-def plot_table(data):
-    colors = [[assign_color(cell) for cell in row] for _, row in data.iterrows()]
-
-    fig, ax = plt.subplots(figsize=(12, len(data)*0.5))
-    ax.axis('off')
     
-    tbl = ax.table(cellText=data.values, cellColours=colors, 
-                   colLabels=data.columns, cellLoc='center', loc='center')
+parsed_data = []
+
+for line in extracted_contents_gpt_responses:
+    # Match patterns like 'sample_ID=SRS5253951: soil' or 'Sample ID: SRS3992785 Answer: water'
+    match = re.search(r'(sample[_\s]*ID|SRS|ERS|DRS)\s*[:=]\s*([\w\d]+)[\s\W]*(soil|water|plant|animal|human)', line, re.IGNORECASE)
+    if match:
+        sample_id = match.group(2)
+        biome = match.group(3).lower()
+        if biome == 'human':
+            biome = 'animal'  # replace human with animal
+        parsed_data.append((sample_id, biome))
+
+len(parsed_data)
+
+# Store the parsed data to a file
+
+# Get the current date and time in the format YYYYMMDD_HHMMSS
+current_datetime = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+# Create the file name with the current date and time appended
+file_name = f"/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gtp_35_output_{current_datetime}.txt"
+
+# save: 
+with open(file_name, "w") as f:
+    for item in parsed_data:
+        print(item)
+        f.write(f"{item[0]}: {item[1]}\n")
+
     
-    tbl.auto_set_font_size(False)
-    tbl.set_fontsize(8)
-    tbl.auto_set_column_width(col=list(range(len(data.columns))))
-    plt.show()
 
-# Breaking the data into chunks of, for instance, 20 rows per figure
-n = 25  # Number of rows per chunk
-chunks = [m_filtered.iloc[i:i + n] for i in range(0, len(m_filtered), n)]
 
-for chunk in chunks:
-    plot_table(chunk)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
