@@ -111,7 +111,7 @@ def plot_confusion_matrix(df, actual_col='curated_biome', predicted_col='gpt_gen
 
 
 # Read the file into a dataframe
-file_name = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gtp_35_output_20231009_124829.txt"
+file_name = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gtp_35_output_20231010_160709.txt"
 dfr = pd.read_csv(file_name, sep=": ", engine='python', header=None, names=["sample", "gpt_generated_biome"])
 # Display the dataframe
 print(dfr)

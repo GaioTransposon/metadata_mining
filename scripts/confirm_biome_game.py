@@ -29,9 +29,6 @@ filename = CSV_PATH
 df = pd.read_csv(filename)
 
 
-df['biome_gpt'] = df['biome_gpt'].replace('human', 'animal')
-
-
 def save_gold_data(data, filename=GOLD_DICT_PATH):
     with open(filename, "wb") as f:
         pickle.dump(data, f)
@@ -63,6 +60,10 @@ def display_biome_counts(gold_dict):
 
 
 def play_game(df):
+    
+    df['biome_gpt'] = df['biome_gpt'].replace('human', 'animal')
+    df['biome'] = df['biome'].replace('aquatic', 'water')
+    
     # Load gold_dict and processed_pmids from a previous game or start with an empty ones
     gold_dict, processed_pmids = load_gold_data()
     
