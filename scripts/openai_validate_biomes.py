@@ -283,7 +283,7 @@ class GPTInteractor:
         
         # Construct the filename
         current_datetime = datetime.now().strftime('%Y%m%d_%H%M')
-        self.saved_filename = f"gtp_raw_output_model_{self.model}_temp{self.temperature}_dt{current_datetime}.txt"
+        self.saved_filename = f"gpt_raw_output_model_{self.model}_temp{self.temperature}_dt{current_datetime}.txt"
         self.saved_filename = os.path.join(self.work_dir, self.saved_filename)
 
         # Write to the file
@@ -394,7 +394,7 @@ class GPTOutputParsing:
     
     def save_cleaned_to_file(self):
         # Modify the filename to switch from 'raw' to 'clean'
-        self.clean_filename = self.filepath.replace('gtp_raw_output', 'gtp_clean_output')
+        self.clean_filename = self.filepath.replace('gpt_raw_output', 'gpt_clean_output')
     
         # Save the dataframe to CSV format
         self.parsed_data.to_csv(self.clean_filename, index=False)
@@ -438,22 +438,36 @@ if __name__ == "__main__":
 # python /Users/dgaio/github/metadata_mining/scripts/openai_validate_biomes.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #         --input_gold_dict "gold_dict.pkl" \
-#             --n_samples_per_biome 10 \
+#             --n_samples_per_biome 40 \
 #                 --seed 42 \
 #                     --directory_with_split_metadata "sample.info_split_dirs" \
 #                         --api_key_path "/Users/dgaio/my_api_key" \
 #                             --model "gpt-3.5-turbo-16k-0613" \
-#                                 --temperature 1.0
-    
+#                                 --temperature 0.75
+
+# 20231012
 # Temperatures: 0.0 0.25 0.5 0.75 1.0
 # 10 samples per biome
 
+# 20231013
+# Temperatures: 0.0 0.25 0.5 0.75 1.0
+# 40 samples per biome
+# Cost: 
+# prompt: 283170  $0.84951
+# completion: 7750  $0.031
+
+# 20231013
+# Temperatures: 0.0 0.25 0.5 0.75 1.0
+# 100 samples per biome --> 71 requests per temperature = 71*5 = 355
+# 1 request = 1 chunk = 1000 tokens max (excl. sys prompt)
 
 
 
-
-
-
+# 0.0 ; df rows: 398
+# 0.25 ; df rows: 397
+# 0.50 ; df rows: 398
+# 0.75 ; df rows: 398
+# 1.0 ; df rows: 
 
 
 
