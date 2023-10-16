@@ -396,10 +396,11 @@ class GPTOutputParsing:
         parsed_data = pd.DataFrame(list(parsed_data_dict.items()), columns=['sample', 'gpt_generated_output_raw'])
 
         def extract_clean_output(raw_output):
+            raw_output_lower = raw_output.lower()
             for keyword in ['plant', 'animal', 'soil', 'water']:
-                if keyword in raw_output:
+                if keyword in raw_output_lower:
                     return keyword
-            if 'human' in raw_output:
+            if 'human' in raw_output_lower:
                 return 'animal'
             return None
 
@@ -447,9 +448,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
 
 
 
@@ -534,6 +532,14 @@ if __name__ == "__main__":
 
 
 
+def extract_clean_output(raw_output):
+    raw_output_lower = raw_output.lower()
+    for keyword in ['plant', 'animal', 'soil', 'water']:
+        if keyword in raw_output_lower:
+            return keyword
+    if 'human' in raw_output_lower:
+        return 'animal'
+    return None
 
 
 
