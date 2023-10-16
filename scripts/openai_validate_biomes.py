@@ -15,6 +15,7 @@ import argparse
 import pickle
 import re
 from datetime import datetime
+import time
 
 
 
@@ -29,6 +30,10 @@ def parse_arguments():
     parser.add_argument('--api_key_path', type=str, required=True, help='Path to the OpenAI API key')
     parser.add_argument('--model', type=str, required=True, help='GPT model to use')
     parser.add_argument('--temperature', type=float, required=True, help='Temperature setting for the GPT model')
+    parser.add_argument('--top_p', type=float, required=True, help='Top-p setting for the GPT model')
+    parser.add_argument('--frequency_penalty', type=float, required=True, help='Frequency penalty setting for the GPT model')
+    parser.add_argument('--presence_penalty', type=float, required=True, help='Presence penalty setting for the GPT model')
+    parser.add_argument('--wait', action='store_true', help='Decide to wait 70 seconds between requests: necessary for gpt-4')
 
     return parser.parse_args()
 
@@ -37,7 +42,6 @@ def parse_arguments():
 # =======================================================
 # PHASE 1: Metadata Processing
 # =======================================================
-
 
 
 class MetadataProcessor:
@@ -168,13 +172,18 @@ class MetadataProcessor:
 class GPTInteractor:
     
     
-    def __init__(self, work_dir, api_key_path, model, temperature):
+    def __init__(self, work_dir, n_samples_per_biome, api_key_path, model, temperature, top_p, frequency_penalty, presence_penalty, wait):
         self.work_dir = work_dir
+        self.n_samples_per_biome = n_samples_per_biome
         self.api_key_path = api_key_path
         self.api_key = self.load_api_key()
         self.model = model
         self.temperature = temperature
+        self.top_p = top_p
+        self.frequency_penalty = frequency_penalty
+        self.presence_penalty = presence_penalty
         self.saved_filename = None  # This will store the filename once saved
+        self.wait = wait 
 
     def consolidate_chunks_to_strings(self, chunks):
         """
@@ -235,10 +244,10 @@ class GPTInteractor:
                 }
             ],
             temperature=self.temperature,
-            max_tokens=4096,
-            top_p=0.75,
-            frequency_penalty=0,
-            presence_penalty=0
+            # max_tokens left to default which is 4096 
+            top_p=self.top_p,
+            frequency_penalty=self.frequency_penalty,
+            presence_penalty=self.presence_penalty
         )
 
     
@@ -260,9 +269,15 @@ class GPTInteractor:
             print(f"Sent chunks count: {sent_chunks_count}")
             
             print(f"Sending request number: {index} of {len(content_strings)} requests")
+            
+            if self.wait and index > 1:  # We don't wait for the first request
+                print("Waiting for 70 seconds before the next request...")
+                time.sleep(70)
+            
             response = self.gpt_request(content_string=content_string)
             gpt_responses.append(response)
         return gpt_responses
+    
     
     def save_gpt_responses_to_file(self, gpt_responses):
         """
@@ -283,7 +298,7 @@ class GPTInteractor:
         
         # Construct the filename
         current_datetime = datetime.now().strftime('%Y%m%d_%H%M')
-        self.saved_filename = f"gpt_raw_output_model_{self.model}_temp{self.temperature}_dt{current_datetime}.txt"
+        self.saved_filename = f"gpt_raw_output_nspb{self.n_samples_per_biome}_model_{self.model}_temp{self.temperature}_topp{self.top_p}_freqp{self.frequency_penalty}_presp{self.presence_penalty}_dt{current_datetime}.txt"
         self.saved_filename = os.path.join(self.work_dir, self.saved_filename)
 
         # Write to the file
@@ -421,7 +436,8 @@ def main():
     chunks = metadata_processor.run()
 
     # Phase 2: GPT Interaction
-    gpt_interactor = GPTInteractor(args.work_dir, args.api_key_path, args.model, args.temperature)
+    gpt_interactor = GPTInteractor(args.work_dir, args.n_samples_per_biome, args.api_key_path, args.model, args.temperature, args.top_p, args.frequency_penalty, args.presence_penalty, args.wait)
+
     gpt_interactor.run(chunks)
 
     # Phase 3: Parsing GPT Output
@@ -432,18 +448,25 @@ def main():
 if __name__ == "__main__":
     main()
 
-    
-    
+
+
+
+
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_validate_biomes.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
-#         --input_gold_dict "gold_dict.pkl" \
-#             --n_samples_per_biome 40 \
-#                 --seed 42 \
-#                     --directory_with_split_metadata "sample.info_split_dirs" \
-#                         --api_key_path "/Users/dgaio/my_api_key" \
-#                             --model "gpt-3.5-turbo-16k-0613" \
-#                                 --temperature 0.75
+#     --input_gold_dict "gold_dict.pkl" \
+#     --n_samples_per_biome 10 \
+#     --seed 42 \
+#     --directory_with_split_metadata "sample.info_split_dirs" \
+#     --api_key_path "/Users/dgaio/my_api_key" \
+#     --model "gpt-3.5-turbo-16k-0613" \
+#     --temperature 0.25 \
+#     --top_p 0.75 \
+#     --frequency_penalty 0 \
+#     --presence_penalty 0 \
+#     --wait # only to add when using gpt-4
+
 
 # 20231012
 # Temperatures: 0.0 0.25 0.5 0.75 1.0
@@ -460,16 +483,16 @@ if __name__ == "__main__":
 # Temperatures: 0.0 0.25 0.5 0.75 1.0
 # 100 samples per biome --> 71 requests per temperature = 71*5 = 355
 # 1 request = 1 chunk = 1000 tokens max (excl. sys prompt)
-
-
-
 # 0.0 ; df rows: 398
 # 0.25 ; df rows: 397
 # 0.50 ; df rows: 398
 # 0.75 ; df rows: 398
-# 1.0 ; df rows: 
+# 1.0 ; df rows: 395
 
 
+# 20231016
+# gpt-4 vs gpt-3.5-turbo-16k-0613
+# 10 samples per biome (7 requests)
 
 
 
