@@ -6,14 +6,20 @@ Created on Mon Oct  9 13:05:41 2023
 @author: dgaio
 """
 
+# -----------------------------
+# 1. Imports
+# -----------------------------
 import glob
 import pandas as pd
-import os 
+import os
 import pickle
 import re
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# -----------------------------
+# 2. Function Definitions
+# -----------------------------
 
 def interactive_file_selection(initial_pattern):
     """
@@ -40,6 +46,7 @@ def interactive_file_selection(initial_pattern):
             if not current_files:
                 print("No files match your refined criteria. Resetting to initial files.")
                 current_files = glob.glob(initial_pattern)
+
 
 def find_distinguishing_features(files):
     """
@@ -74,8 +81,8 @@ def extract_labels_from_filename(filename, distinguishing_tokens):
         # Extracted content
         content = matches.group(1)
         
-        # Split the content on underscores and dashes to get individual features
-        labels = re.split('[_-]', content)
+        # Split the content on underscores to get individual features
+        labels = content.split('_')
         
         # Only keep the labels that are in distinguishing tokens
         labels = [label for label in labels if label in distinguishing_tokens]
@@ -91,14 +98,29 @@ def load_and_process_file(file_name, gold_standard_df):
 def calculate_agreement(merged_df):
     total_samples = len(merged_df)
     agree_samples = len(merged_df[merged_df['gpt_generated_output_clean'] == merged_df['curated_biome']])
-    return (agree_samples / total_samples) * 100
+    agreement = (agree_samples / total_samples) * 100
+    return agreement, total_samples
+    total_samples = len(merged_df)
+    agree_samples = len(merged_df[merged_df['gpt_generated_output_clean'] == merged_df['curated_biome']])
+    agreement = (agree_samples / total_samples) * 100
+    return agreement, total_samples
 
+def custom_sort(label):
+    # Use regex to split the string into its text and number components
+    match = re.match(r"([a-z]+)([0-9]+)", label, re.I)
+    if match:
+        # If the regex finds a match, sort by the string, then by the number
+        items = match.groups()
+        return items[0], int(items[1])
+    # If no match is found, sort only by the string
+    return label, 0
 
-# Start with the initial pattern
+# -----------------------------
+# 3. Data Processing & Loading
+# -----------------------------
 work_dir = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/"
-
-# 2. Open gold_dict and transform to a df
 input_gold_dict = os.path.join(work_dir, "gold_dict.pkl")
+
 with open(input_gold_dict, 'rb') as file:
     gold_dict = pickle.load(file)
 
@@ -108,146 +130,171 @@ gold_dict_df['pmid'] = gold_dict_df['tuple_data'].apply(lambda x: x[0])
 gold_dict_df['curated_biome'] = gold_dict_df['tuple_data'].apply(lambda x: x[1])
 gold_dict_df.drop(columns='tuple_data', inplace=True)
 
-initial_pattern = os.path.join(work_dir, "gpt_clean*")
 
+# -----------------------------
+# 4. Interactive File Selection
+# -----------------------------
+initial_pattern = os.path.join(work_dir, "gpt_clean*")
 selected_files = interactive_file_selection(initial_pattern)
 print("\nSelected files for analysis:")
 for f in selected_files:
     print(os.path.basename(f))
-
-# Get the distinguishing features
+    
+    
+# -----------------------------
+# 5. File Analysis & Data Extraction
+# -----------------------------
 distinguishing_features = find_distinguishing_features(selected_files)
-print(distinguishing_features)
-
-
-
-def extract_labels_from_filename(filename, distinguishing_tokens):
-    """
-    Extract distinguishing labels from the filename.
-    """
-    # Extract the content between "gpt" and "_dt"
-    pattern = re.compile(r'gpt(.*?)_dt')
-    matches = pattern.search(filename)
-
-    if matches:
-        # Extracted content
-        content = matches.group(1)
-        
-        # Split the content on underscores to get individual features
-        labels = content.split('_')
-        
-        # Only keep the labels that are in distinguishing tokens
-        labels = [label for label in labels if label in distinguishing_tokens]
-        
-        return ", ".join(labels)
-
-    return "Unknown"
-
-# Get the distinguishing features
-distinguishing_features = find_distinguishing_features(selected_files)
-print(distinguishing_features)
-
-# Extract labels using the distinguishing tokens
 labels = [extract_labels_from_filename(file, distinguishing_features) for file in selected_files]
-print("\nLabels for the selected files:")
-for file, label in zip(selected_files, labels):
-    print(f"{os.path.basename(file)} -> {label}")
-
-# [rest of the code is unchanged]
+labels = sorted(labels, key=custom_sort)
 
 
+# Before section #6
+# -----------------------------------
+# Find common samples among all files
+# -----------------------------------
+all_samples = []
+for file in selected_files:
+    temp_df = pd.read_csv(file)
+    all_samples.append(set(temp_df['sample']))
 
-# 2. Open gold_dict and transform to a df
-input_gold_dict = os.path.join(work_dir, "gold_dict.pkl")
-with open(input_gold_dict, 'rb') as file:
-    gold_dict = pickle.load(file)
+common_samples = set.intersection(*all_samples)
 
-gold_dict = gold_dict[0]
-gold_dict_df = pd.DataFrame(gold_dict.items(), columns=['sample', 'tuple_data'])
-gold_dict_df['pmid'] = gold_dict_df['tuple_data'].apply(lambda x: x[0])
-gold_dict_df['curated_biome'] = gold_dict_df['tuple_data'].apply(lambda x: x[1])
-gold_dict_df.drop(columns='tuple_data', inplace=True)
+# Filter the processed DataFrames to keep only common samples
+def filter_common_samples(df, common_samples):
+    return df[df['sample'].isin(common_samples)]
 
 agreement_df = pd.DataFrame(columns=['label', 'curated_biome', 'agreement_percentage'])
-
-# Process each file and calculate agreement percentages
+# Now, in your existing loop in section #6, apply this filter:
 for file, label in zip(selected_files, labels):
     processed_df = load_and_process_file(file, gold_dict_df)
-
-    # Calculate agreement for each biome
+    processed_df = filter_common_samples(processed_df, common_samples)
     biome_agreement = processed_df.groupby('curated_biome').apply(lambda x: calculate_agreement(x)).reset_index()
-    biome_agreement.columns = ['curated_biome', 'agreement_percentage']
+    biome_agreement['agreement_percentage'] = biome_agreement[0].apply(lambda x: x[0])
+    biome_agreement['total_samples'] = biome_agreement[0].apply(lambda x: x[1])
+    biome_agreement.drop(columns=0, inplace=True)
     biome_agreement['label'] = label
-
     agreement_df = pd.concat([agreement_df, biome_agreement], ignore_index=True)
-
-print(agreement_df)
 
 
 # Sort the dataframe by label
-agreement_df['label'] = agreement_df['label'] 
+agreement_df['label'] = agreement_df['label']
 agreement_df = agreement_df.sort_values(by='label')
 
 
-# Custom palette
+# -----------------------------
+# 7. Plotting & Visualization
+# -----------------------------
 custom_palette = {
-    'animal': '#E28989',  # light_coral
-    'water': '#8ADAE1',   # tiffany_blue
-    'plant': '#BCD279',   # pistachio
-    'soil': '#DECE8A'     # flax
+    'animal': '#E28989',
+    'water': '#8ADAE1',
+    'plant': '#BCD279',
+    'soil': '#DECE8A'
 }
 
-# Plot by biome
 plt.figure(figsize=(10, 8))
 sns.set_style("whitegrid")
-bar_plot = sns.barplot(x='label', y='agreement_percentage', hue='curated_biome', data=agreement_df, 
-            palette=custom_palette, ci=None, edgecolor='black', alpha=0.85)
+order = labels
+hue_order = list(custom_palette.keys())
+bar_plot = sns.barplot(data=agreement_df, x='label', y='agreement_percentage', hue='curated_biome',
+                       palette=custom_palette, ci=None, order=order, hue_order=hue_order)
 
-# Annotations and labels for biome-specific plot
-plt.xlabel('label', fontsize=15)
-plt.ylabel('Agreement Percentage', fontsize=15)
-plt.xticks(fontsize=13)
-plt.yticks(fontsize=13)
-plt.legend(title='Biome', title_fontsize='14', fontsize=8, loc='upper left', bbox_to_anchor=(1, 1))
-plt.title(f'Agreement of GPT Predictions with Curated Biomes', fontsize=16, fontweight='bold')
+# Adjust legend, title, and axis labels
+bar_plot.legend(title='Biome', loc='upper left', bbox_to_anchor=(1, 1))
+bar_plot.set_title('Agreement Percentage per Label per Biome')
+bar_plot.set_xlabel('Label')
+bar_plot.set_ylabel('Agreement Percentage')
 
-# Add numbers on top of bars for biome-specific plot
-for p in bar_plot.patches:
-    bar_plot.annotate(format(p.get_height(), '.1f'), 
-                      (p.get_x() + p.get_width() / 2., p.get_height()), 
-                      ha = 'center', va = 'center', 
-                      xytext = (0, 10), 
-                      textcoords = 'offset points',
-                      fontsize = 12)
+# Annotate bars with agreement percentage and total samples
+n_biomes = agreement_df['curated_biome'].nunique()
+bar_width = 0.8 / n_biomes
 
-# Show the first plot
+for index, row in agreement_df.iterrows():
+    # Extract relevant data
+    label = row['label']
+    biome = row['curated_biome']
+    percentage = row['agreement_percentage']
+    samples = row['total_samples']
+
+    # Calculate the bar's x position
+    label_position = order.index(label)  # Use the 'order' list for label positions
+    biome_position = list(custom_palette.keys()).index(biome)
+    bar_position = label_position - 0.4 + bar_width/2 + biome_position * bar_width
+
+    # Annotation for the percentage
+    bar_plot.annotate(f"{percentage:.1f}%", 
+                      (bar_position, percentage + 2), 
+                      ha='center', va='center',
+                      fontsize=12)
+
+    # Annotation for the sample size
+    bar_plot.annotate(f"n = {samples}", 
+                      (bar_position, percentage - 5), 
+                      ha='center', va='center',
+                      fontsize=10, color='black')
+
+
+plt.tight_layout()
 plt.show()
 
-# Plot overall agreement in a new figure
-plt.figure(figsize=(10, 8))
 
-# Plot overall agreement
-overall_agreement = agreement_df.groupby('label')['agreement_percentage'].mean().reset_index()
 
-bar_plot_overall = sns.barplot(x='label', y='agreement_percentage', data=overall_agreement, 
-            color='#8A9BDE', edgecolor='black', alpha=0.85)
 
-# Annotations and labels for overall plot
-plt.xlabel('label', fontsize=15)
-plt.ylabel('Agreement Percentage', fontsize=15)
-plt.xticks(fontsize=13)
-plt.yticks(fontsize=13)
-plt.title(f'Overall Agreement of GPT Predictions', fontsize=16, fontweight='bold')
+# -----------------------------
+# 6. Dataframe Processing & Agreement Calculation for Overall Plot
+# -----------------------------
+# Creating a dataframe for the overall agreement and sample size per label
+overall_agreement_df = pd.DataFrame(columns=['label', 'agreement_percentage', 'total_samples'])
 
-# Add numbers on top of bars for overall plot
-for p in bar_plot_overall.patches:
-    bar_plot_overall.annotate(format(p.get_height(), '.1f'), 
-                      (p.get_x() + p.get_width() / 2., p.get_height()), 
-                      ha = 'center', va = 'center', 
-                      xytext = (0, 10), 
-                      textcoords = 'offset points',
-                      fontsize = 12)
+for file, label in zip(selected_files, labels):
+    processed_df = load_and_process_file(file, gold_dict_df)
+    processed_df = filter_common_samples(processed_df, common_samples)  # Apply common samples filter
+    agreement, samples = calculate_agreement(processed_df)
+    overall_agreement_df = overall_agreement_df.append({
+        'label': label, 
+        'agreement_percentage': agreement, 
+        'total_samples': samples}, 
+        ignore_index=True)
 
-# Show the second plot
+# Sort the dataframe by label
+overall_agreement_df['label'] = sorted(overall_agreement_df['label'], key=custom_sort)
+
+# -----------------------------
+# 7. Plotting & Visualization for Overall Plot
+# -----------------------------
+plt.figure(figsize=(10, 6))
+sns.set_style("whitegrid")
+
+bar_plot = sns.barplot(data=overall_agreement_df, x='label', y='agreement_percentage', palette="viridis", ci=None)
+
+# Adjust legend, title, and axis labels
+bar_plot.set_title('Overall Agreement Percentage per Label')
+bar_plot.set_xlabel('Label')
+bar_plot.set_ylabel('Agreement Percentage')
+
+# Annotate bars with agreement percentage and total samples
+for index, bar in enumerate(bar_plot.patches):
+    # Extract relevant data
+    label = overall_agreement_df.iloc[index]['label']
+    percentage = bar.get_height()
+    samples = overall_agreement_df.iloc[index]['total_samples']
+
+    # Annotation for the percentage
+    bar_plot.annotate(f"{percentage:.1f}%", 
+                      (bar.get_x() + bar.get_width() / 2, percentage + 2), 
+                      ha='center', va='center',
+                      fontsize=12)
+
+    # Annotation for the sample size
+    bar_plot.annotate(f"n = {samples}", 
+                      (bar.get_x() + bar.get_width() / 2, percentage - 5), 
+                      ha='center', va='center',
+                      fontsize=10, color='black')
+
+# Display the plot
+plt.tight_layout()
 plt.show()
+
+
+
 

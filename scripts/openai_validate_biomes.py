@@ -25,6 +25,7 @@ def parse_arguments():
     parser.add_argument('--work_dir', type=str, required=True, help='Working directory path')
     parser.add_argument('--input_gold_dict', type=str, required=True, help='Input gold dictionary filename')
     parser.add_argument('--n_samples_per_biome', type=int, required=True, help='how many samples per biome you want to pick?')
+    parser.add_argument('--chunk_size', type=int, required=True, help='Number of tokens per chunk.')
     parser.add_argument('--seed', type=int, required=True, help='choose a seed for the random shuffling of the samples e.g.: 42')
     parser.add_argument('--directory_with_split_metadata', type=str, required=True, help='Directory with split metadata')
     parser.add_argument('--api_key_path', type=str, required=True, help='Path to the OpenAI API key')
@@ -33,8 +34,7 @@ def parse_arguments():
     parser.add_argument('--top_p', type=float, required=True, help='Top-p setting for the GPT model')
     parser.add_argument('--frequency_penalty', type=float, required=True, help='Frequency penalty setting for the GPT model')
     parser.add_argument('--presence_penalty', type=float, required=True, help='Presence penalty setting for the GPT model')
-    parser.add_argument('--wait', action='store_true', help='Decide to wait 70 seconds between requests: necessary for gpt-4')
-
+    
     return parser.parse_args()
 
 
@@ -42,15 +42,15 @@ def parse_arguments():
 # =======================================================
 # PHASE 1: Metadata Processing
 # =======================================================
-
-
+   
 class MetadataProcessor:
     
-    def __init__(self, work_dir, input_gold_dict, n_samples_per_biome, seed, directory_with_split_metadata):
+    def __init__(self, work_dir, input_gold_dict, n_samples_per_biome, chunk_size, seed, directory_with_split_metadata):
         self.work_dir = work_dir
         self.input_gold_dict = os.path.join(work_dir, input_gold_dict)
         self.n_samples_per_biome = n_samples_per_biome
         self.seed = seed
+        self.chunk_size = chunk_size
         self.directory_with_split_metadata = os.path.join(work_dir, directory_with_split_metadata)
         
 
@@ -67,8 +67,10 @@ class MetadataProcessor:
         return gold_dict_df
 
     def get_random_samples(self, gold_dict_df): 
-        random_samples = gold_dict_df.groupby('curated_biome').apply(lambda x: x.sample(n=self.n_samples_per_biome, random_state=self.seed)).reset_index(drop=True)
-        return random_samples[random_samples['curated_biome'] != 'unknown']
+        # Filter out 'unknown' biomes before sampling - at the moment we don't want to test/validate gpt for the classification of "unknown"
+        filtered_df = gold_dict_df[gold_dict_df['curated_biome'] != 'unknown']
+        random_samples = filtered_df.groupby('curated_biome').apply(lambda x: x.sample(n=self.n_samples_per_biome, random_state=self.seed)).reset_index(drop=True)
+        return random_samples
 
     def fetch_metadata_from_sample(self, sample):
         folder_name = f"dir_{sample[-3:]}"
@@ -121,41 +123,116 @@ class MetadataProcessor:
         
         return metadata_dict
 
-    def create_and_save_chunks(self, metadata_dict, max_tokens=1000):
-        # Combining the list splitting and saving logic into a single function
-        chunks, current_chunk, current_token_count = [], [], 0
 
-        for item in [f"\n\n'sample_ID={key}': '{value}'" for key, value in metadata_dict.items()]:
-            item_tokens = len(item.split())
-            
-            if current_token_count + item_tokens <= max_tokens:
+    def token_count(self, text):
+        """Return the number of tokens in the text."""
+        return len(text.split())
+
+    def create_and_save_chunks(self, metadata_dict):
+        max_tokens = self.chunk_size
+        chunks = []
+        current_chunk, current_token_count = [], 0
+        current_chunk_samples = 0  # Track the number of samples in the current chunk
+        max_samples_per_chunk = 0  # Track the maximum number of samples across all chunks
+    
+        print(f"Max tokens allowed per chunk: {max_tokens}")
+    
+        for sample_id, metadata in metadata_dict.items():
+            item = f"'sample_ID={sample_id}': '{metadata}'"
+            item_tokens = self.token_count(item)
+    
+            print(f"Processing sample: {sample_id} with {item_tokens} tokens")  # Debugging output
+    
+            # Check if this item alone exceeds the max_tokens
+            if item_tokens > max_tokens:
+                print(f"Item {sample_id} is too large to fit in a single chunk.")
+                continue
+    
+            # If adding this item doesn't exceed the token limit, add it to current chunk
+            if (current_token_count + item_tokens) <= max_tokens:
                 current_chunk.append(item)
                 current_token_count += item_tokens
+                current_chunk_samples += 1  # Increment the sample count for the current chunk
             else:
-                chunks.append(current_chunk)
-                current_chunk = [item]
-                current_token_count = item_tokens
-        
+                print(f"Chunk is full with {current_token_count} tokens. Saving and starting a new one.")  # Debugging output
+                chunks.append('\n~~~\n'.join(current_chunk))  # Use ~~~ as a separator between samples in the same chunk
+                max_samples_per_chunk = max(max_samples_per_chunk, current_chunk_samples)  # Update the maximum
+                current_chunk, current_token_count = [item], item_tokens
+                current_chunk_samples = 1  # Reset for the new chunk (this item is the first one)
+    
+        # Handle the last chunk
         if current_chunk:
-            chunks.append(current_chunk)
-        
+            chunks.append('\n~~~\n'.join(current_chunk))
+            max_samples_per_chunk = max(max_samples_per_chunk, current_chunk_samples)  # Update the maximum if needed
+    
         print('Number of chunks: ', len(chunks))
-        print(f"The maximum number of items in a chunk is: {len(max(chunks, key=len))}")
-
+        print(f"The maximum number of items in a chunk is: {max_samples_per_chunk}")
+    
         # Get the current date and time
         current_time = datetime.now()
-        formatted_time = current_time.strftime('%Y%m%d%H%M')  
-        
+        formatted_time = current_time.strftime('%Y%m%d%H%M')
+    
         # Create the filename
         filename = os.path.join(self.work_dir, f"metadata_chunks_{formatted_time}.txt")
-        
+    
         # Write the chunks to the file
         with open(filename, 'w') as f:
             for chunk in chunks:
-                f.write("\n".join(chunk))
+                f.write(chunk)
                 f.write("\n\n-----\n\n")  # Separator between chunks
-
+    
         return chunks
+
+# =============================================================================
+#     def create_and_save_chunks(self, metadata_dict):
+#         max_tokens = self.chunk_size
+#         chunks, current_chunk, current_token_count = [], [], 0
+#         
+#         print(f"Max tokens allowed per chunk: {max_tokens}")
+#     
+#         for sample_id, metadata in metadata_dict.items():
+#             item = f"'sample_ID={sample_id}': '{metadata}'"
+#             item_tokens = self.token_count(item)
+#     
+#             print(f"Processing sample: {sample_id} with {item_tokens} tokens")  # Debugging output
+#     
+#             # Check if this item alone exceeds the max_tokens
+#             if item_tokens > max_tokens:
+#                 print(f"Item {sample_id} is too large to fit in a single chunk.")
+#                 continue
+#     
+#             # If adding this item doesn't exceed the token limit, add it to current chunk
+#             if (current_token_count + item_tokens) <= max_tokens:
+#                 current_chunk.append(item)
+#                 current_token_count += item_tokens
+#             else:
+#                 print(f"Chunk is full with {current_token_count} tokens. Saving and starting a new one.")  # Debugging output
+#                 chunks.append('\n~~~\n'.join(current_chunk))  # Use ~~~ as a separator between samples in the same chunk
+#                 current_chunk, current_token_count = [item], item_tokens
+#     
+#         # Handle the last chunk
+#         if current_chunk:
+#             chunks.append('\nNEXT SAMPLE -->\n'.join(current_chunk))
+#     
+#         print('Number of chunks: ', len(chunks))
+#         print(f"The maximum number of items in a chunk is: {len(max(chunks, key=lambda x: self.token_count(x)))}")
+#     
+#         # Get the current date and time
+#         current_time = datetime.now()
+#         formatted_time = current_time.strftime('%Y%m%d%H%M')
+#     
+#         # Create the filename
+#         filename = os.path.join(self.work_dir, f"metadata_chunks_{formatted_time}.txt")
+#     
+#         # Write the chunks to the file
+#         with open(filename, 'w') as f:
+#             for chunk in chunks:
+#                 f.write(chunk)
+#                 f.write("\n\n-----\n\n")  # Separator between chunks
+#     
+#         return chunks
+# =============================================================================
+
 
     def run(self):
         gold_dict = self.load_gold_dict()
@@ -170,11 +247,11 @@ class MetadataProcessor:
 # =======================================================
 
 class GPTInteractor:
-    
-    
-    def __init__(self, work_dir, n_samples_per_biome, api_key_path, model, temperature, top_p, frequency_penalty, presence_penalty, wait):
+   
+    def __init__(self, work_dir, n_samples_per_biome, chunk_size, api_key_path, model, temperature, top_p, frequency_penalty, presence_penalty):
         self.work_dir = work_dir
         self.n_samples_per_biome = n_samples_per_biome
+        self.chunk_size = chunk_size
         self.api_key_path = api_key_path
         self.api_key = self.load_api_key()
         self.model = model
@@ -183,39 +260,63 @@ class GPTInteractor:
         self.frequency_penalty = frequency_penalty
         self.presence_penalty = presence_penalty
         self.saved_filename = None  # This will store the filename once saved
-        self.wait = wait 
 
-    def consolidate_chunks_to_strings(self, chunks):
-        """
-        Consolidate individual items within each chunk into one content string.
 
-        Parameters:
-        - chunks: List of lists containing the metadata chunked by tokens.
-
-        Returns:
-        - List of consolidated content strings from each chunk.
-        """
-        # Empty list to store content_strings for each chunk
-        content_strings = []
-
-        # Lists to store chunk details (can be returned if needed)
-        chunk_tokens = []
-
-        # Joining the content within each chunk
-        for i, chunk in enumerate(chunks, 1):
-            # Compute the number of tokens in the chunk
-            total_tokens = sum(len(item.split()) for item in chunk)
-            chunk_tokens.append(total_tokens)
-            
-            print(f"Chunk {i} Content (Number of items: {len(chunk)} | Total Tokens: {total_tokens}):")
-            content_string = "\n".join(chunk)
-            content_strings.append(content_string)  # Store the content_string
-            print(f"Chunk {i} Content:")
-            print(content_string)
-            print("----")
-        
-        return content_strings  # Return the consolidated content_strings
+    def token_count(self, text):
+        """Return the number of tokens in the text."""
+        return len(text.split())
     
+    
+    def consolidate_chunks_to_strings(self, chunks):
+        content_strings = []
+        chunk_tokens = []  # This will store the number of tokens in each chunk
+        
+        for i, chunk in enumerate(chunks, 1):
+            total_tokens = self.token_count(chunk)
+            print(f"Chunk {i} Content (Total Tokens: {total_tokens}):")
+            content_strings.append(chunk)  
+            chunk_tokens.append(total_tokens)  # Store the number of tokens
+            #print(f"Chunk {i} Content:")
+            #print("----")
+        
+        print(content_strings)
+        return content_strings, chunk_tokens
+
+
+# =============================================================================
+#     def consolidate_chunks_to_strings(self, chunks):
+#         """
+#         Consolidate individual items within each chunk into one content string.
+# 
+#         Parameters:
+#         - chunks: List of lists containing the metadata chunked by tokens.
+# 
+#         Returns:
+#         - List of consolidated content strings from each chunk.
+#         """
+#         # Empty list to store content_strings for each chunk
+#         content_strings = []
+# 
+#         # Lists to store chunk details (can be returned if needed)
+#         chunk_tokens = []
+# 
+#         # Joining the content within each chunk
+#         for i, chunk in enumerate(chunks, 1):
+#             # Compute the number of tokens in the chunk
+#             total_tokens = sum(len(item.split()) for item in chunk)
+#             chunk_tokens.append(total_tokens)
+#             
+#             print(f"Chunk {i} Content (Number of items: {len(chunk)} | Total Tokens: {total_tokens}):")
+#             content_string = "\n".join(chunk)
+#             content_strings.append(content_string)  # Store the content_string
+#             print(f"Chunk {i} Content:")
+#             print(content_string)
+#             print("----")
+#         
+#         return content_strings, chunk_tokens  # Return the consolidated content_strings
+# =============================================================================
+    
+
     def load_api_key(self):
         try:
             with open(self.api_key_path, "r") as file:
@@ -250,8 +351,7 @@ class GPTInteractor:
             presence_penalty=self.presence_penalty
         )
 
-    
-    def interact_with_gpt(self, content_strings):
+    def interact_with_gpt(self, content_strings, chunk_tokens):
         """
         Iterate over content_strings and make requests to GPT.
 
@@ -261,51 +361,72 @@ class GPTInteractor:
         Returns:
         - List of responses from GPT-3.
         """
-        sent_chunks_count = 0
+        
         gpt_responses = []
-        for index, content_string in enumerate(content_strings, start=1):
-            
-            sent_chunks_count += 1
-            print(f"Sent chunks count: {sent_chunks_count}")
-            
-            print(f"Sending request number: {index} of {len(content_strings)} requests")
-            
-            if self.wait and index > 1:  # We don't wait for the first request
-                print("Waiting for 70 seconds before the next request...")
-                time.sleep(70)
-            
-            response = self.gpt_request(content_string=content_string)
-            gpt_responses.append(response)
+        TOKEN_LIMIT = 9500  # Adding a buffer
+        tokens_processed_in_last_minute = 0
+        last_request_time = time.time()
+
+        for content_string, tokens in zip(content_strings, chunk_tokens):
+            # If adding the next chunk exceeds the limit, wait
+            if tokens_processed_in_last_minute + tokens > TOKEN_LIMIT:
+                elapsed_time = time.time() - last_request_time
+                wait_time = 60 - elapsed_time
+
+                if wait_time > 0:
+                    print(f"Waiting for {wait_time:.2f} seconds...")
+                    time.sleep(wait_time)
+
+                tokens_processed_in_last_minute = 0  # Reset token count
+                last_request_time = time.time()  # Update timestamp
+
+            # Send request to API
+            try:
+                response = self.gpt_request(content_string=content_string)
+                gpt_responses.append(response)
+                tokens_processed_in_last_minute += tokens
+            except openai.error.OpenAIError as e:
+                if "rate limit" in str(e).lower():
+                    print("Rate limit exceeded. Waiting for 2 minutes...")
+                    time.sleep(120)
+                else:
+                    print(f"Error encountered: {e}")
+
         return gpt_responses
-    
-    
+
+
     def save_gpt_responses_to_file(self, gpt_responses):
         """
         Save the content of GPT responses to a file.
-
+    
         Parameters:
         - gpt_responses: List of GPT responses.
-        - model: Name of the GPT model.
-        - temperature: The temperature setting used during the request.
-
+    
         Returns:
         - None
         """
-        # Extract the "content" from each response
-        contents = [response['choices'][0]['message']['content'] for response in gpt_responses]
+        # Extract the "content" from each response with error handling
+        contents = []
+        for response in gpt_responses:
+            try:
+                contents.append(response['choices'][0]['message']['content'])
+            except KeyError:
+                contents.append("ERROR: Malformed response")
+        
         # Join all contents with a separator (two newlines for readability)
         final_content = "\n\n".join(contents)
         
         # Construct the filename
         current_datetime = datetime.now().strftime('%Y%m%d_%H%M')
-        self.saved_filename = f"gpt_raw_output_nspb{self.n_samples_per_biome}_model_{self.model}_temp{self.temperature}_topp{self.top_p}_freqp{self.frequency_penalty}_presp{self.presence_penalty}_dt{current_datetime}.txt"
+        self.saved_filename = f"gpt_raw_output_nspb{self.n_samples_per_biome}_chunksize{self.chunk_size}_model{self.model}_temp{self.temperature}_topp{self.top_p}_freqp{self.frequency_penalty}_presp{self.presence_penalty}_dt{current_datetime}.txt"
         self.saved_filename = os.path.join(self.work_dir, self.saved_filename)
-
+    
         # Write to the file
         with open(self.saved_filename, 'w') as file:
             file.write(final_content)
-
+    
         print(f"Saved GPT responses to: {self.saved_filename}")
+
 
     def get_saved_filename(self):
         """ 
@@ -321,11 +442,12 @@ class GPTInteractor:
             return None
     
     def run(self, chunks):
-        content_strings = self.consolidate_chunks_to_strings(chunks)
-        gpt_responses = self.interact_with_gpt(content_strings)
+        content_strings, chunk_tokens = self.consolidate_chunks_to_strings(chunks)
+        print("Starting interaction with GPT...")
+        gpt_responses = self.interact_with_gpt(content_strings, chunk_tokens)  # Pass chunk_tokens here
+        print("Finished interaction with GPT.")
         self.save_gpt_responses_to_file(gpt_responses)
-
-
+        
 
 # =======================================================
 # PHASE 3: GPT Output Parsing
@@ -433,12 +555,11 @@ def main():
     args = parse_arguments()  # Assumes the parse_arguments function is defined at the top level
 
     # Phase 1: Metadata Processing
-    metadata_processor = MetadataProcessor(args.work_dir, args.input_gold_dict, args.n_samples_per_biome, args.seed, args.directory_with_split_metadata)
+    metadata_processor = MetadataProcessor(args.work_dir, args.input_gold_dict, args.n_samples_per_biome, args.chunk_size, args.seed, args.directory_with_split_metadata)
     chunks = metadata_processor.run()
 
     # Phase 2: GPT Interaction
-    gpt_interactor = GPTInteractor(args.work_dir, args.n_samples_per_biome, args.api_key_path, args.model, args.temperature, args.top_p, args.frequency_penalty, args.presence_penalty, args.wait)
-
+    gpt_interactor = GPTInteractor(args.work_dir, args.n_samples_per_biome, args.chunk_size, args.api_key_path, args.model, args.temperature, args.top_p, args.frequency_penalty, args.presence_penalty)
     gpt_interactor.run(chunks)
 
     # Phase 3: Parsing GPT Output
@@ -450,11 +571,12 @@ if __name__ == "__main__":
     main()
 
 
-
+# # calling the script: 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_validate_biomes.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 10 \
+#     --n_samples_per_biome 200 \
+#     --chunk_size 500 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
 #     --api_key_path "/Users/dgaio/my_api_key" \
@@ -462,8 +584,7 @@ if __name__ == "__main__":
 #     --temperature 0.25 \
 #     --top_p 0.75 \
 #     --frequency_penalty 0 \
-#     --presence_penalty 0 \
-#     --wait # only to add when using gpt-4
+#     --presence_penalty 0 
 
 
 # 20231012
@@ -487,59 +608,40 @@ if __name__ == "__main__":
 # 0.75 ; df rows: 398
 # 1.0 ; df rows: 395
 
-
 # 20231016
 # gpt-4 vs gpt-3.5-turbo-16k-0613
-# 10 samples per biome (7 requests)
+# 10 samples per biome (7 requests each model)
+
+# 20231017 (before 13:30)
+# gpt-4 vs gpt-3.5-turbo-16k-0613 (now corrected for case sensitivity)
+# 10 samples per biome (7 requests each model)
+
+# 20231017 (15:28 and 15:17 and 15:15)
+# gpt-3.5-turbo-16k-0613: 1000 vs 500 vs 250 tokens chunks 
+# 10 samples per biome
+
+# 20231017 (16:07, 16:09, 16:13)
+# gpt-3.5-turbo-16k-0613: 1000 vs 500 vs 250 tokens chunks 
+# 20 samples per biome (81 requests * 3 = 243)
+# tot input prompt tokens: 109644
+# tot output prompt tokens: 4453 
 
 
+# 20231018 (17:36)
+# gpt-3.5-turbo-16k-0613: 
+# 40 samples per biome 
+# chunk_size: 300 vs 500 vs 700 vs 1000 vs 1400 vs 2100
+# Number of chunks:  54 vs 41 vs 34 vs 23 vs 16 vs 10 = tot 178
+# maximum # items in a chunk: 6 vs 8 vs 10 vs 12 vs 17 vs 25
+# output rows: 145 vs 154 vs 158 vs 160 vs 156 vs 152
+# tot input prompt tokens: 316199/1000*0.003= $0.948597
+# tot output prompt tokens: 8533/1000*0.004= $0.03413
 
+# 20231019 (16:00)
+# gpt-3.5-turbo-16k-0613: 
+# 200 samples per biome 
+# chunk_size: 300 vs 500 vs 700 vs 1000 vs 1400 vs 2100 vs 3000
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def extract_clean_output(raw_output):
-    raw_output_lower = raw_output.lower()
-    for keyword in ['plant', 'animal', 'soil', 'water']:
-        if keyword in raw_output_lower:
-            return keyword
-    if 'human' in raw_output_lower:
-        return 'animal'
-    return None
 
 
 
