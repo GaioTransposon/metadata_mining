@@ -641,24 +641,32 @@ if __name__ == "__main__":
 # gpt-3.5-turbo-16k-0613: 
 # 200 samples per biome 
 # chunk_size: 300 vs 500 vs 700 vs 1000 vs 1400 vs 2100 vs 3000
+# tot input prompt tokens: 2037963/1000*0.003= $6.113889
+# tot output prompt tokens: 52231/1000*0.004= $0.208924
 
+# 20231023 (13:00)
+# gpt-3.5-turbo-16k-0613: 
+# 200 samples per biome 
+# chunk_size: 1200
+# temperatures: 0.0 0.25 0.50 0.75 1.00 1.25 1.50 1.75 2.00
+# tot input prompt tokens: .../1000*0.003= ...
+# tot output prompt tokens: .../1000*0.004= ...
 
+# done/doing: 1.00 1.25
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# python /Users/dgaio/github/metadata_mining/scripts/openai_validate_biomes.py \
+#     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
+#     --input_gold_dict "gold_dict.pkl" \
+#     --n_samples_per_biome 200 \
+#     --chunk_size 1200 \
+#     --seed 42 \
+#     --directory_with_split_metadata "sample.info_split_dirs" \
+#     --api_key_path "/Users/dgaio/my_api_key" \
+#     --model "gpt-3.5-turbo-16k-0613" \
+#     --temperature 1.25 \
+#     --top_p 0.75 \
+#     --frequency_penalty 0 \
+#     --presence_penalty 0 
 
 
 
