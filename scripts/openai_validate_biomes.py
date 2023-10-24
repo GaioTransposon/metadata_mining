@@ -649,10 +649,19 @@ if __name__ == "__main__":
 # 200 samples per biome 
 # chunk_size: 1200
 # temperatures: 0.0 0.25 0.50 0.75 1.00 1.25 1.50 1.75 2.00
-# tot input prompt tokens: .../1000*0.003= ...
-# tot output prompt tokens: .../1000*0.004= ...
+# tot input prompt tokens: 2489771/1000*0.003= $7.469
+# tot output prompt tokens: 59273/1000*0.004= $0.237
 
-# done/doing: 1.00 1.25
+# 20231024 (13:45)
+# gpt-3.5-turbo-16k-0613: 
+# 200 samples per biome 
+# chunk_size: 1200
+# temperatures: 1.00
+# top_p: 0.0 vs 0.25 vs 0.50 vs 0.75 vs 1.0
+# tot input prompt tokens: .../1000*0.003= $..
+# tot output prompt tokens: .../1000*0.004= $...
+
+# done/doing: 0.5 
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_validate_biomes.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
@@ -663,8 +672,8 @@ if __name__ == "__main__":
 #     --directory_with_split_metadata "sample.info_split_dirs" \
 #     --api_key_path "/Users/dgaio/my_api_key" \
 #     --model "gpt-3.5-turbo-16k-0613" \
-#     --temperature 1.25 \
-#     --top_p 0.75 \
+#     --temperature 1.00 \
+#     --top_p 0.50 \
 #     --frequency_penalty 0 \
 #     --presence_penalty 0 
 
@@ -672,34 +681,9 @@ if __name__ == "__main__":
 
 
 
-# =============================================================================
-# def fetch_metadata_from_sample(sample, directory_with_split_metadata):
-#     folder_name = f"dir_{sample[-3:]}"
-#     folder_path = os.path.join(directory_with_split_metadata, folder_name)  
-#     metadata_file_path = os.path.join(folder_path, f"{sample}.txt")
-#     with open(metadata_file_path, 'r') as f:
-#         # Filter out lines that start with "experiment", "run", or are empty
-#         metadata = "\n".join([line.strip() for line in f.readlines() if not line.startswith(("experiment", "run")) and line.strip() != ""])
-#     return metadata
-# 
-# 
-# # Filter rows where curated_biome doesn't match gpt_generated_biome
-# mismatched_rows = m[m['curated_biome'] != m['gpt_generated_biome']].sort_values(by='curated_biome')
-# 
-# mismatched_rows = mismatched_rows[mismatched_rows['curated_biome'] == 'plant']
-# 
-# # Then proceed with your operations on the filtered dataframe
-# 
-# # Fetch and print metadata for each mismatched sample
-# for index, row in mismatched_rows.iterrows():
-#     metadata_for_sample = fetch_metadata_from_sample(row['sample'], directory_with_split_metadata)
-#     print(f"Sample: {row['sample']}")
-#     print(f"Curated Biome: {row['curated_biome']}")
-#     print(f"GPT Generated Biome: {row['gpt_generated_biome']}")
-#     print("Metadata:")
-#     print(metadata_for_sample)
-#     print("="*40)  # Separating line for readability
-# =============================================================================
+
+
+
 
 
 
