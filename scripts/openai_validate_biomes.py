@@ -75,7 +75,7 @@ class MetadataProcessor:
     def fetch_metadata_from_sample(self, sample):
         folder_name = f"dir_{sample[-3:]}"
         folder_path = os.path.join(self.directory_with_split_metadata, folder_name)
-        metadata_file_path = os.path.join(folder_path, f"{sample}.txt")
+        metadata_file_path = os.path.join(folder_path, f"{sample}_clean.txt")
         with open(metadata_file_path, 'r') as f:
             return f.read()
 
@@ -85,12 +85,10 @@ class MetadataProcessor:
         processed_samples_count = 0
         processed_samples_list = []  # To keep track of which samples have been processed
         
-        # endings to filter out ("$" makes sure it will skip these if preceeded by a character or empty space)
-        endings_to_remove = ["=$", "nan$", "not applicable$", "missing$", ". na$"]
         metadata_dict = {}
         
         for _, row in shuffled_samples.iterrows():
-            metadata = self.fetch_metadata_from_sample(row['sample'])  # change this line as it's now a method
+            metadata = self.fetch_metadata_from_sample(row['sample'])
             
             print("Metadata for", row['sample'])
             
@@ -101,17 +99,7 @@ class MetadataProcessor:
             cleaned_metadata_lines = []
             for line in metadata.splitlines():
                 stripped_line = line.strip()  # strip whitespace
-                should_keep = True
-                if stripped_line.lower().startswith(("experiment", "run", ">")):
-                    should_keep = False
-                else:
-                    for ending in endings_to_remove:
-                        if re.search(ending, stripped_line, re.IGNORECASE):
-                            print(f"Rejected line (ends with {ending}): {stripped_line}")
-                            should_keep = False
-                            break
-                if should_keep:
-                    cleaned_metadata_lines.append(stripped_line)
+                cleaned_metadata_lines.append(stripped_line)
             cleaned_metadata = "\n".join(cleaned_metadata_lines)
             metadata_dict[row['sample']] = cleaned_metadata
             
@@ -122,7 +110,6 @@ class MetadataProcessor:
         print(f"All processed samples: {processed_samples_list}")
         
         return metadata_dict
-
 
     def token_count(self, text):
         """Return the number of tokens in the text."""
@@ -183,56 +170,6 @@ class MetadataProcessor:
     
         return chunks
 
-# =============================================================================
-#     def create_and_save_chunks(self, metadata_dict):
-#         max_tokens = self.chunk_size
-#         chunks, current_chunk, current_token_count = [], [], 0
-#         
-#         print(f"Max tokens allowed per chunk: {max_tokens}")
-#     
-#         for sample_id, metadata in metadata_dict.items():
-#             item = f"'sample_ID={sample_id}': '{metadata}'"
-#             item_tokens = self.token_count(item)
-#     
-#             print(f"Processing sample: {sample_id} with {item_tokens} tokens")  # Debugging output
-#     
-#             # Check if this item alone exceeds the max_tokens
-#             if item_tokens > max_tokens:
-#                 print(f"Item {sample_id} is too large to fit in a single chunk.")
-#                 continue
-#     
-#             # If adding this item doesn't exceed the token limit, add it to current chunk
-#             if (current_token_count + item_tokens) <= max_tokens:
-#                 current_chunk.append(item)
-#                 current_token_count += item_tokens
-#             else:
-#                 print(f"Chunk is full with {current_token_count} tokens. Saving and starting a new one.")  # Debugging output
-#                 chunks.append('\n~~~\n'.join(current_chunk))  # Use ~~~ as a separator between samples in the same chunk
-#                 current_chunk, current_token_count = [item], item_tokens
-#     
-#         # Handle the last chunk
-#         if current_chunk:
-#             chunks.append('\nNEXT SAMPLE -->\n'.join(current_chunk))
-#     
-#         print('Number of chunks: ', len(chunks))
-#         print(f"The maximum number of items in a chunk is: {len(max(chunks, key=lambda x: self.token_count(x)))}")
-#     
-#         # Get the current date and time
-#         current_time = datetime.now()
-#         formatted_time = current_time.strftime('%Y%m%d%H%M')
-#     
-#         # Create the filename
-#         filename = os.path.join(self.work_dir, f"metadata_chunks_{formatted_time}.txt")
-#     
-#         # Write the chunks to the file
-#         with open(filename, 'w') as f:
-#             for chunk in chunks:
-#                 f.write(chunk)
-#                 f.write("\n\n-----\n\n")  # Separator between chunks
-#     
-#         return chunks
-# =============================================================================
-
 
     def run(self):
         gold_dict = self.load_gold_dict()
@@ -282,40 +219,6 @@ class GPTInteractor:
         print(content_strings)
         return content_strings, chunk_tokens
 
-
-# =============================================================================
-#     def consolidate_chunks_to_strings(self, chunks):
-#         """
-#         Consolidate individual items within each chunk into one content string.
-# 
-#         Parameters:
-#         - chunks: List of lists containing the metadata chunked by tokens.
-# 
-#         Returns:
-#         - List of consolidated content strings from each chunk.
-#         """
-#         # Empty list to store content_strings for each chunk
-#         content_strings = []
-# 
-#         # Lists to store chunk details (can be returned if needed)
-#         chunk_tokens = []
-# 
-#         # Joining the content within each chunk
-#         for i, chunk in enumerate(chunks, 1):
-#             # Compute the number of tokens in the chunk
-#             total_tokens = sum(len(item.split()) for item in chunk)
-#             chunk_tokens.append(total_tokens)
-#             
-#             print(f"Chunk {i} Content (Number of items: {len(chunk)} | Total Tokens: {total_tokens}):")
-#             content_string = "\n".join(chunk)
-#             content_strings.append(content_string)  # Store the content_string
-#             print(f"Chunk {i} Content:")
-#             print(content_string)
-#             print("----")
-#         
-#         return content_strings, chunk_tokens  # Return the consolidated content_strings
-# =============================================================================
-    
 
     def load_api_key(self):
         try:
@@ -661,7 +564,17 @@ if __name__ == "__main__":
 # tot input prompt tokens: .../1000*0.003= $..
 # tot output prompt tokens: .../1000*0.004= $...
 
-# done/doing: 0.5 0.25
+
+# 20231025 (17:26)
+# gpt-3.5-turbo-16k-0613: 
+# 200 samples per biome 
+# chunk_size: 1200
+# temperatures: 1.00
+# top_p: 0.75
+# frequency_penalty: 0.0 vs 0.25 vs 0.50 vs 0.75 vs 1.0
+# tot input prompt tokens: .../1000*0.003= $..
+# tot output prompt tokens: .../1000*0.004= $...
+
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_validate_biomes.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
@@ -673,8 +586,8 @@ if __name__ == "__main__":
 #     --api_key_path "/Users/dgaio/my_api_key" \
 #     --model "gpt-3.5-turbo-16k-0613" \
 #     --temperature 1.00 \
-#     --top_p 0.50 \
-#     --frequency_penalty 0 \
+#     --top_p 0.75 \
+#     --frequency_penalty 0.50 \
 #     --presence_penalty 0 
 
 
