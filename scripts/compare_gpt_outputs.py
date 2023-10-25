@@ -23,9 +23,10 @@ import seaborn as sns
 
 def interactive_file_selection(initial_pattern):
     """
-    Allow user to interactively refine and select files based on their filename patterns.
+    Allow user to interactively refine and select files based on their filename patterns or indices.
     """
     current_files = glob.glob(initial_pattern)
+    selected_files = []  # Initialize an empty list for selected files
     while True:
         # Display current files
         print("\nCurrent matching files:")
@@ -33,19 +34,26 @@ def interactive_file_selection(initial_pattern):
             print(f"{idx}. {os.path.basename(file)}")
 
         # Ask user for further refinement or selection
-        action = input("\nEnter a keyword to refine further, 'done' to finish, or 'all' to select all: ").strip().lower()
+        action = input("\nEnter a keyword to refine further (must start with string), 'done' to finish, 'all' to select all, or space-separated indices (e.g., '2 3') to select specific files: ").strip().lower()
         
         if action == 'done':
-            break
+            return selected_files
         elif action == 'all':
             return current_files
         else:
-            # Refine the list of files based on user input
-            current_files = [f for f in current_files if action in f]
-            
-            if not current_files:
-                print("No files match your refined criteria. Resetting to initial files.")
-                current_files = glob.glob(initial_pattern)
+            # Check if user entered indices
+            indices = action.split()
+            if all(idx.isdigit() for idx in indices):  # Check if all are numbers
+                indices = [int(idx) - 1 for idx in indices]  # Convert to 0-based index
+                selected_files = [current_files[idx] for idx in indices if 0 <= idx < len(current_files)]  # Check if index is in range
+                return selected_files
+            else:
+                # Refine the list of files based on user input
+                current_files = [f for f in current_files if action in f]
+                
+                if not current_files:
+                    print("No files match your refined criteria. Resetting to initial files.")
+                    current_files = glob.glob(initial_pattern)
 
 
 def find_distinguishing_features(files):
@@ -107,13 +115,14 @@ def calculate_agreement(merged_df):
 
 def custom_sort(label):
     # Use regex to split the string into its text and number components
-    match = re.match(r"([a-z]+)([0-9]+)", label, re.I)
+    match = re.match(r"([a-z]+)([0-9]+\.[0-9]+)", label, re.I)
     if match:
         # If the regex finds a match, sort by the string, then by the number
         items = match.groups()
-        return items[0], int(items[1])
+        return items[0], float(items[1])
     # If no match is found, sort only by the string
     return label, 0
+
 
 # -----------------------------
 # 3. Data Processing & Loading
@@ -159,6 +168,7 @@ for file in selected_files:
     all_samples.append(set(temp_df['sample']))
 
 common_samples = set.intersection(*all_samples)
+
 
 # Filter the processed DataFrames to keep only common samples
 def filter_common_samples(df, common_samples):
