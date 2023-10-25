@@ -6,140 +6,109 @@ Created on Tue Oct 24 15:08:44 2023
 @author: dgaio
 """
 
-# PART 1: 
-# reads original ENVO.tsv
-# cleans it, and outputs a dictionary of labels as keys and description as value. 
 
 # PART 2: 
 # goes through raw metadata files and replaces labels at each occurrence (regex flexible)
 # with their respectective description. 
-
-
-import pandas as pd
-import re
-import os
-
-
-# Load the data from CSV
-data = pd.read_csv('/Users/dgaio/Downloads/ENVO.tsv', sep='\t')
-
-# Extract ENVO labels from the 'Term IRI' and 'Parent term IRI' columns
-data['label'] = data['Term IRI'].str.split('/').str[-1]
-data['Parent_label'] = data['Parent term IRI'].str.split('/').str[-1]
-
-# Create a combined description column based on the presence of a definition
-data['Joint_Info'] = data.apply(lambda row: f"{row['Term label']} (definition: {row['Definition']})" if pd.notna(row['Definition']) else row['Term label'], axis=1)
-
-# Create new DataFrames for the child and parent labels, text-labels, and other columns
-child_df = data[['label', 'Term label', 'Definition', 'Joint_Info']]
-parent_df = data[['Parent_label', 'Parent term label']].rename(columns={'Parent_label': 'label', 'Parent term label': 'Term label'}).assign(Joint_Info=data['Parent term label'])
-
-# Concatenate both DataFrames vertically
-result = pd.concat([child_df, parent_df], axis=0, ignore_index=True)
-
-# Drop duplicates based on 'label' and 'Term label' columns
-result = result.drop_duplicates(subset=['label', 'Term label'])
-
-# Keep only rows where the label starts with the specified patterns
-patterns = ['ENVO_', 'NCBITaxon_', 'FOODON_', 'PO_', 'UBERON_']
-mask = result['label'].str.startswith(tuple(patterns)).fillna(False)
-result = result[mask]
-
-
-label_info_dict = result.set_index('label')['Joint_Info'].to_dict()
-
-print(label_info_dict)
-
-
-# Save the final dataframe to a new CSV file
-output_df.to_csv('/Users/dgaio/Downloads/ENVO_parsed.tsv', index=False)
+# saves it with the same name followed by _clean before.txt 
 
 
 
 
-
-
-
-
-
-
-
-
-
-    def process_metadata(self, samples):
-        shuffled_samples = samples.sample(frac=1, random_state=self.seed).reset_index(drop=True)
-        
-        processed_samples_count = 0
-        processed_samples_list = []  # To keep track of which samples have been processed
-        
-        # endings to filter out ("$" makes sure it will skip these if preceeded by a character or empty space)
-        endings_to_remove = ["=$", "nan$", "not applicable$", "missing$", ". na$"]
-        metadata_dict = {}
-        
-        for _, row in shuffled_samples.iterrows():
-            metadata = self.fetch_metadata_from_sample(row['sample'])  # change this line as it's now a method
-            
-            print("Metadata for", row['sample'])
-            
-            processed_samples_count += 1
-            processed_samples_list.append(row['sample'])
-            print(f"Processed samples count: {processed_samples_count}")        
-            
-            cleaned_metadata_lines = []
-            for line in metadata.splitlines():
-                stripped_line = line.strip()  # strip whitespace
-                should_keep = True
-                if stripped_line.lower().startswith(("experiment", "run", ">")):
-                    should_keep = False
-                else:
-                    for ending in endings_to_remove:
-                        if re.search(ending, stripped_line, re.IGNORECASE):
-                            print(f"Rejected line (ends with {ending}): {stripped_line}")
-                            should_keep = False
-                            break
-                if should_keep:
-                    cleaned_metadata_lines.append(stripped_line)
-            cleaned_metadata = "\n".join(cleaned_metadata_lines)
-            metadata_dict[row['sample']] = cleaned_metadata
-            
-            print("Cleaned metadata:")
-            print(cleaned_metadata)
-            print("===================================")
-            
-        print(f"All processed samples: {processed_samples_list}")
-        
-        return metadata_dict
-    
-    
-    
 
 
 def create_regex_pattern(label):
     # Extract the prefix and the digits from the label
-    prefix, digits = re.match(r'([a-zA-Z]+)(\d+)', label).groups()
+    match = re.match(r'([a-zA-Z]+)_?(\d+)', label)
+    
+    if not match:
+        raise ValueError(f"Unexpected label format: {label}")
+
+    prefix, digits = match.groups()
     
     # Construct a regex pattern
     pattern = prefix + r'\D+' + digits
     return pattern
 
 
-base_dir = '/path/to/root/directory'  # Replace this with the path to the directory where your folders start
-
-for dirpath, dirnames, filenames in os.walk(base_dir):
-    for filename in filenames:
-        if filename.endswith('.txt'):  # Assuming the metadata files have .txt extension
-            with open(os.path.join(dirpath, filename), 'r') as f:
-                content = f.read()
-                for label, joint_info in label_info_dict.items():
-                    pattern = create_regex_pattern(label)
-                    content = re.sub(pattern, joint_info, content, flags=re.IGNORECASE)
-            with open(os.path.join(dirpath, filename.split('.')[0] + '_clean.txt'), 'w') as f:
-                f.write(content)
 
 
 
 
+def process_metadata(samples, label_info_dict, base_dir):
+    shuffled_samples = samples.sample(frac=1).reset_index(drop=True)  # Removed seed as it wasn't provided
 
+    processed_samples_count = 0
+    processed_samples_list = []
+    endings_to_remove = ["=$", "nan$", "not applicable$", "missing$", ". na$"]
+    metadata_dict = {}
+    
+    
+    for _, row in shuffled_samples.iterrows():
+        # Extract the last three digits and construct the directory path
+        sub_dir = f"dir_{row['sample'][-3:]}"
+        sample_file = os.path.join(base_dir, sub_dir, row['sample'] + '.txt')
+        
+        with open(sample_file, 'r') as f:
+            metadata = f.read()
+            for label, joint_info in label_info_dict.items():
+                pattern = create_regex_pattern(label)
+                metadata = re.sub(pattern, joint_info, metadata, flags=re.IGNORECASE)
+
+        cleaned_metadata_lines = []
+        for line in metadata.splitlines():
+            stripped_line = line.strip()
+            should_keep = True
+            if stripped_line.lower().startswith(("experiment", "run", ">")):
+                should_keep = False
+            else:
+                for ending in endings_to_remove:
+                    if re.search(ending, stripped_line, re.IGNORECASE):
+                        print(f"Rejected line (ends with {ending}): {stripped_line}")
+                        should_keep = False
+                        break
+            if should_keep:
+                cleaned_metadata_lines.append(stripped_line)
+
+        cleaned_metadata = "\n".join(cleaned_metadata_lines)
+        metadata_dict[row['sample']] = cleaned_metadata
+            
+        # Save cleaned metadata to file
+        clean_file_name = sample_file.replace('.txt', '_clean.txt')
+        with open(clean_file_name, 'w') as f:
+            f.write(cleaned_metadata)
+
+        processed_samples_count += 1
+        processed_samples_list.append(row['sample'])
+        print(f"Processed samples count: {processed_samples_count}")
+        print("Cleaned metadata:")
+        print(cleaned_metadata)
+        print("===================================")
+
+    print(f"All processed samples: {processed_samples_list}")
+    return metadata_dict
+
+
+
+
+
+# Sample DataFrame (replace this with your actual dataframe)
+samples_df = pd.DataFrame({'sample': [#'SRS969018', #ENVO --> ok
+                                      #'DRS005000', # nothing --> ok
+                                      #'ERS4036427', # NCBITaxon --> not replaced because non-existent in ENVO.tsv
+                                      #'SRS6307425', # NCBITaxon yes, but UBERON not --> because non-existent in ENVO.tsv
+                                      #'ERS481159', # PO sample_supplier_name=PO_2732 not translated because non-existent in ENVO.tsv
+                                      #'ERS481227', # PO PO_1591 not translated because non-existent in ENVO.tsv
+                                      'SRS932724',  # FOODON: one out of two; UBERON: no. Reason: non-existent in ENVO.tsv
+                                      'SRS1092766' # FOODON --> ok
+                                      ]})  # Modify accordingly
+
+base_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs'  # Replace with your directory path
+
+
+#label_info_dict = fetch_label_info("https://ontobee.org/listTerms/ENVO?format=tsv")
+
+metadata_dict = process_metadata(samples_df, label_info_dict, base_dir)
 
 
 

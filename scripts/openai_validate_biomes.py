@@ -661,7 +661,7 @@ if __name__ == "__main__":
 # tot input prompt tokens: .../1000*0.003= $..
 # tot output prompt tokens: .../1000*0.004= $...
 
-# done/doing: 0.5 
+# done/doing: 0.5 0.25
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_validate_biomes.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
