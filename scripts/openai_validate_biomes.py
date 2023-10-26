@@ -16,7 +16,7 @@ import pickle
 import re
 from datetime import datetime
 import time
-
+import logging
 
 
 def parse_arguments():
@@ -37,6 +37,49 @@ def parse_arguments():
     
     return parser.parse_args()
 
+
+
+# =======================================================
+# PHASE 0: set up a logging system 
+# =======================================================
+
+# Define a logging function that logs to both the console and a file
+
+class CustomFormatter(logging.Formatter):
+    MAX_LENGTH = 250  # Set this to your desired length
+
+    def format(self, record):
+        if record.levelno == logging.DEBUG and len(record.msg) > self.MAX_LENGTH:
+            record.msg = record.msg[:self.MAX_LENGTH] + "..."
+        return super().format(record)
+
+def setup_logging():
+    # Get the directory where the script is located
+    script_directory = os.path.dirname(os.path.abspath(__file__))
+    
+    # Define the log filename with a timestamp
+    log_filename = datetime.now().strftime("openai_validate_biomes_%Y%m%d_%H%M%S.log")
+    
+    # Join the directory with the log filename to get the full path
+    log_filepath = os.path.join(script_directory, log_filename)
+
+    # Set up the basic logging configuration for the console
+    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
+                        level=logging.DEBUG)
+    
+    formatter = CustomFormatter('%(asctime)s [%(levelname)s]: %(message)s')
+
+    # File handler for logging with the full path
+    file_handler = logging.FileHandler(log_filepath)
+    file_handler.setFormatter(formatter)
+    logging.getLogger().addHandler(file_handler)
+
+    # Console handler for logging
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    logging.getLogger().addHandler(console_handler)
+    
+    
 
 
 # =======================================================
@@ -107,7 +150,8 @@ class MetadataProcessor:
             print(cleaned_metadata)
             print("===================================")
             
-        print(f"All processed samples: {processed_samples_list}")
+        logging.info(f"All processed samples: {processed_samples_list}")
+        
         
         return metadata_dict
 
@@ -122,8 +166,10 @@ class MetadataProcessor:
         current_chunk_samples = 0  # Track the number of samples in the current chunk
         max_samples_per_chunk = 0  # Track the maximum number of samples across all chunks
     
-        print(f"Max tokens allowed per chunk: {max_tokens}")
-    
+        logging.info(f"Max tokens allowed per chunk: {max_tokens}")
+
+        too_large_samples = []  # Step 1: Initialize an empty list to store samples that are too large
+
         for sample_id, metadata in metadata_dict.items():
             item = f"'sample_ID={sample_id}': '{metadata}'"
             item_tokens = self.token_count(item)
@@ -132,7 +178,8 @@ class MetadataProcessor:
     
             # Check if this item alone exceeds the max_tokens
             if item_tokens > max_tokens:
-                print(f"Item {sample_id} is too large to fit in a single chunk.")
+                logging.info(f"Item {sample_id} is too large to fit in a single chunk.")
+                too_large_samples.append(sample_id)
                 continue
     
             # If adding this item doesn't exceed the token limit, add it to current chunk
@@ -152,9 +199,10 @@ class MetadataProcessor:
             chunks.append('\n~~~\n'.join(current_chunk))
             max_samples_per_chunk = max(max_samples_per_chunk, current_chunk_samples)  # Update the maximum if needed
     
-        print('Number of chunks: ', len(chunks))
-        print(f"The maximum number of items in a chunk is: {max_samples_per_chunk}")
-    
+        logging.info(f"Number of chunks: {len(chunks)}")
+        logging.info(f"The maximum number of items in a chunk is: {max_samples_per_chunk}")
+        logging.info(f"Samples that exceeded chunk size: {too_large_samples}")
+        
         # Get the current date and time
         current_time = datetime.now()
         formatted_time = current_time.strftime('%Y%m%d%H%M')
@@ -210,7 +258,8 @@ class GPTInteractor:
         
         for i, chunk in enumerate(chunks, 1):
             total_tokens = self.token_count(chunk)
-            print(f"Chunk {i} Content (Total Tokens: {total_tokens}):")
+            print(f"Chunk {i} Content (Total Tokens: {total_tokens})")
+            logging.info(f"Chunk {i} Content (Total Tokens: {total_tokens})")
             content_strings.append(chunk)  
             chunk_tokens.append(total_tokens)  # Store the number of tokens
             #print(f"Chunk {i} Content:")
@@ -277,7 +326,7 @@ class GPTInteractor:
                 wait_time = 60 - elapsed_time
 
                 if wait_time > 0:
-                    print(f"Waiting for {wait_time:.2f} seconds...")
+                    logging.info(f"Waiting for {wait_time:.2f} seconds...")
                     time.sleep(wait_time)
 
                 tokens_processed_in_last_minute = 0  # Reset token count
@@ -290,10 +339,10 @@ class GPTInteractor:
                 tokens_processed_in_last_minute += tokens
             except openai.error.OpenAIError as e:
                 if "rate limit" in str(e).lower():
-                    print("Rate limit exceeded. Waiting for 2 minutes...")
+                    logging.info("Rate limit exceeded. Waiting for 2 minutes...")
                     time.sleep(120)
                 else:
-                    print(f"Error encountered: {e}")
+                    logging.error(f"Error encountered: {e}")
 
         return gpt_responses
 
@@ -328,8 +377,7 @@ class GPTInteractor:
         with open(self.saved_filename, 'w') as file:
             file.write(final_content)
     
-        print(f"Saved GPT responses to: {self.saved_filename}")
-
+        logging.info(f"Saved GPT responses to: {self.saved_filename}")
 
     def get_saved_filename(self):
         """ 
@@ -346,9 +394,10 @@ class GPTInteractor:
     
     def run(self, chunks):
         content_strings, chunk_tokens = self.consolidate_chunks_to_strings(chunks)
-        print("Starting interaction with GPT...")
+        logging.info("Starting interaction with GPT...")
         gpt_responses = self.interact_with_gpt(content_strings, chunk_tokens)  # Pass chunk_tokens here
-        print("Finished interaction with GPT.")
+        logging.info("Finished interaction with GPT.")
+        
         self.save_gpt_responses_to_file(gpt_responses)
         
 
@@ -371,19 +420,19 @@ class GPTOutputParsing:
                 with open(self.filepath, 'r') as file:
                     return file.readlines()  
             except FileNotFoundError:
-                print(f"File '{self.filepath}' not found.")
+                logging.error(f"File '{self.filepath}' not found.")
                 return None
             except IOError:
-                print(f"Error reading file '{self.filepath}'.")
+                logging.error(f"Error reading file '{self.filepath}'.")
                 return None
         else:
-            print("No filepath provided.")
+            logging.error("No filepath provided.")
             return None
 
     def check_keyword_mentions(self):
         keywords = ['animal', 'soil', 'water', 'plant', 'human']
         total_count = sum(line.lower().count(keyword) for line in self.raw_content for keyword in keywords)
-        print(f"Total count of mentions: {total_count}")
+        logging.info(f"Total count of keyword mentions: {total_count}")
         return total_count
 
     def parse_samples(self):
@@ -414,7 +463,8 @@ class GPTOutputParsing:
         
         all_sample_ids = extract_all_sample_ids()
         missing_samples = all_sample_ids - set(parsed_data.keys())
-        print("Number of samples we lost in the parsing: ", missing_samples)
+        num_missing = len(missing_samples)
+        logging.info(f"Number of samples we lost in the parsing: {num_missing} ({missing_samples if num_missing > 0 else 'None'})")
         return missing_samples
 
     def prepare_dataframe(self, parsed_data_dict):
@@ -439,7 +489,7 @@ class GPTOutputParsing:
     
         # Save the dataframe to CSV format
         self.parsed_data.to_csv(self.clean_filename, index=False)
-        print(f"Saved clean GPT output to: {self.clean_filename}")
+        logging.info(f"Saved clean GPT output to: {self.clean_filename}")
         
     def run(self):
         self.check_keyword_mentions()
@@ -455,6 +505,8 @@ class GPTOutputParsing:
 # =======================================================
 
 def main():
+    
+    setup_logging()
     args = parse_arguments()  # Assumes the parse_arguments function is defined at the top level
 
     # Phase 1: Metadata Processing
@@ -565,21 +617,28 @@ if __name__ == "__main__":
 # tot output prompt tokens: .../1000*0.004= $...
 
 
-# 20231025 (17:26)
+# 20231025 (17:26) + 202310126 (before 14:00)
 # gpt-3.5-turbo-16k-0613: 
 # 200 samples per biome 
 # chunk_size: 1200
 # temperatures: 1.00
 # top_p: 0.75
 # frequency_penalty: 0.0 vs 0.25 vs 0.50 vs 0.75 vs 1.0
-# tot input prompt tokens: .../1000*0.003= $..
-# tot output prompt tokens: .../1000*0.004= $...
+
+# 20231026 (14:15)
+# gpt-3.5-turbo-16k-0613: 
+# 200 samples per biome 
+# chunk_size: 1200
+# temperatures: 1.00
+# top_p: 0.75
+# frequency_penalty: 0.25
+# presence penalty: 0.0 vs 0.50 vs 1.00 vs 1.50 vs 2.0
 
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_validate_biomes.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
+#     --n_samples_per_biome 2 \
 #     --chunk_size 1200 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
@@ -587,8 +646,8 @@ if __name__ == "__main__":
 #     --model "gpt-3.5-turbo-16k-0613" \
 #     --temperature 1.00 \
 #     --top_p 0.75 \
-#     --frequency_penalty 0.50 \
-#     --presence_penalty 0 
+#     --frequency_penalty 0.25 \
+#     --presence_penalty 1.5
 
 
 
