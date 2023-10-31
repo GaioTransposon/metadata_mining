@@ -8,11 +8,7 @@ Created on Mon Aug 21 19:55:43 2023
 
 
 # # run as: 
-# python ~/github/metadata_mining/scripts/get_ncbi_metadata_entrez.py  \
-#         --work_dir '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/' \
-#             --sample_info_biome_pmid "sample.info_biome_pmid.csv" \
-#                 --output_file "sample.info_biome_pmid_title_abstract.csv" \
-#                         --figure "sample.info_biome_pmid_title_abstract.pdf"
+# python ~/github/metadata_mining/scripts/confirm_biome_game.py 
     
 
 path_to_dirs = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs"

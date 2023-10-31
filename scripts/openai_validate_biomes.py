@@ -11,6 +11,7 @@ import openai
 import pandas as pd
 import numpy as np
 from collections import Counter
+from transformers import GPT2Tokenizer
 import argparse
 import pickle
 import re
@@ -156,8 +157,16 @@ class MetadataProcessor:
         return metadata_dict
 
     def token_count(self, text):
-        """Return the number of tokens in the text."""
-        return len(text.split())
+        """Return the number of tokens in the text (count tokens the BPE way)."""
+        # len(text.split()
+        
+        # load tokenizer 
+        tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+
+        # Tokenize the text and count the tokens
+        tokens = tokenizer.tokenize(text)
+        
+        return len(tokens)
 
     def create_and_save_chunks(self, metadata_dict):
         max_tokens = self.chunk_size
@@ -648,14 +657,6 @@ if __name__ == "__main__":
 #     --top_p 0.75 \
 #     --frequency_penalty 0.25 \
 #     --presence_penalty 1.5
-
-
-
-
-
-
-
-
 
 
 
