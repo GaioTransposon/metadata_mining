@@ -11,14 +11,12 @@ Created on Mon Aug 21 19:55:43 2023
 # python ~/github/metadata_mining/scripts/confirm_biome_game.py 
     
 
-path_to_dirs = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs"
-
-
 import pandas as pd
 import os
 import pickle
 
 
+path_to_dirs = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs"
 GOLD_DICT_PATH = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gold_dict.pkl"
 CSV_PATH = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/training_data_pmids_based.csv"
 filename = CSV_PATH
