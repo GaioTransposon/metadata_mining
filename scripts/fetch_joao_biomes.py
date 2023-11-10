@@ -45,7 +45,7 @@ def read_mapdb_h5(h5_path, otu_data=True, meta_data=True):
 def save_results(result_dict):
     # Save the entire dictionary as JSON
     # Note: This will not include the sparse matrix in its original format
-    with open('/mnt/data/results.json', 'w') as f_json:
+    with open(output, 'w') as f_json:
         # Convert numpy arrays to lists for JSON serialization
         json_safe_dict = {
             key: (value.tolist() if isinstance(value, np.ndarray) else value)
@@ -63,6 +63,7 @@ def save_results(result_dict):
 
 h5_path = "/mnt/mnemo3/janko/data/microbe_atlas/sruns-otus.97.otutable_plusMetaNoHeader_taxonomy_unmapped.h5"
 
+output = "/mnt/mnemo5/dgaio/joao_biomes.json"
 
 try:
     result = read_mapdb_h5(h5_path)
