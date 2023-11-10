@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import csc_matrix
 import json 
-
+from scipy.sparse import save_npz
 
 
 def read_mapdb_h5(h5_path, otu_data=True, meta_data=True):
@@ -41,38 +41,28 @@ def read_mapdb_h5(h5_path, otu_data=True, meta_data=True):
     return result_dict
 
 
-# Assuming `result` is the dictionary returned from your function
-def save_results(result_dict):
-    # Save the entire dictionary as JSON
-    # Note: This will not include the sparse matrix in its original format
-    with open(output, 'w') as f_json:
-        # Convert numpy arrays to lists for JSON serialization
-        json_safe_dict = {
-            key: (value.tolist() if isinstance(value, np.ndarray) else value)
-            for key, value in result_dict.items()
-        }
-        json.dump(json_safe_dict, f_json, indent=4)
+# Function to decode byte strings in a DataFrame
+def decode_byte_strings(df):
+    return df.applymap(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
 
-    # Save tabular data to CSV
-    # Assuming meta_data is a DataFrame or can be converted to one
-    if 'meta_data' in result_dict:
-        for key, df in result_dict['meta_data'].items():
-            df.to_csv(f'/mnt/data/meta_data_{key}.csv', index=False)
+# Function call with the path to your HDF5 file
+result = read_mapdb_h5('/mnt/mnemo3/janko/data/microbe_atlas/hdf5/v0.2.1/metag_minfilter/samples-otus.97.metag.minfilter.minCov90.noMulticell.h5')
 
+# Access the OTU table and metadata
+otu_table = result["otu_data"]["otu_table"]
+sample_index = result["otu_data"]["sample_index"]
+otu_index = result["otu_data"]["otu_index"]
+meta_data = result["meta_data"]
 
+# Decode byte strings in sample_index and save to CSV
+decoded_sample_index = [s.decode('utf-8') for s in sample_index]
+sample_index_df = pd.DataFrame(decoded_sample_index, columns=['sample_index'])
+sample_index_df.to_csv('sample_index.csv', index=False)
 
-h5_path = "/mnt/mnemo3/janko/data/microbe_atlas/sruns-otus.97.otutable_plusMetaNoHeader_taxonomy_unmapped.h5"
-
-output = "/mnt/mnemo5/dgaio/joao_biomes.json"
-
-try:
-    result = read_mapdb_h5(h5_path)
-    save_results(result)
-    print("Function executed successfully.")
-except Exception as e:
-    error_message = str(e)
-    print(f"An error occurred: {error_message}")
-
+# Decode byte strings in meta_data and save to CSV
+for key, df in meta_data.items():
+    decoded_df = decode_byte_strings(df)
+    decoded_df.to_csv(f'/mnt/mnemo5/dgaio/meta_data_{key}.csv', index=False)
 
 
 
