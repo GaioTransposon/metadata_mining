@@ -62,7 +62,7 @@ sample_index_df.to_csv('sample_index.csv', index=False)
 # Decode byte strings in meta_data and save to CSV
 for key, df in meta_data.items():
     decoded_df = decode_byte_strings(df)
-    decoded_df.to_csv(f'/mnt/mnemo5/dgaio/meta_data_{key}.csv', index=False)
+    decoded_df.to_csv(f'/mnt/mnemo5/dgaio/metadata_{key}.csv', index=False)
 
 
 
