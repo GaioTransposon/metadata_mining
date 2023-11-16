@@ -39,7 +39,7 @@ def load_gold_data(filename=GOLD_DICT_PATH):
 def fetch_metadata_from_sample(sample):
     folder_name = f"dir_{sample[-3:]}"
     folder_path = os.path.join(path_to_dirs, folder_name)  
-    metadata_file_path = os.path.join(folder_path, f"{sample}.txt")
+    metadata_file_path = os.path.join(folder_path, f"{sample}_clean.txt")
     with open(metadata_file_path, 'r') as f:
         metadata = f.read()
     return metadata
@@ -79,7 +79,8 @@ def play_game(df):
     group = biomes_df.get_group(selected_biome)
 
     # Count gold_dict samples for the selected biome
-    gold_biome_count = sum(1 for _, biome_val in gold_dict.values() if biome_val == selected_biome)
+    gold_biome_count = sum(1 for value in gold_dict.values() if value[1] == selected_biome)
+    #gold_biome_count = sum(1 for _, biome_val in gold_dict.values() if biome_val == selected_biome)
 
     # Continue the game until all samples in the selected biome are processed
     while gold_biome_count < len(group):
