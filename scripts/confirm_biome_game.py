@@ -39,7 +39,7 @@ def load_gold_data(filename=GOLD_DICT_PATH):
 def fetch_metadata_from_sample(sample):
     folder_name = f"dir_{sample[-3:]}"
     folder_path = os.path.join(path_to_dirs, folder_name)  
-    metadata_file_path = os.path.join(folder_path, f"{sample}_clean.txt")
+    metadata_file_path = os.path.join(folder_path, f"{sample}.txt")
     with open(metadata_file_path, 'r') as f:
         metadata = f.read()
     return metadata
