@@ -143,4 +143,5 @@ if __name__ == '__main__':
 #     --output_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject" \
 #     --output_file "ontologies_dict"
 
-
+# # on atlas
+# python github/metadata_mining/scripts/fetch_and_join_ontologies.py --wanted_ontologies FOODON ENVO UBERON PO --output_dir "MicrobeAtlasProject" --output_file "ontologies_dict"
