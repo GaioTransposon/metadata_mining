@@ -144,10 +144,7 @@ Created on Tue Oct 24 15:08:44 2023
 # =============================================================================
 
 
-
-
-
-
+from multiprocessing import Queue, Process, cpu_count, Manager
 import re
 import os
 import pandas as pd
@@ -159,6 +156,8 @@ import time
 import glob
 import multiprocessing
 import traceback
+import cProfile
+
 
 def create_regex_pattern(label):
     match = re.match(r'([a-zA-Z]+)_?(\d+)', label)
@@ -168,12 +167,7 @@ def create_regex_pattern(label):
     prefix, digits = match.groups()
     pattern = re.compile(prefix + r'\D+' + digits, flags=re.IGNORECASE)
     return pattern
-
-
-
-
-
-
+    
 
 def process_samples(file_paths, compiled_patterns, label_info_dict, base_dir, compiled_endings):
     process_id = os.getpid()  # Get the current process ID
@@ -219,6 +213,7 @@ def process_samples(file_paths, compiled_patterns, label_info_dict, base_dir, co
     return log_messages, len(file_paths)
 
 
+
 def process_metadata(base_dir, label_info_dict, batch_size=10, max_workers=None):
     
     print(f"Max workers set to: {max_workers}")  # Print the number of max_workers
@@ -251,9 +246,13 @@ def process_metadata(base_dir, label_info_dict, batch_size=10, max_workers=None)
             print(f"Processed {processed_samples_count} files")
 
     return processed_samples_count
+    
+    
 
 if __name__ == "__main__":
     start_time = time.time()
+    
+    
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--path_to_dir', required=True, help="Path to main directory.")
@@ -272,11 +271,28 @@ if __name__ == "__main__":
     with open(dict_file_path, 'rb') as f:
         label_info_dict = pickle.load(f)
 
-    processed_samples_count = process_metadata(base_dir, label_info_dict, max_workers=args.max_workers)
 
+    ##
+    profiler = cProfile.Profile()
+    profiler.enable()
+    
+    processed_samples_count = process_metadata(base_dir, label_info_dict, max_workers=args.max_workers)
+    
+    profiler.disable()
+    profiler.print_stats(sort='time')
+    
+    ##
+
+    ##
     print(f"Total processed files: {processed_samples_count}")
     end_time = time.time()
     total_time = end_time - start_time
     print(f"Total execution time: {total_time:.2f} seconds")
     
+    
+    
+# python /Users/dgaio/github/metadata_mining/scripts/clean_and_envo_translate.py \
+#     --path_to_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject" \
+#     --ontology_dict "ontologies_dict.pkl" \
+#     --metadata_dirs "sample.info_split_dirs" --max_workers 10
     
