@@ -172,7 +172,7 @@ def main():
 
     processes = []
     for dir_name in os.listdir(base_dir):
-        if dir_name.startswith("dirzz_"):
+        if dir_name.startswith("dir_80"):
             dir_path = os.path.join(base_dir, dir_name)
             p = multiprocessing.Process(target=process_directory, args=(dir_path, modified_ontology_dict, base_log_file_path))
             processes.append(p)
