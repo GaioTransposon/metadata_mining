@@ -34,7 +34,6 @@ def load_gold_data(filename=GOLD_DICT_PATH):
     except (FileNotFoundError, EOFError):  # No previous data or empty file
         return {}, set()
 
-
 # Utility to fetch metadata from folders
 def fetch_metadata_from_sample(sample):
     folder_name = f"dir_{sample[-3:]}"
@@ -43,16 +42,6 @@ def fetch_metadata_from_sample(sample):
     with open(metadata_file_path, 'r') as f:
         metadata = f.read()
     return metadata
-
-# =============================================================================
-# def display_biome_counts(gold_dict):
-#     biomes = ['animal', 'plant', 'water', 'soil', 'unknown']
-#     print("\nBiome Counts in Gold Dictionary:")
-#     print("---------------------------------")
-#     for biome in biomes:
-#         count = sum(1 for _, biome_val in gold_dict.values() if biome_val == biome)
-#         print(f"{biome.capitalize()}: {count}")
-# =============================================================================
 
 def display_biome_counts(gold_dict):
     biomes = ['animal', 'plant', 'water', 'soil', 'unknown']
