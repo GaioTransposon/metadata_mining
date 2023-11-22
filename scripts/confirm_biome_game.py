@@ -39,17 +39,27 @@ def load_gold_data(filename=GOLD_DICT_PATH):
 def fetch_metadata_from_sample(sample):
     folder_name = f"dir_{sample[-3:]}"
     folder_path = os.path.join(path_to_dirs, folder_name)  
-    metadata_file_path = os.path.join(folder_path, f"{sample}.txt")
+    metadata_file_path = os.path.join(folder_path, f"{sample}_clean.txt")
     with open(metadata_file_path, 'r') as f:
         metadata = f.read()
     return metadata
+
+# =============================================================================
+# def display_biome_counts(gold_dict):
+#     biomes = ['animal', 'plant', 'water', 'soil', 'unknown']
+#     print("\nBiome Counts in Gold Dictionary:")
+#     print("---------------------------------")
+#     for biome in biomes:
+#         count = sum(1 for _, biome_val in gold_dict.values() if biome_val == biome)
+#         print(f"{biome.capitalize()}: {count}")
+# =============================================================================
 
 def display_biome_counts(gold_dict):
     biomes = ['animal', 'plant', 'water', 'soil', 'unknown']
     print("\nBiome Counts in Gold Dictionary:")
     print("---------------------------------")
     for biome in biomes:
-        count = sum(1 for _, biome_val in gold_dict.values() if biome_val == biome)
+        count = sum(1 for values in gold_dict.values() if len(values) >= 2 and values[1] == biome)
         print(f"{biome.capitalize()}: {count}")
 
 
