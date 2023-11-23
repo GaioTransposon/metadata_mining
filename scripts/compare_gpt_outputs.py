@@ -16,6 +16,9 @@ import pickle
 import re
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.metrics import confusion_matrix
+import numpy as np
+import textwrap
 
 # -----------------------------
 # 2. Function Definitions
@@ -99,19 +102,34 @@ def extract_labels_from_filename(filename, distinguishing_tokens):
 
     return "Unknown"
 
+
+
+
+
+
 def load_and_process_file(file_name, gold_standard_df):
     dfr = pd.read_csv(file_name)
-    return pd.merge(dfr, gold_standard_df, on='sample', how='inner')
+    #dfr.dropna(subset=['gpt_generated_output_clean'], inplace=True)
+    dfr['gpt_generated_output_clean'] = dfr['gpt_generated_output_clean'].fillna('unknown').astype(str)
+    merged_df = pd.merge(dfr, gold_standard_df, on='sample', how='inner')
+
+    # Check for 'unknown' in merged DataFrame
+    num_unknown_merged = merged_df['gpt_generated_output_clean'].value_counts().get('unknown', 0)
+    print(f"Number of 'unknown' after merging '{os.path.basename(file_name)}':", num_unknown_merged)
+
+    return merged_df
+
+
+
+
 
 def calculate_agreement(merged_df):
     total_samples = len(merged_df)
-    agree_samples = len(merged_df[merged_df['gpt_generated_output_clean'] == merged_df['curated_biome']])
+    agree_samples = len(merged_df[merged_df['gpt_generated_output_clean'] == merged_df['biome']])
     agreement = (agree_samples / total_samples) * 100
     return agreement, total_samples
-    total_samples = len(merged_df)
-    agree_samples = len(merged_df[merged_df['gpt_generated_output_clean'] == merged_df['curated_biome']])
-    agreement = (agree_samples / total_samples) * 100
-    return agreement, total_samples
+
+
 
 def custom_sort(label):
     # Use regex to split the string into its text and number components
@@ -122,6 +140,8 @@ def custom_sort(label):
         return items[0], float(items[1])
     # If no match is found, sort only by the string
     return label, 0
+
+
 
 
 # -----------------------------
@@ -136,8 +156,11 @@ with open(input_gold_dict, 'rb') as file:
 gold_dict = gold_dict[0]
 gold_dict_df = pd.DataFrame(gold_dict.items(), columns=['sample', 'tuple_data'])
 gold_dict_df['pmid'] = gold_dict_df['tuple_data'].apply(lambda x: x[0])
-gold_dict_df['curated_biome'] = gold_dict_df['tuple_data'].apply(lambda x: x[1])
+gold_dict_df['biome'] = gold_dict_df['tuple_data'].apply(lambda x: x[1])
 gold_dict_df.drop(columns='tuple_data', inplace=True)
+#gold_dict_df = gold_dict_df[gold_dict_df['biome'] != 'unknown']
+
+
 
 
 # -----------------------------
@@ -156,9 +179,9 @@ for f in selected_files:
 distinguishing_features = find_distinguishing_features(selected_files)
 labels = [extract_labels_from_filename(file, distinguishing_features) for file in selected_files]
 labels = sorted(labels, key=custom_sort)
+print('Distinguishing features of GPT files are: ', labels)
 
 
-# Before section #6
 # -----------------------------------
 # Find common samples among all files
 # -----------------------------------
@@ -174,12 +197,12 @@ common_samples = set.intersection(*all_samples)
 def filter_common_samples(df, common_samples):
     return df[df['sample'].isin(common_samples)]
 
-agreement_df = pd.DataFrame(columns=['label', 'curated_biome', 'agreement_percentage'])
+agreement_df = pd.DataFrame(columns=['label', 'biome', 'agreement_percentage'])
 # Now, in your existing loop in section #6, apply this filter:
 for file, label in zip(selected_files, labels):
     processed_df = load_and_process_file(file, gold_dict_df)
     processed_df = filter_common_samples(processed_df, common_samples)
-    biome_agreement = processed_df.groupby('curated_biome').apply(lambda x: calculate_agreement(x)).reset_index()
+    biome_agreement = processed_df.groupby('biome').apply(lambda x: calculate_agreement(x)).reset_index()
     biome_agreement['agreement_percentage'] = biome_agreement[0].apply(lambda x: x[0])
     biome_agreement['total_samples'] = biome_agreement[0].apply(lambda x: x[1])
     biome_agreement.drop(columns=0, inplace=True)
@@ -188,41 +211,48 @@ for file, label in zip(selected_files, labels):
 
 
 # Sort the dataframe by label
-agreement_df['label'] = agreement_df['label']
 agreement_df = agreement_df.sort_values(by='label')
 
 
 # -----------------------------
 # 7. Plotting & Visualization
 # -----------------------------
+
 custom_palette = {
     'animal': '#E28989',
     'water': '#8ADAE1',
     'plant': '#BCD279',
-    'soil': '#DECE8A'
+    'soil': '#DECE8A',
+    'unknown': '#B2BEB5'
 }
+
+
 
 plt.figure(figsize=(10, 8))
 sns.set_style("whitegrid")
 order = labels
-hue_order = list(custom_palette.keys())
-bar_plot = sns.barplot(data=agreement_df, x='label', y='agreement_percentage', hue='curated_biome',
-                       palette=custom_palette, ci=None, order=order, hue_order=hue_order)
+hue_order = ['animal', 'water', 'plant', 'soil', 'unknown']  # Include 'unknown' here
+bar_plot = sns.barplot(data=agreement_df, x='label', y='agreement_percentage', hue='biome',
+                       palette=custom_palette, errorbar=None, order=order, hue_order=hue_order)
 
 # Adjust legend, title, and axis labels
 bar_plot.legend(title='Biome', loc='upper left', bbox_to_anchor=(1, 1))
-bar_plot.set_title('Agreement Percentage per Label per Biome')
-bar_plot.set_xlabel('Label')
-bar_plot.set_ylabel('Agreement Percentage')
+bar_plot.set_title('Agreement percentage per label per biome')
+bar_plot.set_ylabel('Agreement (%)')
+bar_plot.set_ylabel('')
+
+# Set custom x-axis labels with wrapped text
+wrapped_labels = ['\n'.join(textwrap.wrap(label, 30)) for label in labels]  # Adjust wrap length as needed
+bar_plot.set_xticklabels(wrapped_labels)  # Adjust rotation and alignment as needed
 
 # Annotate bars with agreement percentage and total samples
-n_biomes = agreement_df['curated_biome'].nunique()
+n_biomes = agreement_df['biome'].nunique()
 bar_width = 0.8 / n_biomes
 
 for index, row in agreement_df.iterrows():
     # Extract relevant data
     label = row['label']
-    biome = row['curated_biome']
+    biome = row['biome']
     percentage = row['agreement_percentage']
     samples = row['total_samples']
 
@@ -250,6 +280,7 @@ plt.show()
 
 
 
+
 # -----------------------------
 # 6. Dataframe Processing & Agreement Calculation for Overall Plot
 # -----------------------------
@@ -260,11 +291,13 @@ for file, label in zip(selected_files, labels):
     processed_df = load_and_process_file(file, gold_dict_df)
     processed_df = filter_common_samples(processed_df, common_samples)  # Apply common samples filter
     agreement, samples = calculate_agreement(processed_df)
-    overall_agreement_df = overall_agreement_df.append({
-        'label': label, 
-        'agreement_percentage': agreement, 
-        'total_samples': samples}, 
-        ignore_index=True)
+    new_row = pd.DataFrame({
+        'label': [label], 
+        'agreement_percentage': [agreement], 
+        'total_samples': [samples]
+    })
+    overall_agreement_df = pd.concat([overall_agreement_df, new_row], ignore_index=True)
+
 
 # Sort the dataframe by label
 overall_agreement_df['label'] = sorted(overall_agreement_df['label'], key=custom_sort)
@@ -275,7 +308,7 @@ overall_agreement_df['label'] = sorted(overall_agreement_df['label'], key=custom
 plt.figure(figsize=(10, 6))
 sns.set_style("whitegrid")
 
-bar_plot = sns.barplot(data=overall_agreement_df, x='label', y='agreement_percentage', palette="viridis", ci=None)
+bar_plot = sns.barplot(data=overall_agreement_df, x='label', y='agreement_percentage', palette="viridis", errorbar=None)
 
 # Adjust legend, title, and axis labels
 bar_plot.set_title('Overall Agreement Percentage per Label')
@@ -304,6 +337,95 @@ for index, bar in enumerate(bar_plot.patches):
 # Display the plot
 plt.tight_layout()
 plt.show()
+
+
+
+# -----------------------------
+# 8. Plot confusion matrix files vs gold_dict 
+# -----------------------------
+
+
+def create_confusion_matrix(file, df_predicted_biomes):
+    df = load_and_process_file(file, df_predicted_biomes)
+    labels = ['animal', 'water', 'plant', 'soil', 'unknown']
+    # Generate confusion matrix
+    cm = confusion_matrix(df['biome'], df['gpt_generated_output_clean'], labels=labels)
+    return cm
+
+
+def plot_multiple_confusion_matrices(confusion_matrices):
+    # Determine the layout based on the number of matrices
+    num_matrices = len(confusion_matrices)
+    if num_matrices <= 2:
+        nrows, ncols = 1, num_matrices
+        title_font_size = 12  # Larger font for fewer matrices
+    else:
+        nrows = 2
+        ncols = (num_matrices + 1) // 2  # Round up if odd number of matrices
+        title_font_size = 8  # Smaller font for more matrices
+
+    fig, axes = plt.subplots(nrows, ncols, figsize=(10 * ncols, 8 * nrows))
+    axes = axes.flatten()  # Flatten in case of single row
+
+    # Plot each confusion matrix
+    for ax, (cm, classes, title) in zip(axes, confusion_matrices):
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=classes, yticklabels=classes, ax=ax)
+        wrapped_title = "\n".join(textwrap.wrap(title, 60))
+        ax.set_title(wrapped_title, fontsize=title_font_size)
+        ax.set_ylabel('Actual')
+        ax.set_xlabel('Predicted')
+
+    # Adjust layout
+    plt.tight_layout()
+    plt.show()
+
+
+
+# # # # 
+
+
+# GPT vs gold_dict
+# Generate and plot confusion matrices for GPT files vs predicted
+confusion_matrices_gold_dict = []
+for file in selected_files:
+    cm = create_confusion_matrix(file, gold_dict_df)
+    classes = ['animal', 'water', 'plant', 'soil', 'unknown']  # Set the order of classes
+    confusion_matrices_gold_dict.append((cm, classes, os.path.basename(file)))
+plot_multiple_confusion_matrices(confusion_matrices_gold_dict)
+
+
+# # # # 
+
+
+# GPT vs Joao
+joao_biomes_path = os.path.join(work_dir, "joao_biomes_parsed.csv")
+
+joao_biomes_df = pd.read_csv(joao_biomes_path)
+joao_biomes_df['biome'] = joao_biomes_df['biome'].fillna('unknown').replace('aquatic', 'water').astype(str)
+joao_biomes_all = joao_biomes_df.copy()
+joao_biomes_high_confidence = joao_biomes_df[joao_biomes_df['confidence'] != 'low']
+print("Unique biomes in Joao's DataFrame:", joao_biomes_df['biome'].unique())
+
+# Generate and plot confusion matrices for GPT files vs predicted
+confusion_matrices_joao = []
+for file in selected_files:
+    cm = create_confusion_matrix(file, joao_biomes_all)    
+    classes = ['animal', 'water', 'plant', 'soil', 'unknown']  # Set the order of classes
+    confusion_matrices_joao.append((cm, classes, os.path.basename(file)))
+plot_multiple_confusion_matrices(confusion_matrices_joao)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
