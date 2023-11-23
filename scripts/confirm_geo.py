@@ -6,71 +6,11 @@ Created on Wed Nov 22 16:18:27 2023
 @author: dgaio
 """
 
-# =============================================================================
-# import os
-# import re
-# 
-# 
-# patterns = [
-#     r'[^a-zA-Z]lat[^a-zA-Z]\w*', # Matches surrounded by non-letter characters
-#     r'[^a-zA-Z]lon[^a-zA-Z]\w*',  
-#     r'[^a-zA-Z]latitude[^a-zA-Z]\w*',  
-#     r'[^a-zA-Z]longitude[^a-zA-Z]\w*',  
-#     r'[^a-zA-Z]coordinates[^a-zA-Z]\w*', 
-#     r'[^a-zA-Z]coordinate[^a-zA-Z]\w*',  
-#     r'[^a-zA-Z]location[^a-zA-Z]\w*',
-#     r'[^a-zA-Z]geograph\w*',  # Matches with non-letter characters left of the word
-#     r'[^a-zA-Z]geo\w*',
-# ]
-# 
-# 
-# 
-# def extract_coordinates(file_path):
-#     with open(file_path, 'r') as file:
-#         lines = file.readlines()
-# 
-#     sample_name = lines[0].strip()
-#     coordinate_lines = []
-# 
-#     for line in lines:
-#         if any(re.search(pattern, line, re.IGNORECASE) for pattern in patterns):
-#             coordinate_lines.append(f"{sample_name}\n{line.strip()}\n")
-# 
-#     return coordinate_lines
-# 
-# 
-# 
-# 
-# path_to_dirs = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs"
-# 
-# # Assuming the directories are named as 'dir_XXX'
-# dir_names = [name for name in os.listdir(path_to_dirs) if name.startswith('dir_80')]
-# 
-# output_file = path_to_dirs+"/samples_coordinates.txt"
-# 
-# with open(output_file, 'w') as outfile:
-#     for dir_name in dir_names:
-#         dir_path = os.path.join(path_to_dirs, dir_name)
-#         for filename in os.listdir(dir_path):
-#             if filename.endswith('.txt'):  # or other specific extension if needed
-#                 file_path = os.path.join(dir_path, filename)
-#                 coordinate_lines = extract_coordinates(file_path)
-#                 outfile.writelines(coordinate_lines)
-# 
-# 
-# 
-# # remove lines that do not contain any digit
-# # remove lines that are over n tokens? like abstracts? or extract to part of surrounding text
-# =============================================================================
-
-   
 
 import os
 import pickle
 import random
 import re
-
-
 
 
 path_to_dirs = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs"
