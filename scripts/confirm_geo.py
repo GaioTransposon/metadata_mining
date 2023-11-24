@@ -9,33 +9,22 @@ Created on Wed Nov 22 16:18:27 2023
 
 import os
 import pickle
+import pandas as pd
 import random
-import re
-
 
 path_to_dirs = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs"
 GOLD_DICT_PATH = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gold_dict.pkl"
+JOAO_BIOMES_PATH = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/joao_biomes_parsed.csv"
 
-
-
-patterns = [
-    r'[^a-zA-Z]lat[^a-zA-Z]\w*', # Matches surrounded by non-letter characters
-    r'[^a-zA-Z]lon[^a-zA-Z]\w*', 
-    r'[^a-zA-Z]geo[^a-zA-Z]\w*', 
-    r'[^a-zA-Z]latitude[^a-zA-Z]\w*',  
-    r'[^a-zA-Z]longitude[^a-zA-Z]\w*',  
-    r'[^a-zA-Z]coordinates[^a-zA-Z]\w*', 
-    r'[^a-zA-Z]coordinate[^a-zA-Z]\w*',  
-    r'[^a-zA-Z]location[^a-zA-Z]\w*',
-    r'[^a-zA-Z]geograph\w*',  # Matches with non-letter characters left of the word
-    r'[^a-zA-Z]geo\w*',
-]
-
-
+# Load the CSV file
+joao_biomes_df = pd.read_csv(JOAO_BIOMES_PATH)
+# Filter out rows with NaN coordinates
+joao_biomes_df = joao_biomes_df.dropna(subset=['coordinates'])
 
 def save_gold_data(gold_data, filename=GOLD_DICT_PATH):
     with open(filename, "wb") as f:
         pickle.dump(gold_data, f)
+
 
 def update_gold_data(sample_id, coordinates, location_text, gold_data):
     gold_dict, processed_pmids = gold_data
@@ -47,20 +36,14 @@ def update_gold_data(sample_id, coordinates, location_text, gold_data):
     )
     save_gold_data(gold_data)
 
-    
-# Utility to fetch metadata from folders
+
 def fetch_metadata_from_sample(sample):
     folder_name = f"dir_{sample[-3:]}"
     folder_path = os.path.join(path_to_dirs, folder_name)  
     metadata_file_path = os.path.join(folder_path, f"{sample}_clean.txt")
 
-    relevant_lines = []
     with open(metadata_file_path, 'r') as f:
-        for line in f:
-            if any(re.search(pattern, line, re.IGNORECASE) for pattern in patterns):
-                relevant_lines.append(line.strip())
-
-    return '\n'.join(relevant_lines)
+        return f.read()
 
 
 def display_biome_stats(gold_dict):
@@ -85,6 +68,10 @@ def play_game(gold_data):
         'p': 'plant',
         's': 'soil'
     }
+    
+    # Filter gold_dict samples based on joao_biomes_df
+    filtered_samples = set(joao_biomes_df['sample'])
+    gold_dict = {k: v for k, v in gold_dict.items() if k in filtered_samples}
 
     biome_input = input("\nWhich biome do you want to focus on? (a for animal, w for water, p for plant, s for soil, q to quit): ").lower()
     if biome_input == 'q':
@@ -129,7 +116,6 @@ def play_game(gold_data):
 
 
 
-
 # Code to initiate the game
 try:
     with open(GOLD_DICT_PATH, "rb") as f:
@@ -138,7 +124,6 @@ except (FileNotFoundError, EOFError):
     gold_data = ({}, set())
 
 play_game(gold_data)
-
 
 
 
