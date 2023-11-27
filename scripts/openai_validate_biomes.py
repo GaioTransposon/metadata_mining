@@ -298,7 +298,7 @@ class GPTInteractor:
             messages=[
                 {
                     "role": "system",
-                    "content": "Based on the metadata texts below, you have to guess where the sample each metadata text is based on, come from. Your choices are are: 'animal' (includes human), 'plant', 'water', 'soil'. Report the sample ID each time and the answer (strictly 1-word answer for each sample ID)."
+                    "content": "Based on the metadata texts below, you have to guess where the sample each metadata text is based on, comes from. Your choices are are: 'animal' (includes human), 'plant', 'water', 'soil'. Report the sample ID each time and the answer (strictly 1-word answer for each sample ID)."
                 },
                 {
                     "role": "user",
@@ -644,10 +644,20 @@ if __name__ == "__main__":
 # presence penalty: 0.0 vs 0.50 vs 1.00 vs 1.50 vs 2.0
 
 
+# 2023127 (14:15)
+# gpt-4 vs gpt-3.5-turbo-16k-0613
+# 200 samples per biome 
+# chunk_size: 1200
+# temperatures: 1.00
+# top_p: 0.75
+# frequency_penalty: 0.25
+# presence penalty: 1.50
+
+
 # python /Users/dgaio/github/metadata_mining/scripts/openai_validate_biomes.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 2 \
+#     --n_samples_per_biome 200 \
 #     --chunk_size 1200 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \

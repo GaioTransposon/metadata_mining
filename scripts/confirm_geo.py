@@ -58,8 +58,6 @@ def display_biome_stats(gold_dict):
         print(f"{biome.capitalize()}: {count}")
 
 
-
-
 def play_game(gold_data):
     gold_dict, _ = gold_data
     biome_mapping = {
@@ -68,12 +66,13 @@ def play_game(gold_data):
         'p': 'plant',
         's': 'soil'
     }
-    
+
     # Filter gold_dict samples based on joao_biomes_df
     filtered_samples = set(joao_biomes_df['sample'])
     gold_dict = {k: v for k, v in gold_dict.items() if k in filtered_samples}
 
     biome_input = input("\nWhich biome do you want to focus on? (a for animal, w for water, p for plant, s for soil, q to quit): ").lower()
+    
     if biome_input == 'q':
         display_biome_stats(gold_dict)
         print("Exiting game...")
@@ -91,9 +90,6 @@ def play_game(gold_data):
 
     while True:
         sample = random.choice(biome_samples)
-        
-        # Print the sample ID before fetching the metadata
-        print(f"\n>{sample}")
         metadata = fetch_metadata_from_sample(sample)
         print(metadata)
 
@@ -110,9 +106,16 @@ def play_game(gold_data):
         update_gold_data(sample, coordinates, location_text, gold_data)
         print("Information saved successfully.")
 
-    display_biome_stats(gold_dict)
-    print("Exiting game...")
+    # Save and reload the gold_dict before displaying stats
+    save_gold_data(gold_data)
+    try:
+        with open(GOLD_DICT_PATH, "rb") as f:
+            gold_data = pickle.load(f)
+            display_biome_stats(gold_data[0])
+    except (FileNotFoundError, EOFError):
+        print("Error in loading the updated gold data.")
 
+    print("Exiting game...")
 
 
 
@@ -124,6 +127,12 @@ except (FileNotFoundError, EOFError):
     gold_data = ({}, set())
 
 play_game(gold_data)
+
+
+
+
+
+
 
 
 

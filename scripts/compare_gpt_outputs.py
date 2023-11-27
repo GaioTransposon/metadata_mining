@@ -223,7 +223,7 @@ custom_palette = {
     'water': '#8ADAE1',
     'plant': '#BCD279',
     'soil': '#DECE8A',
-    'unknown': '#B2BEB5'
+    'unknown':'#B2BEB5'
 }
 
 
@@ -249,6 +249,8 @@ bar_plot.set_xticklabels(wrapped_labels)  # Adjust rotation and alignment as nee
 n_biomes = agreement_df['biome'].nunique()
 bar_width = 0.8 / n_biomes
 
+
+
 for index, row in agreement_df.iterrows():
     # Extract relevant data
     label = row['label']
@@ -256,11 +258,15 @@ for index, row in agreement_df.iterrows():
     percentage = row['agreement_percentage']
     samples = row['total_samples']
 
+    
+    
     # Calculate the bar's x position
     label_position = order.index(label)  # Use the 'order' list for label positions
     biome_position = list(custom_palette.keys()).index(biome)
     bar_position = label_position - 0.4 + bar_width/2 + biome_position * bar_width
 
+    print(f"Label: {label}, Biome: {biome}, Position: {bar_position}")
+    
     # Annotation for the percentage
     bar_plot.annotate(f"{percentage:.1f}%", 
                       (bar_position, percentage + 2), 
@@ -276,8 +282,6 @@ for index, row in agreement_df.iterrows():
 
 plt.tight_layout()
 plt.show()
-
-
 
 
 
@@ -305,9 +309,22 @@ overall_agreement_df['label'] = sorted(overall_agreement_df['label'], key=custom
 # -----------------------------
 # 7. Plotting & Visualization for Overall Plot
 # -----------------------------
+
+
+# Function to extract numeric value from the label
+def extract_number(label):
+    number = re.findall(r'\d+', label)
+    return int(number[0]) if number else 0
+
+# Add a numeric column for sorting
+overall_agreement_df['numeric_label'] = overall_agreement_df['label'].apply(extract_number)
+
+# Sort the DataFrame based on the numeric label
+overall_agreement_df.sort_values('numeric_label', inplace=True)
+
+# Create the bar plot
 plt.figure(figsize=(10, 6))
 sns.set_style("whitegrid")
-
 bar_plot = sns.barplot(data=overall_agreement_df, x='label', y='agreement_percentage', palette="viridis", errorbar=None)
 
 # Adjust legend, title, and axis labels
@@ -339,19 +356,22 @@ plt.tight_layout()
 plt.show()
 
 
-
 # -----------------------------
 # 8. Plot confusion matrix files vs gold_dict 
 # -----------------------------
 
-
 def create_confusion_matrix(file, df_predicted_biomes):
     df = load_and_process_file(file, df_predicted_biomes)
     labels = ['animal', 'water', 'plant', 'soil', 'unknown']
+
     # Generate confusion matrix
     cm = confusion_matrix(df['biome'], df['gpt_generated_output_clean'], labels=labels)
-    return cm
 
+    # Calculate counts for each category
+    actual_counts = df['biome'].value_counts().reindex(labels, fill_value=0)
+    predicted_counts = df['gpt_generated_output_clean'].value_counts().reindex(labels, fill_value=0)
+
+    return cm, actual_counts, predicted_counts
 
 def plot_multiple_confusion_matrices(confusion_matrices):
     # Determine the layout based on the number of matrices
@@ -368,8 +388,10 @@ def plot_multiple_confusion_matrices(confusion_matrices):
     axes = axes.flatten()  # Flatten in case of single row
 
     # Plot each confusion matrix
-    for ax, (cm, classes, title) in zip(axes, confusion_matrices):
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=classes, yticklabels=classes, ax=ax)
+    for ax, (cm, actual_counts, predicted_counts, title) in zip(axes, confusion_matrices):
+        xticklabels = [f'{label} ({predicted_counts[label]})' for label in actual_counts.index]
+        yticklabels = [f'{label} ({actual_counts[label]})' for label in predicted_counts.index]
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=xticklabels, yticklabels=yticklabels, ax=ax)
         wrapped_title = "\n".join(textwrap.wrap(title, 60))
         ax.set_title(wrapped_title, fontsize=title_font_size)
         ax.set_ylabel('Actual')
@@ -380,22 +402,13 @@ def plot_multiple_confusion_matrices(confusion_matrices):
     plt.show()
 
 
-
-# # # # 
-
-
 # GPT vs gold_dict
-# Generate and plot confusion matrices for GPT files vs predicted
 confusion_matrices_gold_dict = []
 for file in selected_files:
-    cm = create_confusion_matrix(file, gold_dict_df)
-    classes = ['animal', 'water', 'plant', 'soil', 'unknown']  # Set the order of classes
-    confusion_matrices_gold_dict.append((cm, classes, os.path.basename(file)))
+    cm, actual_counts, predicted_counts = create_confusion_matrix(file, gold_dict_df)
+    title = os.path.basename(file)
+    confusion_matrices_gold_dict.append((cm, actual_counts, predicted_counts, title))
 plot_multiple_confusion_matrices(confusion_matrices_gold_dict)
-
-
-# # # # 
-
 
 # GPT vs Joao
 joao_biomes_path = os.path.join(work_dir, "joao_biomes_parsed.csv")
@@ -404,14 +417,12 @@ joao_biomes_df = pd.read_csv(joao_biomes_path)
 joao_biomes_df['biome'] = joao_biomes_df['biome'].fillna('unknown').replace('aquatic', 'water').astype(str)
 joao_biomes_all = joao_biomes_df.copy()
 joao_biomes_high_confidence = joao_biomes_df[joao_biomes_df['confidence'] != 'low']
-print("Unique biomes in Joao's DataFrame:", joao_biomes_df['biome'].unique())
 
-# Generate and plot confusion matrices for GPT files vs predicted
 confusion_matrices_joao = []
 for file in selected_files:
-    cm = create_confusion_matrix(file, joao_biomes_all)    
-    classes = ['animal', 'water', 'plant', 'soil', 'unknown']  # Set the order of classes
-    confusion_matrices_joao.append((cm, classes, os.path.basename(file)))
+    cm, actual_counts, predicted_counts = create_confusion_matrix(file, joao_biomes_all)
+    title = os.path.basename(file)
+    confusion_matrices_joao.append((cm, actual_counts, predicted_counts, title))
 plot_multiple_confusion_matrices(confusion_matrices_joao)
 
 
@@ -420,8 +431,65 @@ plot_multiple_confusion_matrices(confusion_matrices_joao)
 
 
 
+# -----------------------------
+# Step 1: Extract Samples from the Chosen GPT File
+# -----------------------------
+
+chosen_file = selected_files[2]  # You can modify this to select a specific file
+
+df_chosen = pd.read_csv(chosen_file)
+chosen_samples = set(df_chosen['sample'])
 
 
+# -----------------------------
+# Step 2: Load Joao's Biomes Data
+# -----------------------------
+joao_biomes_path = os.path.join(work_dir, "joao_biomes_parsed.csv")
+joao_biomes_df = pd.read_csv(joao_biomes_path)
+joao_biomes_df['biome'] = joao_biomes_df['biome'].fillna('unknown').replace('aquatic', 'water').astype(str)
+
+
+# -----------------------------
+# Step 3: Filter Joao's and Gold Dict Biomes Dataframes
+# -----------------------------
+filtered_joao_df = joao_biomes_df[joao_biomes_df['sample'].isin(chosen_samples)]
+filtered_gold_dict_df = gold_dict_df[gold_dict_df['sample'].isin(chosen_samples)]
+
+
+# -----------------------------
+# Step 4: Function for Comparing Two Biome Datasets with Sample Sums
+# -----------------------------
+def create_and_plot_confusion_matrix(df_joao, df_gold_dict):
+    # Merge the two dataframes on the common 'sample' column
+    merged_df = df_joao.merge(df_gold_dict, on='sample', suffixes=('_joao', '_gold'))
+    
+    # Define the labels for the confusion matrix
+    labels = ['animal', 'water', 'plant', 'soil', 'unknown']
+
+    # Count the number of samples for each biome in both datasets
+    joao_counts = merged_df['biome_joao'].value_counts().reindex(labels, fill_value=0)
+    gold_dict_counts = merged_df['biome_gold'].value_counts().reindex(labels, fill_value=0)
+
+    # Generate the confusion matrix
+    cm = confusion_matrix(merged_df['biome_gold'], merged_df['biome_joao'], labels=labels)
+
+    # Create labels with sample counts
+    xticklabels = [f'{label} ({joao_counts[label]})' for label in labels]
+    yticklabels = [f'{label} ({gold_dict_counts[label]})' for label in labels]
+
+    # Plot the confusion matrix
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=xticklabels, yticklabels=yticklabels)
+    plt.title('Confusion Matrix: Gold Dict Biomes vs Joao\'s Biomes')
+    plt.ylabel('Gold Dict Biomes')
+    plt.xlabel('Joao\'s Biomes')
+    plt.show()
+
+
+# -----------------------------
+# Step 5: Create and Plot the Confusion Matrix
+# -----------------------------
+create_and_plot_confusion_matrix(filtered_joao_df, filtered_gold_dict_df)
 
 
 
