@@ -66,7 +66,7 @@ def play_game(gold_data):
     while True:
         biome_input = input("\nWhich biome do you want to focus on? (a for animal, w for water, p for plant, s for soil, q to quit): ").lower()
 
-        if biome_input == 'q':
+        if biome_input == 'q':da
             display_biome_stats(gold_dict)
             print("Exiting game...")
             break
