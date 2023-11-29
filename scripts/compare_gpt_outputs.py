@@ -19,6 +19,7 @@ import seaborn as sns
 from sklearn.metrics import confusion_matrix
 import numpy as np
 import textwrap
+import seaborn as sns
 
 # -----------------------------
 # 2. Function Definitions
@@ -182,9 +183,36 @@ labels = sorted(labels, key=custom_sort)
 print('Distinguishing features of GPT files are: ', labels)
 
 
-# -----------------------------------
-# Find common samples among all files
-# -----------------------------------
+
+# -----------------------------
+# 6. Dataframe Processing & Agreement Calculation for Overall Plot (All Samples)
+# -----------------------------
+# Creating a dataframe for the overall agreement and sample size per label (all samples)
+overall_agreement_df_all = pd.DataFrame(columns=['label', 'agreement_percentage', 'total_samples'])
+
+# Create a list of tuples mapping each file to its label
+file_label_mapping = [(file, extract_labels_from_filename(file, distinguishing_features)) for file in selected_files]
+
+# Sort the mapping based on labels
+file_label_mapping.sort(key=lambda x: custom_sort(x[1]))
+
+# Use the mapping for data processing
+for file, label in file_label_mapping:
+    processed_df = load_and_process_file(file, gold_dict_df)  # No common samples filter applied
+    agreement, samples = calculate_agreement(processed_df)
+    new_row = pd.DataFrame({
+        'label': [label],
+        'agreement_percentage': [agreement],
+        'total_samples': [samples]
+    })
+    overall_agreement_df_all = pd.concat([overall_agreement_df_all, new_row], ignore_index=True)
+
+
+
+# -----------------------------
+# 6. Dataframe Processing & Agreement Calculation for Overall Plot (common samples)
+# -----------------------------
+
 all_samples = []
 for file in selected_files:
     temp_df = pd.read_csv(file)
@@ -193,167 +221,114 @@ for file in selected_files:
 common_samples = set.intersection(*all_samples)
 
 
-# Filter the processed DataFrames to keep only common samples
+# Initialize the dataframe for overall agreement (common samples only)
+overall_agreement_df_common = pd.DataFrame(columns=['label', 'agreement_percentage', 'total_samples'])
+
+
 def filter_common_samples(df, common_samples):
     return df[df['sample'].isin(common_samples)]
 
-agreement_df = pd.DataFrame(columns=['label', 'biome', 'agreement_percentage'])
-# Now, in your existing loop in section #6, apply this filter:
-for file, label in zip(selected_files, labels):
+
+# Use the mapping for data processing with common samples filter
+for file, label in file_label_mapping:
     processed_df = load_and_process_file(file, gold_dict_df)
-    processed_df = filter_common_samples(processed_df, common_samples)
-    biome_agreement = processed_df.groupby('biome').apply(lambda x: calculate_agreement(x)).reset_index()
-    biome_agreement['agreement_percentage'] = biome_agreement[0].apply(lambda x: x[0])
-    biome_agreement['total_samples'] = biome_agreement[0].apply(lambda x: x[1])
-    biome_agreement.drop(columns=0, inplace=True)
-    biome_agreement['label'] = label
-    agreement_df = pd.concat([agreement_df, biome_agreement], ignore_index=True)
-
-
-# Sort the dataframe by label
-agreement_df = agreement_df.sort_values(by='label')
-
-
-# -----------------------------
-# 7. Plotting & Visualization
-# -----------------------------
-
-custom_palette = {
-    'animal': '#E28989',
-    'water': '#8ADAE1',
-    'plant': '#BCD279',
-    'soil': '#DECE8A',
-    'unknown':'#B2BEB5'
-}
-
-
-
-plt.figure(figsize=(10, 8))
-sns.set_style("whitegrid")
-order = labels
-hue_order = ['animal', 'water', 'plant', 'soil', 'unknown']  # Include 'unknown' here
-bar_plot = sns.barplot(data=agreement_df, x='label', y='agreement_percentage', hue='biome',
-                       palette=custom_palette, errorbar=None, order=order, hue_order=hue_order)
-
-# Adjust legend, title, and axis labels
-bar_plot.legend(title='Biome', loc='upper left', bbox_to_anchor=(1, 1))
-bar_plot.set_title('Agreement percentage per label per biome')
-bar_plot.set_ylabel('Agreement (%)')
-bar_plot.set_ylabel('')
-
-# Set custom x-axis labels with wrapped text
-wrapped_labels = ['\n'.join(textwrap.wrap(label, 30)) for label in labels]  # Adjust wrap length as needed
-bar_plot.set_xticklabels(wrapped_labels)  # Adjust rotation and alignment as needed
-
-# Annotate bars with agreement percentage and total samples
-n_biomes = agreement_df['biome'].nunique()
-bar_width = 0.8 / n_biomes
-
-
-
-for index, row in agreement_df.iterrows():
-    # Extract relevant data
-    label = row['label']
-    biome = row['biome']
-    percentage = row['agreement_percentage']
-    samples = row['total_samples']
-
-    
-    
-    # Calculate the bar's x position
-    label_position = order.index(label)  # Use the 'order' list for label positions
-    biome_position = list(custom_palette.keys()).index(biome)
-    bar_position = label_position - 0.4 + bar_width/2 + biome_position * bar_width
-
-    print(f"Label: {label}, Biome: {biome}, Position: {bar_position}")
-    
-    # Annotation for the percentage
-    bar_plot.annotate(f"{percentage:.1f}%", 
-                      (bar_position, percentage + 2), 
-                      ha='center', va='center',
-                      fontsize=12)
-
-    # Annotation for the sample size
-    bar_plot.annotate(f"n = {samples}", 
-                      (bar_position, percentage - 5), 
-                      ha='center', va='center',
-                      fontsize=10, color='black')
-
-
-plt.tight_layout()
-plt.show()
-
-
-
-# -----------------------------
-# 6. Dataframe Processing & Agreement Calculation for Overall Plot
-# -----------------------------
-# Creating a dataframe for the overall agreement and sample size per label
-overall_agreement_df = pd.DataFrame(columns=['label', 'agreement_percentage', 'total_samples'])
-
-for file, label in zip(selected_files, labels):
-    processed_df = load_and_process_file(file, gold_dict_df)
-    processed_df = filter_common_samples(processed_df, common_samples)  # Apply common samples filter
-    agreement, samples = calculate_agreement(processed_df)
+    processed_df_common = filter_common_samples(processed_df, common_samples)  # Apply common samples filter
+    agreement, samples = calculate_agreement(processed_df_common)
     new_row = pd.DataFrame({
-        'label': [label], 
-        'agreement_percentage': [agreement], 
+        'label': [label],
+        'agreement_percentage': [agreement],
         'total_samples': [samples]
     })
-    overall_agreement_df = pd.concat([overall_agreement_df, new_row], ignore_index=True)
-
+    overall_agreement_df_common = pd.concat([overall_agreement_df_common, new_row], ignore_index=True)
 
 # Sort the dataframe by label
-overall_agreement_df['label'] = sorted(overall_agreement_df['label'], key=custom_sort)
+overall_agreement_df_common['label'] = sorted(overall_agreement_df_common['label'], key=custom_sort)
+
+
 
 # -----------------------------
-# 7. Plotting & Visualization for Overall Plot
+# 7. Plotting & Visualization for Overall Plot (all + common samples)
 # -----------------------------
 
+# Add a new column to each DataFrame to distinguish between 'All Samples' and 'Common Samples'
+overall_agreement_df_all['sample_type'] = 'all_samples'
+overall_agreement_df_common['sample_type'] = 'common_samples'
 
-# Function to extract numeric value from the label
+# Merge the two DataFrames
+combined_agreement_df = pd.concat([overall_agreement_df_all, overall_agreement_df_common])
+
+# Sort the combined dataframe by label
+combined_agreement_df.sort_values(by='label', inplace=True)
+
+combined_agreement_df['sub_label'] = combined_agreement_df.apply(lambda x: f"{x['agreement_percentage']:.2f}% \n(n={x['total_samples']})", axis=1)
+
+
+# -----------------------------
+# 8. Combined Plotting & Visualization
+# -----------------------------
+
+# Function to extract numeric value from the label: useful for sorting
 def extract_number(label):
     number = re.findall(r'\d+', label)
     return int(number[0]) if number else 0
 
 # Add a numeric column for sorting
-overall_agreement_df['numeric_label'] = overall_agreement_df['label'].apply(extract_number)
+combined_agreement_df['numeric_label'] = combined_agreement_df['label'].apply(extract_number)
 
 # Sort the DataFrame based on the numeric label
-overall_agreement_df.sort_values('numeric_label', inplace=True)
+combined_agreement_df.sort_values('numeric_label', inplace=True)
 
-# Create the bar plot
-plt.figure(figsize=(10, 6))
+
+
+plt.figure(figsize=(15, 8))
 sns.set_style("whitegrid")
-bar_plot = sns.barplot(data=overall_agreement_df, x='label', y='agreement_percentage', palette="viridis", errorbar=None)
+
+# Create a grouped bar plot
+bar_plot_combined = sns.barplot(data=combined_agreement_df, x='label', y='agreement_percentage', 
+                                hue='sample_type', palette="viridis")
 
 # Adjust legend, title, and axis labels
-bar_plot.set_title('Overall Agreement Percentage per Label')
-bar_plot.set_xlabel('Label')
-bar_plot.set_ylabel('Agreement Percentage')
+bar_plot_combined.set_title('Agreement Percentage per Label for All vs Common Samples')
+bar_plot_combined.set_ylabel('Agreement Percentage')
 
-# Annotate bars with agreement percentage and total samples
-for index, bar in enumerate(bar_plot.patches):
-    # Extract relevant data
-    label = overall_agreement_df.iloc[index]['label']
-    percentage = bar.get_height()
-    samples = overall_agreement_df.iloc[index]['total_samples']
+# Annotate bars with combined agreement percentage and total samples
+num_bars = len(combined_agreement_df['label'].unique())
+num_types = len(combined_agreement_df['sample_type'].unique())
 
-    # Annotation for the percentage
-    bar_plot.annotate(f"{percentage:.1f}%", 
-                      (bar.get_x() + bar.get_width() / 2, percentage + 2), 
-                      ha='center', va='center',
-                      fontsize=12)
+for index, p in enumerate(bar_plot_combined.patches):
+    height = p.get_height()
+    # Calculate the index of the data row that corresponds to this patch
+    data_row_index = (index % num_bars) * num_types + (index // num_bars)
+    label_row = combined_agreement_df.iloc[data_row_index]
+    annotation = label_row['sub_label']
 
-    # Annotation for the sample size
-    bar_plot.annotate(f"n = {samples}", 
-                      (bar.get_x() + bar.get_width() / 2, percentage - 5), 
-                      ha='center', va='center',
-                      fontsize=10, color='black')
+    bar_plot_combined.annotate(annotation, (p.get_x() + p.get_width() / 2, height), 
+                               ha='center', va='bottom', fontsize=10)
 
-# Display the plot
+plt.legend(title='Sample Type', loc='upper left')
 plt.tight_layout()
 plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # -----------------------------
@@ -435,7 +410,7 @@ plot_multiple_confusion_matrices(confusion_matrices_joao)
 # Step 1: Extract Samples from the Chosen GPT File
 # -----------------------------
 
-chosen_file = selected_files[2]  # You can modify this to select a specific file
+chosen_file = selected_files[3]  # You can modify this to select a specific file
 
 df_chosen = pd.read_csv(chosen_file)
 chosen_samples = set(df_chosen['sample'])
