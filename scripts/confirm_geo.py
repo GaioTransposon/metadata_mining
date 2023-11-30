@@ -58,6 +58,8 @@ def display_biome_stats(gold_dict):
         print(f"{biome.capitalize()}: {count}")
 
 
+
+
 def play_game(gold_data):
     gold_dict, _ = gold_data
     biome_mapping = {
@@ -84,13 +86,14 @@ def play_game(gold_data):
         print("Invalid option. Please choose a valid biome.")
         return
 
-    biome_samples = [sample for sample, data in gold_dict.items() if data[1] == selected_biome]
-    if not biome_samples:
-        print("No samples found for this biome.")
-        return
+    # Filter out samples that already have four values
+    biome_samples = {sample for sample, data in gold_dict.items() if data[1] == selected_biome and len(data) < 4}
 
-    while True:
-        sample = random.choice(biome_samples)
+    # Set to track samples handled in the current session
+    handled_samples = set()
+
+    while biome_samples - handled_samples:
+        sample = random.choice(list(biome_samples - handled_samples))
         metadata = fetch_metadata_from_sample(sample)
         print(metadata)
 
@@ -106,6 +109,9 @@ def play_game(gold_data):
 
         update_gold_data(sample, coordinates, location_text, gold_data)
         print("Information saved successfully.")
+
+        # Add the sample to the set of handled samples
+        handled_samples.add(sample)
 
     # Save and reload the gold_dict before displaying stats
     save_gold_data(gold_data)
