@@ -70,9 +70,9 @@ def play_game(gold_data):
         'u': 'unknown'
     }
 
-    # Filter gold_dict samples based on joao_biomes_df
-    filtered_samples = set(joao_biomes_df['sample'])
-    gold_dict = {k: v for k, v in gold_dict.items() if k in filtered_samples}
+    # # Filter gold_dict samples based on joao_biomes_df
+    # filtered_samples = set(joao_biomes_df['sample'])
+    # gold_dict = {k: v for k, v in gold_dict.items() if k in filtered_samples}
 
     biome_input = input("\nWhich biome do you want to focus on? (a for animal, w for water, p for plant, s for soil, u for unknown, q to quit): ").lower()
     

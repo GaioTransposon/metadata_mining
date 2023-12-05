@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Oct 12 15:41:38 2023
+Created on Tue Dec  5 17:00:38 2023
 
 @author: dgaio
 """
@@ -79,6 +79,7 @@ def setup_logging():
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
     logging.getLogger().addHandler(console_handler)
+
     
     
 
@@ -107,6 +108,11 @@ class MetadataProcessor:
         gold_dict_df = pd.DataFrame(input_gold_dict.items(), columns=['sample', 'tuple_data'])
         gold_dict_df['pmid'] = gold_dict_df['tuple_data'].apply(lambda x: x[0])
         gold_dict_df['curated_biome'] = gold_dict_df['tuple_data'].apply(lambda x: x[1])
+
+        # Check if geo_coordinates and geo_text exist in the tuple and extract them
+        gold_dict_df['geo_coordinates'] = gold_dict_df['tuple_data'].apply(lambda x: x[2] if len(x) > 2 else np.nan)
+        gold_dict_df['geo_text'] = gold_dict_df['tuple_data'].apply(lambda x: x[3] if len(x) > 3 else np.nan)
+
         gold_dict_df.drop(columns='tuple_data', inplace=True)
         return gold_dict_df
 
@@ -235,7 +241,7 @@ class MetadataProcessor:
         metadata_dict = self.process_metadata(random_samples)
         chunks = self.create_and_save_chunks(metadata_dict)
         return chunks
-
+    
 # =======================================================
 # PHASE 2: GPT Interaction
 # =======================================================
@@ -298,7 +304,12 @@ class GPTInteractor:
             messages=[
                 {
                     "role": "system",
-                    "content": "Based on the metadata texts below, you have to guess where the sample each metadata text is based on, comes from. Your choices are: 'animal' (includes human), 'plant', 'water', 'soil'. Report the sample ID each time and the answer (strictly 1-word answer for each sample ID)."
+                    "content": '''
+                    Based on the metadata texts below, you have to:
+                        1) guess where the sample each metadata text is based on, comes from. Your choices are: 'animal' (includes human), 'plant', 'water', 'soil'. Give strictly 1-word answer for each sample ID.
+                        2) extract the location in terms of coordinates, and in terms of text. When info is not available, write 'NA'. 
+                        All values separated by '__'. An example of the answer for a sample: SRS123456__animal__12.37 N 1.51 W__Burkina Faso
+                    '''
                 },
                 {
                     "role": "user",
@@ -407,14 +418,18 @@ class GPTInteractor:
         gpt_responses = self.interact_with_gpt(content_strings, chunk_tokens)  # Pass chunk_tokens here
         logging.info("Finished interaction with GPT.")
         
-        self.save_gpt_responses_to_file(gpt_responses)
-        
+        self.save_gpt_responses_to_file(gpt_responses) 
+    
 
 # =======================================================
 # PHASE 3: GPT Output Parsing
 # =======================================================
 
 
+
+# =======================================================
+# PHASE 3: GPT Output Parsing
+# =======================================================
 class GPTOutputParsing:
 
     def __init__(self, interactor_instance):
@@ -427,7 +442,7 @@ class GPTOutputParsing:
         if self.filepath:
             try:
                 with open(self.filepath, 'r') as file:
-                    return file.readlines()  
+                    return file.read().splitlines()  
             except FileNotFoundError:
                 logging.error(f"File '{self.filepath}' not found.")
                 return None
@@ -438,76 +453,38 @@ class GPTOutputParsing:
             logging.error("No filepath provided.")
             return None
 
-    def check_keyword_mentions(self):
-        keywords = ['animal', 'soil', 'water', 'plant', 'human']
-        total_count = sum(line.lower().count(keyword) for line in self.raw_content for keyword in keywords)
-        logging.info(f"Total count of keyword mentions: {total_count}")
-        return total_count
-
     def parse_samples(self):
         result = {}
-        sample_id_pattern = re.compile(r'(SRS|ERS|DRS)\d+')
-        buffer = None
-        text = ''   # Initialize the text variable here
+        pattern = re.compile(r'(SRS|ERS|DRS)\d+__\w+__.*?__.*')
         
         for line in self.raw_content:
-            id_match = sample_id_pattern.search(line)
-            if id_match:
-                if buffer:
-                    result[buffer] = text.strip()
-                buffer = id_match.group()
-                text = line[id_match.end():]
-            elif buffer:
-                text += ' ' + line
-
-        if buffer:
-            result[buffer] = text.strip()
+            match = pattern.match(line)
+            if match:
+                parts = line.split('__')
+                if len(parts) == 4:
+                    sample_id, biome, coordinates, location = parts
+                    result[sample_id] = {
+                        'biome': biome,
+                        'geo_coordinates': coordinates,
+                        'geo_text': location
+                    }
 
         return result
 
-    def check_missing_samples(self, parsed_data):
-        def extract_all_sample_ids():
-            sample_id_pattern = re.compile(r'(SRS|ERS|DRS)\d+')
-            return set(m.group() for line in self.raw_content for m in [sample_id_pattern.search(line)] if m)
-        
-        all_sample_ids = extract_all_sample_ids()
-        missing_samples = all_sample_ids - set(parsed_data.keys())
-        num_missing = len(missing_samples)
-        logging.info(f"Number of samples we lost in the parsing: {num_missing} ({missing_samples if num_missing > 0 else 'None'})")
-        return missing_samples
-
     def prepare_dataframe(self, parsed_data_dict):
-        parsed_data = pd.DataFrame(list(parsed_data_dict.items()), columns=['sample', 'gpt_generated_output_raw'])
+        return pd.DataFrame.from_dict(parsed_data_dict, orient='index').reset_index().rename(columns={'index': 'sample'})
 
-        def extract_clean_output(raw_output):
-            raw_output_lower = raw_output.lower()
-            for keyword in ['plant', 'animal', 'soil', 'water']:
-                if keyword in raw_output_lower:
-                    return keyword
-            if 'human' in raw_output_lower:
-                return 'animal'
-            return None
-
-        parsed_data['gpt_generated_output_clean'] = parsed_data['gpt_generated_output_raw'].apply(extract_clean_output)
-        self.parsed_data = parsed_data
-        return parsed_data
-    
     def save_cleaned_to_file(self):
-        # Modify the filename to switch from 'raw' to 'clean'
         self.clean_filename = self.filepath.replace('gpt_raw_output', 'gpt_clean_output')
-    
-        # Save the dataframe to CSV format
         self.parsed_data.to_csv(self.clean_filename, index=False)
         logging.info(f"Saved clean GPT output to: {self.clean_filename}")
         
     def run(self):
-        self.check_keyword_mentions()
         parsed_samples = self.parse_samples()
-        self.check_missing_samples(parsed_samples)
-        df = self.prepare_dataframe(parsed_samples)
+        self.parsed_data = self.prepare_dataframe(parsed_samples)
         self.save_cleaned_to_file()
-        return df
-    
+        return self.parsed_data
+
 
 # =======================================================
 # Main Execution
@@ -533,127 +510,12 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# # calling the script: 
-# python /Users/dgaio/github/metadata_mining/scripts/openai_validate_biomes.py \
-#     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
-#     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
-#     --chunk_size 500 \
-#     --seed 42 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --api_key_path "/Users/dgaio/my_api_key" \
-#     --model "gpt-3.5-turbo-16k-0613" \
-#     --temperature 0.25 \
-#     --top_p 0.75 \
-#     --frequency_penalty 0 \
-#     --presence_penalty 0 
-
-
-# 20231012
-# Temperatures: 0.0 0.25 0.5 0.75 1.0
-# 10 samples per biome
-
-# 20231013
-# Temperatures: 0.0 0.25 0.5 0.75 1.0
-# 40 samples per biome
-# Cost: 
-# prompt: 283170  $0.84951
-# completion: 7750  $0.031
-
-# 20231013
-# Temperatures: 0.0 0.25 0.5 0.75 1.0
-# 100 samples per biome --> 71 requests per temperature = 71*5 = 355
-# 1 request = 1 chunk = 1000 tokens max (excl. sys prompt)
-# 0.0 ; df rows: 398
-# 0.25 ; df rows: 397
-# 0.50 ; df rows: 398
-# 0.75 ; df rows: 398
-# 1.0 ; df rows: 395
-
-# 20231016
-# gpt-4 vs gpt-3.5-turbo-16k-0613
-# 10 samples per biome (7 requests each model)
-
-# 20231017 (before 13:30)
-# gpt-4 vs gpt-3.5-turbo-16k-0613 (now corrected for case sensitivity)
-# 10 samples per biome (7 requests each model)
-
-# 20231017 (15:28 and 15:17 and 15:15)
-# gpt-3.5-turbo-16k-0613: 1000 vs 500 vs 250 tokens chunks 
-# 10 samples per biome
-
-# 20231017 (16:07, 16:09, 16:13)
-# gpt-3.5-turbo-16k-0613: 1000 vs 500 vs 250 tokens chunks 
-# 20 samples per biome (81 requests * 3 = 243)
-# tot input prompt tokens: 109644
-# tot output prompt tokens: 4453 
-
-
-# 20231018 (17:36)
-# gpt-3.5-turbo-16k-0613: 
-# 40 samples per biome 
-# chunk_size: 300 vs 500 vs 700 vs 1000 vs 1400 vs 2100
-# Number of chunks:  54 vs 41 vs 34 vs 23 vs 16 vs 10 = tot 178
-# maximum # items in a chunk: 6 vs 8 vs 10 vs 12 vs 17 vs 25
-# output rows: 145 vs 154 vs 158 vs 160 vs 156 vs 152
-# tot input prompt tokens: 316199/1000*0.003= $0.948597
-# tot output prompt tokens: 8533/1000*0.004= $0.03413
-
-# 20231019 (16:00)
-# gpt-3.5-turbo-16k-0613: 
-# 200 samples per biome 
-# chunk_size: 300 vs 500 vs 700 vs 1000 vs 1400 vs 2100 vs 3000
-# tot input prompt tokens: 2037963/1000*0.003= $6.113889
-# tot output prompt tokens: 52231/1000*0.004= $0.208924
-
-# 20231023 (13:00)
-# gpt-3.5-turbo-16k-0613: 
-# 200 samples per biome 
-# chunk_size: 1200
-# temperatures: 0.0 0.25 0.50 0.75 1.00 1.25 1.50 1.75 2.00
-# tot input prompt tokens: 2489771/1000*0.003= $7.469
-# tot output prompt tokens: 59273/1000*0.004= $0.237
-
-# 20231024 (13:45)
-# gpt-3.5-turbo-16k-0613: 
-# 200 samples per biome 
-# chunk_size: 1200
-# temperatures: 1.00
-# top_p: 0.0 vs 0.25 vs 0.50 vs 0.75 vs 1.0
-# tot input prompt tokens: .../1000*0.003= $..
-# tot output prompt tokens: .../1000*0.004= $...
-
-# 20231025 (17:26) + 202310126 (before 14:00)
-# gpt-3.5-turbo-16k-0613: 
-# 200 samples per biome 
-# chunk_size: 1200
-# temperatures: 1.00
-# top_p: 0.75
-# frequency_penalty: 0.0 vs 0.25 vs 0.50 vs 0.75 vs 1.0
-
-# 20231026 (14:15)
-# gpt-3.5-turbo-16k-0613: 
-# 200 samples per biome 
-# chunk_size: 1200
-# temperatures: 1.00
-# top_p: 0.75
-# frequency_penalty: 0.25
-# presence penalty: 0.0 vs 0.50 vs 1.00 vs 1.50 vs 2.0
-
-# 2023127 (14:15)
-# gpt-4 vs gpt-3.5-turbo-16k-0613
-# 200 samples per biome 
-# chunk_size: 1200
-# temperatures: 1.00
-# top_p: 0.75
-# frequency_penalty: 0.25
-# presence penalty: 1.50
-
-# 2023129 (14:00)
+    
+    
+    
+# 20231205 (17:20)
 # gpt-3.5-turbo-1106
-# 200 samples per biome 
+# 4 samples per biome 
 # chunk_size: 1200
 # temperatures: 1.00
 # top_p: 0.75
@@ -661,10 +523,10 @@ if __name__ == "__main__":
 # presence penalty: 1.50
 
 
-# python /Users/dgaio/github/metadata_mining/scripts/openai_validate_biomes.py \
+# python /Users/dgaio/github/metadata_mining/scripts/openai_validate_biomes_geo.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
+#     --n_samples_per_biome 2 \
 #     --chunk_size 1200 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
@@ -674,8 +536,4 @@ if __name__ == "__main__":
 #     --top_p 0.75 \
 #     --frequency_penalty 0.25 \
 #     --presence_penalty 1.5
-
-
-
-
-
+    
