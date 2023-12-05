@@ -66,7 +66,7 @@ def process_file(file_path, modified_ontology_dict, log_file_path):
             for line in file:
                 original_line = line  # Keep the original line for logging purposes
                 line_lower = line.lower().strip()
-                rejection_endings = ("=", "nan", "not applicable", "missing", " na", " na\n")
+                rejection_endings = ("=", "nan", "not applicable", "missing", " na", " na\n", "not collected")
 
                 # Check if the line should be rejected
                 if line_lower.endswith(rejection_endings) or line_lower.startswith(("experiment", "run")):
