@@ -555,15 +555,15 @@ if __name__ == "__main__":
 
 
 
+
 # =============================================================================
-# 
 # 
 # import pandas as pd
 # import matplotlib.pyplot as plt
 # 
 # 
 # # Load the first DataFrame
-# gpt_output_df = pd.read_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gpt_clean_output_nspb20_chunksize1200_modelgpt-3.5-turbo-1106_temp1.0_topp0.75_freqp0.25_presp1.5_dt20231205_1733.txt')
+# gpt_output_df = pd.read_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gpt_clean_output_nspb20_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_dt20231206_1635.txt')
 # 
 # # Load the second DataFrame
 # joao_biomes_df = pd.read_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/joao_biomes_parsed.csv')
