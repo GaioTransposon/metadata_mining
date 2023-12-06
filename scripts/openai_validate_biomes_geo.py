@@ -421,10 +421,6 @@ class GPTInteractor:
         self.save_gpt_responses_to_file(gpt_responses) 
     
 
-# =======================================================
-# PHASE 3: GPT Output Parsing
-# =======================================================
-
 
 
 # =======================================================
@@ -526,7 +522,7 @@ if __name__ == "__main__":
 # python /Users/dgaio/github/metadata_mining/scripts/openai_validate_biomes_geo.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 2 \
+#     --n_samples_per_biome 20 \
 #     --chunk_size 1200 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
