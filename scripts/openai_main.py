@@ -49,11 +49,11 @@ def main():
     metadata_processor = MetadataProcessor(args.work_dir, args.input_gold_dict, args.n_samples_per_biome, args.chunk_size, args.system_prompt_file, args.encoding_name, args.seed, args.directory_with_split_metadata)
     
     
-    chunks = metadata_processor.run()
-
+    metadata_processor.run()
+    
     # Phase 2: GPT Interaction
-    gpt_interactor = GPTInteractor(args.work_dir, args.n_samples_per_biome, args.chunk_size, args.system_prompt_file, args.encoding_name, args.api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty)
-    gpt_interactor.run(chunks)
+    gpt_interactor = GPTInteractor(args.work_dir, args.n_samples_per_biome, args.chunk_size, args.system_prompt_file, args.api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty)
+    gpt_interactor.run()
 
     # Phase 3: Parsing GPT Output
     gpt_parser = GPTOutputParsing(gpt_interactor)
@@ -74,15 +74,15 @@ if __name__ == "__main__":
 # to get idea of how it counts tokens
 # 1 samples per biome 
 
-# 20231207 (13:35)
-# to get idea of how it counts tokens
-# 1 samples per biome 
+# 20231207 (18:22)
+# chunk size 1200
+# 40 samples per biome
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 1 \
-#     --chunk_size 1000 \
+#     --n_samples_per_biome 10 \
+#     --chunk_size 1200 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
 #     --system_prompt_file "openai_system_prompt.txt" \

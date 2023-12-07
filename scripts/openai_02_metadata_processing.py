@@ -123,8 +123,8 @@ class MetadataProcessor:
         except IOError:
             print(f"Error reading system prompt file '{prompt_file}'.")
             return None
-        
-        
+    
+    
     def save_chunks_to_file(self, chunks):
         current_time = datetime.now()
         formatted_time = current_time.strftime('%Y%m%d%H%M')
@@ -182,14 +182,14 @@ class MetadataProcessor:
             print([token_count for _, token_count in bin])
 
         # Create and save chunks
-        chunks = []
+        consolidated_chunks = []
         for bin in binned_samples:
             chunk = '\n~~~\n'.join(f"'sample_ID={sample_id}': '{metadata_dict[sample_id]}'" for sample_id, _ in bin)
-            chunks.append(chunk)
+            consolidated_chunks.append(chunk)
         
-        self.save_chunks_to_file(chunks)
-        return chunks
-
+        self.save_chunks_to_file(consolidated_chunks)
+        return consolidated_chunks
+    
 
     def run(self):
         gold_dict = self.load_gold_dict()
@@ -200,11 +200,9 @@ class MetadataProcessor:
         return chunks
     
 
-
-
-
-
-
+ 
+    
+    
 
 
 
