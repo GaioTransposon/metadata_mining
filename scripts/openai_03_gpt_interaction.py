@@ -21,10 +21,11 @@ import tiktoken
 
 class GPTInteractor:
    
-    def __init__(self, work_dir, n_samples_per_biome, chunk_size, api_key_path, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty):
+    def __init__(self, work_dir, n_samples_per_biome, chunk_size, system_prompt_file, api_key_path, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty):
         self.work_dir = work_dir
         self.n_samples_per_biome = n_samples_per_biome
         self.chunk_size = chunk_size
+        self.system_prompt_file = system_prompt_file
         self.api_key_path = api_key_path
         self.api_key = self.load_api_key()
         self.model = model
@@ -56,6 +57,7 @@ class GPTInteractor:
             #print(chunk)
             print("----")
         
+        print(content_strings)
         return content_strings, chunk_tokens
 
 
@@ -71,20 +73,34 @@ class GPTInteractor:
             print(f"Error reading file '{self.api_key_path}'.")
             return None
 
+        
+    def load_system_prompt(self):
+        """Load the system prompt from a text file."""
+        prompt_file = os.path.join(self.work_dir, self.system_prompt_file)
+        try:
+            with open(prompt_file, 'r') as file:
+                return file.read().strip()
+        except FileNotFoundError:
+            print(f"System prompt file '{prompt_file}' not found.")
+            return None
+        except IOError:
+            print(f"Error reading system prompt file '{prompt_file}'.")
+            return None
+        
     def gpt_request(self, content_string):
         openai.api_key = self.api_key
+        system_prompt = self.load_system_prompt()  # Load the system prompt
+
+        if not system_prompt:
+            print("System prompt is not available. Aborting request.")
+            return None
 
         return openai.ChatCompletion.create(
             model=self.model,
             messages=[
                 {
                     "role": "system",
-                    "content": '''
-                    Based on the metadata texts below, you have to:
-                        1) guess where the sample each metadata text is based on, comes from. Your choices are: 'animal' (includes human), 'plant', 'water', 'soil'. Give strictly 1-word answer for each sample ID.
-                        2) extract the location in terms of coordinates, and in terms of text. When info is not available, write 'NA'. 
-                        All values separated by '__'. An example of the answer for a sample: SRS123456__animal__12.37 N 1.51 W__Burkina Faso
-                    '''
+                    "content": system_prompt  # Use the loaded system prompt
                 },
                 {
                     "role": "user",
@@ -97,6 +113,7 @@ class GPTInteractor:
             frequency_penalty=self.frequency_penalty,
             presence_penalty=self.presence_penalty
         )
+
 
     def interact_with_gpt(self, content_strings, chunk_tokens):
         """
