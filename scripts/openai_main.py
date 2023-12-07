@@ -70,11 +70,14 @@ if __name__ == "__main__":
 # to get idea of how it counts tokens
 # 1 samples per biome 
 
+# 20231207 (13:35)
+# to get idea of how it counts tokens
+# 1 samples per biome 
 
-# python /Users/dgaio/github/metadata_mining/scripts/openai_05_main.py \
+# python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 20 \
+#     --n_samples_per_biome 1 \
 #     --chunk_size 2000 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \

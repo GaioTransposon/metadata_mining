@@ -12,7 +12,7 @@ import openai
 from datetime import datetime
 import time
 import logging
-from transformers import GPT2Tokenizer
+import tiktoken
 
 
 # =======================================================
@@ -36,14 +36,11 @@ class GPTInteractor:
         self.saved_filename = None  # This will store the filename once saved
 
 
-    def token_count(self, text):
-        """Return the number of tokens in the text (count tokens the BPE way)."""
-        # load tokenizer 
-        tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-        # Tokenize the text and count the tokens
-        tokens = tokenizer.tokenize(text)
+    def token_count(self, text, encoding_name="cl100k_base"):
+        """Return the number of tokens in the text using tiktoken."""
+        encoding = tiktoken.get_encoding(encoding_name)
+        tokens = encoding.encode(text)
         return len(tokens)
-    
     
     def consolidate_chunks_to_strings(self, chunks):
         content_strings = []
