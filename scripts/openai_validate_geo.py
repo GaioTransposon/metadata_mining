@@ -556,83 +556,112 @@ if __name__ == "__main__":
 
 
 
-# =============================================================================
-# 
-# import pandas as pd
-# import matplotlib.pyplot as plt
-# 
-# 
-# # Load the first DataFrame
-# gpt_output_df = pd.read_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gpt_clean_output_nspb20_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_dt20231206_1635.txt')
-# 
-# # Load the second DataFrame
-# joao_biomes_df = pd.read_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/joao_biomes_parsed.csv')
-# 
-# # Merge the DataFrames on 'sample'
-# df = pd.merge(gpt_output_df, joao_biomes_df, on='sample', how='inner')
-# 
-# # Handle missing values if necessary
-# # For example, you can fill NaN with a default value or leave them as is
-# 
-# # Display the merged DataFrame
-# print(df)
-# 
-# 
-# # Assuming df is your DataFrame
-# # Count of string 'NA'
-# count_string_na_geo_coordinates = (df['geo_coordinates'] == 'NA').sum()
-# count_string_na_coordinates = (df['coordinates'] == 'NA').sum()
-# 
-# # Count of NaN values
-# count_nan_geo_coordinates = df['geo_coordinates'].isna().sum()
-# count_nan_coordinates = df['coordinates'].isna().sum()
-# 
-# # Total count of 'NA' and NaN in each column
-# total_na_geo_coordinates = count_string_na_geo_coordinates + count_nan_geo_coordinates
-# total_na_coordinates = count_string_na_coordinates + count_nan_coordinates
-# 
-# print("Total 'NA' in geo_coordinates:", total_na_geo_coordinates)
-# print("Total 'NA' in coordinates:", total_na_coordinates)
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# # Count of string 'NA'
-# count_string_na_geo_coordinates = (df['geo_coordinates'] == 'NA').sum()
-# count_string_na_coordinates = (df['coordinates'] == 'NA').sum()
-# 
-# # Count of NaN values
-# count_nan_geo_coordinates = df['geo_coordinates'].isna().sum()
-# count_nan_coordinates = df['coordinates'].isna().sum()
-# 
-# # Total count of 'NA' and NaN in each column
-# total_na_geo_coordinates = count_string_na_geo_coordinates + count_nan_geo_coordinates
-# total_na_coordinates = count_string_na_coordinates + count_nan_coordinates
-# 
-# # Total count of non-'NA' and non-NaN values
-# total_non_na_geo_coordinates = len(df) - total_na_geo_coordinates
-# total_non_na_coordinates = len(df) - total_na_coordinates
-# 
-# # Data for plotting
-# categories = ['GPT_extracted_coordinates', 'old_coordinates']
-# na_counts = [total_na_geo_coordinates, total_na_coordinates]
-# non_na_counts = [total_non_na_geo_coordinates, total_non_na_coordinates]
-# 
-# # Create a bar plot
-# plt.bar(categories, non_na_counts, label='Non-NA Values')
-# plt.bar(categories, na_counts, bottom=non_na_counts, label='NA Values')
-# 
-# # Adding labels and title
-# 
-# plt.ylabel('Count')
-# plt.legend()
-# 
-# # Show the plot
-# plt.show()
-# 
-# =============================================================================
+
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib_venn import venn2
+
+
+# Load the first DataFrame
+gpt_output_df = pd.read_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gpt_clean_output_nspb40_chunksize1200_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_dt20231207_1823.txt')
+
+# Load the second DataFrame
+joao_biomes_df = pd.read_csv('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/joao_biomes_parsed.csv')
+
+# Merge the DataFrames on 'sample'
+df = pd.merge(gpt_output_df, joao_biomes_df, on='sample', how='inner')
+
+# Handle missing values if necessary
+# For example, you can fill NaN with a default value or leave them as is
+
+# Display the merged DataFrame
+print(df)
+
+
+# Assuming df is your DataFrame
+# Count of string 'NA'
+count_string_na_geo_coordinates = (df['geo_coordinates'] == 'NA').sum()
+count_string_na_coordinates = (df['coordinates'] == 'NA').sum()
+
+# Count of NaN values
+count_nan_geo_coordinates = df['geo_coordinates'].isna().sum()
+count_nan_coordinates = df['coordinates'].isna().sum()
+
+# Total count of 'NA' and NaN in each column
+total_na_geo_coordinates = count_string_na_geo_coordinates + count_nan_geo_coordinates
+total_na_coordinates = count_string_na_coordinates + count_nan_coordinates
+
+# Total count of non-'NA' and non-NaN values
+total_non_na_geo_coordinates = len(df) - total_na_geo_coordinates
+total_non_na_coordinates = len(df) - total_na_coordinates
+
+# Data for plotting
+categories = ['GPT_extracted_coordinates', 'old_coordinates']
+na_counts = [total_na_geo_coordinates, total_na_coordinates]
+non_na_counts = [total_non_na_geo_coordinates, total_non_na_coordinates]
+
+# Create a bar plot
+plt.bar(categories, non_na_counts, label='Non-NA Values')
+plt.bar(categories, na_counts, bottom=non_na_counts, label='NA Values')
+
+# Adding labels and title
+
+plt.ylabel('Count')
+plt.legend()
+
+# Show the plot
+plt.show()
+
+
+
+
+
+# Assuming df is your DataFrame
+geo_na = df['geo_coordinates'].isna()
+coords_na = df['coordinates'].isna()
+
+# Set sizes for the Venn diagram
+only_geo_na = sum(geo_na & ~coords_na)
+only_coords_na = sum(~geo_na & coords_na)
+both_na = sum(geo_na & coords_na)
+both_not_na = sum(~geo_na & ~coords_na)
+
+# Create a Venn diagram
+plt.figure(figsize=(8, 6))
+venn2(subsets=(only_geo_na, only_coords_na, both_na), set_labels=('GPT coordinates - NA', 'all coordinates NA'))
+
+# Show the plot
+plt.show()
+
+
+
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Assuming df is your DataFrame
+geo_na = df['geo_coordinates'].isna()
+coords_na = df['coordinates'].isna()
+
+# Calculate counts for each scenario
+only_geo_na = sum(geo_na & ~coords_na)
+only_coords_na = sum(~geo_na & coords_na)
+both_na = sum(geo_na & coords_na)
+both_not_na = sum(~geo_na & ~coords_na)
+
+# Data for plotting
+categories = ['only GPT coordinates - NA', 'only Joao cordinates - NA', 'both NA', 'both Not NA']
+counts = [only_geo_na, only_coords_na, both_na, both_not_na]
+
+# Create a bar plot
+plt.figure(figsize=(10, 6))
+plt.bar(categories, counts, color=['blue', 'green', 'red', 'purple'])
+
+# Adding labels and title
+plt.ylabel('Count')
+
+# Show the plot
+plt.show()
 
 

@@ -12,7 +12,7 @@ import openai
 from datetime import datetime
 import time
 import logging
-import tiktoken
+import glob 
 
 
 # =======================================================
@@ -20,13 +20,12 @@ import tiktoken
 # =======================================================
 
 class GPTInteractor:
-   
-    def __init__(self, work_dir, n_samples_per_biome, chunk_size, system_prompt_file, encoding_name, api_key_path, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty):
+
+    def __init__(self, work_dir, n_samples_per_biome, chunk_size, system_prompt_file, api_key_path, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty):
         self.work_dir = work_dir
         self.n_samples_per_biome = n_samples_per_biome
-        self.chunk_size = chunk_size
+        self.chunk_size = chunk_size 
         self.system_prompt_file = system_prompt_file
-        self.encoding_name = encoding_name
         self.api_key_path = api_key_path
         self.api_key = self.load_api_key()
         self.model = model
@@ -35,32 +34,22 @@ class GPTInteractor:
         self.top_p = top_p
         self.frequency_penalty = frequency_penalty
         self.presence_penalty = presence_penalty
-        self.saved_filename = None  # This will store the filename once saved
-
-
-    def token_count(self, text, encoding_name):
-        """Return the number of tokens in the text using tiktoken."""
-        encoding = tiktoken.get_encoding(encoding_name)
-        tokens = encoding.encode(text)
-        return len(tokens)
+        self.saved_filename = None
     
-    def consolidate_chunks_to_strings(self, chunks, encoding_name):
-        content_strings = []
-        chunk_tokens = []  # This will store the number of tokens in each chunk
-        
-        for i, chunk in enumerate(chunks, 1):
-            total_tokens = self.token_count(chunk, encoding_name)
-            print(f"Chunk {i} Content (Total Tokens: {total_tokens})")
-            logging.info(f"Chunk {i} Content (Total Tokens: {total_tokens})")
-            content_strings.append(chunk)  
-            chunk_tokens.append(total_tokens)  # Store the number of tokens
-            #print(f"Chunk {i} Content:")
-            #print(chunk)
-            print("----")
-        
-        #print(content_strings)
-        return content_strings, chunk_tokens
 
+    def load_latest_chunks_file(self):
+        """Load the latest chunks file based on naming convention and timestamp."""
+        file_pattern = os.path.join(self.work_dir, 'metadata_chunks_*.txt')
+        list_of_files = glob.glob(file_pattern)  # List all chunk files
+        if not list_of_files:
+            print("No chunk files found.")
+            return None
+        latest_file = max(list_of_files, key=os.path.getctime)  # Get the latest file
+        with open(latest_file, 'r') as file:
+            content_strings = file.read().split("\n\n-----\n\n")
+        return content_strings
+    
+    
 
     def load_api_key(self):
         try:
@@ -88,6 +77,7 @@ class GPTInteractor:
             print(f"Error reading system prompt file '{prompt_file}'.")
             return None
         
+    
     def gpt_request(self, content_string):
         openai.api_key = self.api_key
         system_prompt = self.load_system_prompt()  # Load the system prompt
@@ -115,48 +105,27 @@ class GPTInteractor:
             presence_penalty=self.presence_penalty
         )
 
-
-    def interact_with_gpt(self, content_strings, chunk_tokens):
-        """
-        Iterate over content_strings and make requests to GPT.
-
-        Parameters:
-        - content_strings: List of string contents to process.
-
-        Returns:
-        - List of responses from GPT.
-        """
-        
+    
+    def interact_with_gpt(self):
+        """Iterate over content strings and make requests to GPT."""
+        content_strings = self.load_latest_chunks_file()
+        if not content_strings:
+            return []
+    
         gpt_responses = []
-        TOKEN_LIMIT = 9500  # Adding a buffer
-        tokens_processed_in_last_minute = 0
-        last_request_time = time.time()
-
-        for content_string, tokens in zip(content_strings, chunk_tokens):
-            # If adding the next chunk exceeds the limit, wait
-            if tokens_processed_in_last_minute + tokens > TOKEN_LIMIT:
-                elapsed_time = time.time() - last_request_time
-                wait_time = 60 - elapsed_time
-
-                if wait_time > 0:
-                    logging.info(f"Waiting for {wait_time:.2f} seconds...")
-                    time.sleep(wait_time)
-
-                tokens_processed_in_last_minute = 0  # Reset token count
-                last_request_time = time.time()  # Update timestamp
-
+    
+        for content_string in content_strings:
             # Send request to API
             try:
                 response = self.gpt_request(content_string=content_string)
                 gpt_responses.append(response)
-                tokens_processed_in_last_minute += tokens
             except openai.error.OpenAIError as e:
                 if "rate limit" in str(e).lower():
                     logging.info("Rate limit exceeded. Waiting for 2 minutes...")
                     time.sleep(120)
                 else:
                     logging.error(f"Error encountered: {e}")
-
+    
         return gpt_responses
 
 
@@ -205,14 +174,16 @@ class GPTInteractor:
             print("No file has been saved yet!")
             return None
     
-    def run(self, chunks):
-        content_strings, chunk_tokens = self.consolidate_chunks_to_strings(chunks, self.encoding_name)
-        logging.info("Starting interaction with GPT...")
-        gpt_responses = self.interact_with_gpt(content_strings, chunk_tokens)  # Pass chunk_tokens here
-        logging.info("Finished interaction with GPT.")
-        
-        self.save_gpt_responses_to_file(gpt_responses) 
     
+    def run(self):
+        logging.info("Starting interaction with GPT...")
+        gpt_responses = self.interact_with_gpt()
+        logging.info("Finished interaction with GPT.")
+        self.save_gpt_responses_to_file(gpt_responses)
+    
+
+
+
 
 
 
