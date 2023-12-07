@@ -21,11 +21,12 @@ import tiktoken
 
 class GPTInteractor:
    
-    def __init__(self, work_dir, n_samples_per_biome, chunk_size, system_prompt_file, api_key_path, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty):
+    def __init__(self, work_dir, n_samples_per_biome, chunk_size, system_prompt_file, encoding_name, api_key_path, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty):
         self.work_dir = work_dir
         self.n_samples_per_biome = n_samples_per_biome
         self.chunk_size = chunk_size
         self.system_prompt_file = system_prompt_file
+        self.encoding_name = encoding_name
         self.api_key_path = api_key_path
         self.api_key = self.load_api_key()
         self.model = model
@@ -37,18 +38,18 @@ class GPTInteractor:
         self.saved_filename = None  # This will store the filename once saved
 
 
-    def token_count(self, text, encoding_name="cl100k_base"):
+    def token_count(self, text, encoding_name):
         """Return the number of tokens in the text using tiktoken."""
         encoding = tiktoken.get_encoding(encoding_name)
         tokens = encoding.encode(text)
         return len(tokens)
     
-    def consolidate_chunks_to_strings(self, chunks):
+    def consolidate_chunks_to_strings(self, chunks, encoding_name):
         content_strings = []
         chunk_tokens = []  # This will store the number of tokens in each chunk
         
         for i, chunk in enumerate(chunks, 1):
-            total_tokens = self.token_count(chunk)
+            total_tokens = self.token_count(chunk, encoding_name)
             print(f"Chunk {i} Content (Total Tokens: {total_tokens})")
             logging.info(f"Chunk {i} Content (Total Tokens: {total_tokens})")
             content_strings.append(chunk)  
@@ -57,7 +58,7 @@ class GPTInteractor:
             #print(chunk)
             print("----")
         
-        print(content_strings)
+        #print(content_strings)
         return content_strings, chunk_tokens
 
 
@@ -205,7 +206,7 @@ class GPTInteractor:
             return None
     
     def run(self, chunks):
-        content_strings, chunk_tokens = self.consolidate_chunks_to_strings(chunks)
+        content_strings, chunk_tokens = self.consolidate_chunks_to_strings(chunks, self.encoding_name)
         logging.info("Starting interaction with GPT...")
         gpt_responses = self.interact_with_gpt(content_strings, chunk_tokens)  # Pass chunk_tokens here
         logging.info("Finished interaction with GPT.")
