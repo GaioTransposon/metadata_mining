@@ -10,7 +10,7 @@ Created on Wed Dec  6 13:57:10 2023
 import os
 import pandas as pd
 import numpy as np
-from transformers import GPT2Tokenizer
+import tiktoken
 import pickle
 from datetime import datetime
 import logging
@@ -93,15 +93,14 @@ class MetadataProcessor:
         
         return metadata_dict
 
-    def token_count(self, text):
-        """Return the number of tokens in the text (count tokens the BPE way)."""
-        # load tokenizer 
-        tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-        # Tokenize the text and count the tokens
-        tokens = tokenizer.tokenize(text)
+    def token_count(self, text, encoding_name="cl100k_base"):
+        """Return the number of tokens in the text using tiktoken."""
+        encoding = tiktoken.get_encoding(encoding_name)
+        tokens = encoding.encode(text)
         return len(tokens)
 
-    def create_and_save_chunks(self, metadata_dict):
+            
+    def create_and_save_chunks(self, metadata_dict, encoding_name="cl100k_base"):
         max_tokens = self.chunk_size
         chunks = []
         current_chunk, current_token_count = [], 0
@@ -114,7 +113,8 @@ class MetadataProcessor:
 
         for sample_id, metadata in metadata_dict.items():
             item = f"'sample_ID={sample_id}': '{metadata}'"
-            item_tokens = self.token_count(item)
+            #item_tokens = self.token_count(item)
+            item_tokens = self.token_count(item, encoding_name)
     
             print(f"Processing sample: {sample_id} with {item_tokens} tokens")  # Debugging output
     
@@ -169,3 +169,56 @@ class MetadataProcessor:
         chunks = self.create_and_save_chunks(metadata_dict)
         return chunks
     
+
+
+
+
+
+
+
+
+
+# =============================================================================
+# # load an encoding by name.
+# encoding = tiktoken.get_encoding("cl100k_base")
+# 
+# # automatically load the correct encoding for a given model name.
+# #encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+# 
+# # Turn text into tokens 
+# my_tokens = encoding.encode('''
+# 'sample_ID=SRS5567190': '>SRS5567190
+# sample_alias=trim.sRA46.fq
+# sample_TAXON_ID=447426
+# sample_SCIENTIFIC_NAME=human oral metagenome
+# sample_host=Homo sapiens
+# sample_isolate=human saliva37
+# sample_host_age=50
+# sample_biomaterial_provider=luoyubin
+# sample_host_sex=female
+# sample_isolation_source=saliva
+# sample_BioSampleModel=Metagenome or environmental
+# study=SRP226795
+# study_STUDY_TITLE=human saliva metagenome Metagenome
+# study_STUDY_ABSTRACT=sequencing of human saliva metagenome'
+#                             ''')
+# 
+# # Turn tokens into text 
+# my_tokens_to_text = encoding.decode(my_tokens)
+# 
+# 
+# # Count tokens by counting the length of the list returned by .encode().
+# def num_tokens_from_string(string: str, encoding_name: str) -> int:
+#     """Returns the number of tokens in a text string."""
+#     encoding = tiktoken.get_encoding(encoding_name)
+#     num_tokens = len(encoding.encode(string))
+#     return num_tokens
+# 
+# num_tokens_from_string(my_tokens_to_text, "cl100k_base")
+# =============================================================================
+
+
+
+
+
+
