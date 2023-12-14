@@ -79,7 +79,7 @@ class MetadataProcessor:
         for _, row in shuffled_samples.iterrows():
             metadata = self.fetch_metadata_from_sample(row['sample'])
             
-            print("Metadata for", row['sample'])
+            #print("Metadata for", row['sample'])
             
             processed_samples_count += 1
             processed_samples_list.append(row['sample'])
@@ -94,7 +94,7 @@ class MetadataProcessor:
             
             #print("Cleaned metadata:")
             #print(cleaned_metadata)
-            print("===================================")
+            #print("===================================")
             
         logging.info(f"All processed samples: {processed_samples_list}")
         
@@ -153,10 +153,10 @@ class MetadataProcessor:
                 if token_count <= effective_max_tokens:
                     bins.append([(sample_id, token_count)])
         return bins
-   
+
+    
 
     def create_and_save_chunks(self, metadata_dict, encoding_name):
-        
 
         system_prompt_size = self.token_count(self.load_system_prompt(), encoding_name)
         #print('system_prompt_size:', system_prompt_size)
@@ -171,15 +171,22 @@ class MetadataProcessor:
         # Check for samples with token sizes exceeding effective_max_tokens
         for sample_id, token_count in samples_with_tokens:
             if token_count > effective_max_tokens:
-                print(f"WARNING: 'sample_ID={sample_id}' is too large to fit into a chunk of effective chunk size {effective_max_tokens}")
-                logging.warning(f"'sample_ID={sample_id}' is too large to fit into a chunk of effective chunk size {effective_max_tokens}")
+                logging.info(f"'sample_ID={sample_id}' is too large to fit into a chunk of effective chunk size {effective_max_tokens}")
         
         binned_samples = self.first_fit_decreasing_bin(samples_with_tokens, effective_max_tokens)
 
         # Print the bins with token sizes
-        print("Bins with token sizes:")
+        #print("Bins with token sizes and their sums:")
+        total_sum_of_all_bins = 0
         for bin in binned_samples:
-            print([token_count for _, token_count in bin])
+            bin_token_sizes = [token_count for _, token_count in bin]
+            sum_of_tokens = sum(bin_token_sizes)
+            total_sum_of_all_bins += sum_of_tokens
+            #print(f"Bin token sizes: {bin_token_sizes}, Sum: {sum_of_tokens}")
+
+        # Add the sums of all bin tokens and the system prompt tokens multiplied by the number of bins
+        total_tokens = total_sum_of_all_bins + (system_prompt_size * len(binned_samples))
+        logging.info(f"Total input tokens (including system prompt(s)): {total_tokens}")
 
         # Create and save chunks
         consolidated_chunks = []

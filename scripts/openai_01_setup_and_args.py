@@ -12,6 +12,7 @@ from datetime import datetime
 import logging
 
 
+
 # =======================================================
 # PHASE 0: set up a logging system 
 # =======================================================
@@ -25,6 +26,7 @@ class CustomFormatter(logging.Formatter):
         if record.levelno == logging.DEBUG and len(record.msg) > self.MAX_LENGTH:
             record.msg = record.msg[:self.MAX_LENGTH] + "..."
         return super().format(record)
+    
 
 def setup_logging():
     # get dir of script
@@ -36,21 +38,20 @@ def setup_logging():
     # Join the directory with the log filename to get the full path
     log_filepath = os.path.join(script_directory, log_filename)
 
-    # Set up the basic logging configuration for the console
-    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
-                        level=logging.WARNING)  # WARNING, ERROR, and CRITICAL are printed
-    
+    # Create a logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)  # Set the logger level to DEBUG to capture all types of logs
+
     formatter = CustomFormatter('%(asctime)s [%(levelname)s]: %(message)s')
 
-    # File handler for logging with the full path
+    # File handler for logging
     file_handler = logging.FileHandler(log_filepath)
+    file_handler.setLevel(logging.INFO)  # Set this to INFO to capture INFO and higher level logs
     file_handler.setFormatter(formatter)
-    logging.getLogger().addHandler(file_handler)
+    logger.addHandler(file_handler)
 
     # Console handler for logging
     console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.WARNING)  # Set this to WARNING to capture only WARNING and higher level logs
     console_handler.setFormatter(formatter)
-    logging.getLogger().addHandler(console_handler)
-
-    
-    
+    logger.addHandler(console_handler)
