@@ -42,13 +42,15 @@ class GPTInteractor:
         file_pattern = os.path.join(self.work_dir, 'metadata_chunks_*.txt')
         list_of_files = glob.glob(file_pattern)  # List all chunk files
         if not list_of_files:
-            print("No chunk files found.")
+            #print("No chunk files found.")
             return None
         latest_file = max(list_of_files, key=os.path.getctime)  # Get the latest file
         with open(latest_file, 'r') as file:
             content_strings = file.read().split("\n\n-----\n\n")
-        return content_strings
-    
+        
+        # Filter out any empty strings
+        return [s for s in content_strings if s.strip()]
+
     
 
     def load_api_key(self):
@@ -57,10 +59,10 @@ class GPTInteractor:
                 api_key = file.read().strip()
                 return api_key.strip()
         except FileNotFoundError:
-            print(f"File '{self.api_key_path}' not found.")
+            logging.error(f"File '{self.api_key_path}' not found.")
             return None
         except IOError:
-            print(f"Error reading file '{self.api_key_path}'.")
+            logging.error(f"Error reading file '{self.api_key_path}'.")
             return None
 
         
@@ -71,10 +73,10 @@ class GPTInteractor:
             with open(prompt_file, 'r') as file:
                 return file.read().strip()
         except FileNotFoundError:
-            print(f"System prompt file '{prompt_file}' not found.")
+            logging.error(f"System prompt file '{prompt_file}' not found.")
             return None
         except IOError:
-            print(f"Error reading system prompt file '{prompt_file}'.")
+            logging.error(f"Error reading system prompt file '{prompt_file}'.")
             return None
         
     
@@ -83,7 +85,7 @@ class GPTInteractor:
         system_prompt = self.load_system_prompt()  # Load the system prompt
 
         if not system_prompt:
-            print("System prompt is not available. Aborting request.")
+            logging.error("System prompt is not available. Aborting request.")
             return None
 
         return openai.ChatCompletion.create(
@@ -106,6 +108,10 @@ class GPTInteractor:
         )
 
     
+
+    
+
+        
     def interact_with_gpt(self):
         """Iterate over content strings and make requests to GPT."""
         content_strings = self.load_latest_chunks_file()
@@ -115,9 +121,15 @@ class GPTInteractor:
         gpt_responses = []
     
         for content_string in content_strings:
+            
+            if not content_string.strip():  # Skip empty content strings
+                continue
+                
             # Send request to API
             try:
+                #print(content_string)
                 response = self.gpt_request(content_string=content_string)
+                #print(response)
                 gpt_responses.append(response)
             except openai.error.OpenAIError as e:
                 if "rate limit" in str(e).lower():
@@ -171,14 +183,14 @@ class GPTInteractor:
         if self.saved_filename:
             return self.saved_filename
         else:
-            print("No file has been saved yet!")
+            logging.error("No file has been saved yet!")
             return None
     
     
     def run(self):
-        logging.info("Starting interaction with GPT...")
+        print("Starting interaction with GPT...")
         gpt_responses = self.interact_with_gpt()
-        logging.info("Finished interaction with GPT.")
+        print("Finished interaction with GPT.")
         self.save_gpt_responses_to_file(gpt_responses)
     
 
