@@ -12,6 +12,7 @@ import re
 import logging
 import tiktoken
 
+
 # =======================================================
 # PHASE 3: GPT Output Parsing
 # =======================================================
@@ -51,21 +52,23 @@ class GPTOutputParsing:
 
     def parse_samples(self):
         result = {}
-        pattern = re.compile(r'(SRS|ERS|DRS)\d+__\w+__.*?__.*')
+        pattern = re.compile(r'(SRS|ERS|DRS)\d+__\w+__.*?__.*?__.*')
         
         for line in self.raw_lines:
             match = pattern.match(line)
             if match:
                 parts = line.split('__')
-                if len(parts) == 4:
-                    sample_id, biome, coordinates, location = parts
+                if len(parts) == 5:
+                    sample_id, biome, sub_biome, coordinates, location = parts
                     result[sample_id] = {
                         'biome': biome,
+                        'sub_biome': sub_biome,
                         'geo_coordinates': coordinates,
                         'geo_text': location
                     }
-
+    
         return result
+
 
     def prepare_dataframe(self, parsed_data_dict):
         return pd.DataFrame.from_dict(parsed_data_dict, orient='index').reset_index().rename(columns={'index': 'sample'})
