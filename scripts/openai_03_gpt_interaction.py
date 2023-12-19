@@ -40,19 +40,18 @@ class GPTInteractor:
     def load_latest_chunks_file(self):
         """Load the latest chunks file based on naming convention and timestamp."""
         file_pattern = os.path.join(self.work_dir, 'metadata_chunks_*.txt')
-        list_of_files = glob.glob(file_pattern)  # List all chunk files
+        list_of_files = glob.glob(file_pattern)  
         if not list_of_files:
             #print("No chunk files found.")
             return None
-        latest_file = max(list_of_files, key=os.path.getctime)  # Get the latest file
+        latest_file = max(list_of_files, key=os.path.getctime)  # get the latest file
         with open(latest_file, 'r') as file:
             content_strings = file.read().split("\n\n-----\n\n")
         
-        # Filter out any empty strings
+        # filter out any empty strings
         return [s for s in content_strings if s.strip()]
 
     
-
     def load_api_key(self):
         try:
             with open(self.api_key_path, "r") as file:
@@ -82,7 +81,7 @@ class GPTInteractor:
     
     def gpt_request(self, content_string):
         openai.api_key = self.api_key
-        system_prompt = self.load_system_prompt()  # Load the system prompt
+        system_prompt = self.load_system_prompt()  # load the system prompt
 
         if not system_prompt:
             logging.error("System prompt is not available. Aborting request.")
@@ -93,7 +92,7 @@ class GPTInteractor:
             messages=[
                 {
                     "role": "system",
-                    "content": system_prompt  # Use the loaded system prompt
+                    "content": system_prompt  # use the loaded system prompt
                 },
                 {
                     "role": "user",
@@ -107,10 +106,6 @@ class GPTInteractor:
             presence_penalty=self.presence_penalty
         )
 
-    
-
-    
-
         
     def interact_with_gpt(self):
         """Iterate over content strings and make requests to GPT."""
@@ -122,10 +117,10 @@ class GPTInteractor:
     
         for content_string in content_strings:
             
-            if not content_string.strip():  # Skip empty content strings
+            if not content_string.strip():  # skip empty content strings
                 continue
                 
-            # Send request to API
+            # send request to API
             try:
                 #print(content_string)
                 response = self.gpt_request(content_string=content_string)
@@ -151,7 +146,7 @@ class GPTInteractor:
         Returns:
         - None
         """
-        # Extract the "content" from each response with error handling
+        # extract the "content" from each response with error handling
         contents = []
         for response in gpt_responses:
             try:
@@ -159,15 +154,15 @@ class GPTInteractor:
             except KeyError:
                 contents.append("ERROR: Malformed response")
         
-        # Join all contents with a separator (two newlines for readability)
+        # join all contents with a separator (two newlines for readability)
         final_content = "\n\n".join(contents)
         
-        # Construct the filename
+        # construct the filename
         current_datetime = datetime.now().strftime('%Y%m%d_%H%M')
         self.saved_filename = f"gpt_raw_output_nspb{self.n_samples_per_biome}_chunksize{self.chunk_size}_model{self.model}_temp{self.temperature}_maxtokens{self.max_tokens}_topp{self.top_p}_freqp{self.frequency_penalty}_presp{self.presence_penalty}_dt{current_datetime}.txt"
         self.saved_filename = os.path.join(self.work_dir, self.saved_filename)
     
-        # Write to the file
+        # write to file
         with open(self.saved_filename, 'w') as file:
             file.write(final_content)
     

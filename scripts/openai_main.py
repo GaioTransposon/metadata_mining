@@ -111,23 +111,23 @@ if __name__ == "__main__":
 # "gpt-3.5-turbo-1106"
 # 40 samples per biome 
 # to test costs 
-
 # what my log file says: 
 # Total input tokens (including system prompt(s)): 65587
 # Total output tokens: 3614
-
 # what openai states: 
 # cost: $0.09
 # requests: 45
 # input tokens: 66587
 # output tokens: 3571
 
-
+# 20231219 (14:00)
+# 200 samples per biome
+# to test tokens and cost
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 40 \
+#     --n_samples_per_biome 200 \
 #     --chunk_size 1500 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
