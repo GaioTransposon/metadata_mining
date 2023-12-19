@@ -45,7 +45,7 @@ class MetadataProcessor:
         gold_dict_df['pmid'] = gold_dict_df['tuple_data'].apply(lambda x: x[0])
         gold_dict_df['curated_biome'] = gold_dict_df['tuple_data'].apply(lambda x: x[1])
 
-        # Check if geo_coordinates and geo_text exist in the tuple and extract them
+        # check if geo_coordinates and geo_text exist in the tuple and extract them
         gold_dict_df['geo_coordinates'] = gold_dict_df['tuple_data'].apply(lambda x: x[2] if len(x) > 2 else np.nan)
         gold_dict_df['geo_text'] = gold_dict_df['tuple_data'].apply(lambda x: x[3] if len(x) > 3 else np.nan)
 
@@ -54,7 +54,7 @@ class MetadataProcessor:
 
 
     def get_random_samples(self, gold_dict_df): 
-        # Filter out 'unknown' biomes before sampling - at the moment we don't want to test/validate gpt for the classification of "unknown"
+        # filter out 'unknown' biomes before sampling - at the moment we don't want to test/validate gpt for the classification of "unknown"
         filtered_df = gold_dict_df[gold_dict_df['curated_biome'] != 'unknown']
         random_samples = filtered_df.groupby('curated_biome').apply(lambda x: x.sample(n=self.n_samples_per_biome, random_state=self.seed)).reset_index(drop=True)
         return random_samples
@@ -72,7 +72,7 @@ class MetadataProcessor:
         shuffled_samples = samples.sample(frac=1, random_state=self.seed).reset_index(drop=True)
         
         processed_samples_count = 0
-        processed_samples_list = []  # To keep track of which samples have been processed
+        processed_samples_list = []  # to keep track of which samples have been processed
         
         metadata_dict = {}
         
@@ -87,7 +87,7 @@ class MetadataProcessor:
             
             cleaned_metadata_lines = []
             for line in metadata.splitlines():
-                stripped_line = line.strip()  # strip whitespace
+                stripped_line = line.strip()  # strips whitespace
                 cleaned_metadata_lines.append(stripped_line)
             cleaned_metadata = "\n".join(cleaned_metadata_lines)
             metadata_dict[row['sample']] = cleaned_metadata
@@ -133,7 +133,7 @@ class MetadataProcessor:
         with open(filename, 'w') as file:
             for chunk in chunks:
                 file.write(chunk)
-                file.write("\n\n-----\n\n")  # Separator between chunks
+                file.write("\n\n-----\n\n")  # separator between chunks
         logging.info(f"Saved metadata chunks to: {filename}")
         
 
@@ -149,7 +149,7 @@ class MetadataProcessor:
                     placed = True
                     break
             if not placed:
-                # If the token_count exceeds the effective_max_tokens, create a new bin for the sample.
+                # if the token_count exceeds the effective_max_tokens, create a new bin 
                 if token_count <= effective_max_tokens:
                     bins.append([(sample_id, token_count)])
         return bins
@@ -168,14 +168,14 @@ class MetadataProcessor:
         samples_with_tokens = [(sample_id, self.token_count(f"'sample_ID={sample_id}': '{metadata}'", encoding_name)) for sample_id, metadata in metadata_dict.items()]
         #print('samples_with_tokens:', samples_with_tokens)
         
-        # Check for samples with token sizes exceeding effective_max_tokens
+        # print messages into log, if sample metadata exceeds effective_max_tokens
         for sample_id, token_count in samples_with_tokens:
             if token_count > effective_max_tokens:
                 logging.info(f"'sample_ID={sample_id}' is too large to fit into a chunk of effective chunk size {effective_max_tokens}")
         
         binned_samples = self.first_fit_decreasing_bin(samples_with_tokens, effective_max_tokens)
 
-        # Print the bins with token sizes
+        # print token sizes of bins
         #print("Bins with token sizes and their sums:")
         total_sum_of_all_bins = 0
         for bin in binned_samples:
@@ -184,11 +184,11 @@ class MetadataProcessor:
             total_sum_of_all_bins += sum_of_tokens
             #print(f"Bin token sizes: {bin_token_sizes}, Sum: {sum_of_tokens}")
 
-        # Add the sums of all bin tokens and the system prompt tokens multiplied by the number of bins
+        # add the sums of all bin tokens and the system prompt tokens multiplied by the number of bins (this is the total input tokens)
         total_tokens = total_sum_of_all_bins + (system_prompt_size * len(binned_samples))
         logging.info(f"Total input tokens (including system prompt(s)): {total_tokens}")
 
-        # Create and save chunks
+        # create and save chunks
         consolidated_chunks = []
         for bin in binned_samples:
             chunk = '\n~~~\n'.join(f"'sample_ID={sample_id}': '{metadata_dict[sample_id]}'" for sample_id, _ in bin)
