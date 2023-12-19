@@ -12,7 +12,6 @@ from datetime import datetime
 import logging
 
 
-
 # =======================================================
 # PHASE 0: set up a logging system 
 # =======================================================

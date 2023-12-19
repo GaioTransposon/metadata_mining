@@ -15,8 +15,6 @@ from openai_04_gpt_parsing import GPTOutputParsing
 import time  
 
 
-
-
 # =======================================================
 # Main Execution
 # =======================================================
@@ -123,15 +121,23 @@ if __name__ == "__main__":
 # 20231219 (14:00)
 # 200 samples per biome
 # to test tokens and cost
+#Input: 323788 
+#Completion: 18166 
+
+# 20231219 (16:50)
+# 2 samples per biome
+# to test new prompt
+#Input: 323788 
+#Completion: 18166 
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
+#     --n_samples_per_biome 2 \
 #     --chunk_size 1500 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "openai_system_prompt.txt" \
+#     --system_prompt_file "openai_system_prompt2.txt" \
 #     --encoding_name "cl100k_base" \
 #     --api_key_path "/Users/dgaio/my_api_key" \
 #     --model "gpt-3.5-turbo-1106" \
@@ -140,4 +146,8 @@ if __name__ == "__main__":
 #     --top_p 0.75 \
 #     --frequency_penalty 0.25 \
 #     --presence_penalty 1.5
+
+
+
+
 
