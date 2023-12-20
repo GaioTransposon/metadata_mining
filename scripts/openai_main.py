@@ -137,7 +137,7 @@ if __name__ == "__main__":
 #     --chunk_size 1500 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "openai_system_prompt2.txt" \
+#     --system_prompt_file "openai_system_prompt.txt" \
 #     --encoding_name "cl100k_base" \
 #     --api_key_path "/Users/dgaio/my_api_key" \
 #     --model "gpt-3.5-turbo-1106" \

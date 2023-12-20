@@ -56,7 +56,10 @@ class MetadataProcessor:
 
     def get_random_samples(self, gold_dict_df): 
         # filter out 'unknown' biomes before sampling - at the moment we don't want to test/validate gpt for the classification of "unknown"
-        filtered_df = gold_dict_df[gold_dict_df['curated_biome'] != 'unknown']
+        #filtered_df = gold_dict_df[gold_dict_df['curated_biome'] != 'unknown']
+        
+        filtered_df = gold_dict_df
+        
         random_samples = filtered_df.groupby('curated_biome').apply(lambda x: x.sample(n=self.n_samples_per_biome, random_state=self.seed)).reset_index(drop=True)
         return random_samples
 
