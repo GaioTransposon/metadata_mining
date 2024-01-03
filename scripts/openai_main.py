@@ -130,10 +130,17 @@ if __name__ == "__main__":
 #Input: 323788 
 #Completion: 18166 
 
+# 20231221 (14:00)
+# 200 samples per biome (incl unknown)
+
+# 20231221 (17:50)
+# 4 samples per biome 
+# test editing prompt to ask table format 
+
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 2 \
+#     --n_samples_per_biome 4 \
 #     --chunk_size 1500 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
