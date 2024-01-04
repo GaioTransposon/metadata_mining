@@ -51,33 +51,24 @@ class GPTOutputParsing:
         tokens = encoding.encode(content)
         logging.info(f"Total output tokens: {len(tokens)}")
 
+    
     def parse_samples(self):
-        result = {}
-        pattern = re.compile(r'^(SRS|ERS|DRS)\d+__\w+__.*')
+        result = []
+        pattern = re.compile(r'^(ERS|SRS|DRS)\d+__.*')
         
         for line in self.raw_lines:
-            # Check if the line is not empty
-            if line.strip():  # .strip() removes whitespace from the beginning and end of the line
-                match = pattern.match(line)
-                if match:
-                    parts = line.split('__')
-                    sample_id = parts[0]
-                    biome = parts[1]
-                    location = parts[2] if len(parts) > 2 else None
-                    sub_biome = parts[3] if len(parts) > 3 else None
-                    additional_info = parts[4:] if len(parts) > 4 else None
-        
-                    result[sample_id] = {
-                        'biome': biome,
-                        'geo_text': location,
-                        'sub_biome': sub_biome,
-                        'additional_info': additional_info
-                    }
-                else:
-                    self.unparsed_lines.append(line)  # Add to unparsed lines
+            # Check if the line is not empty and matches the pattern
+            if line.strip() and pattern.match(line.strip()):
+                parts = line.split('__')
+                sample_dict = {}
+                for i, part in enumerate(parts):
+                    sample_dict[f'col_{i}'] = part
+                result.append(sample_dict)
+            else:
+                if line.strip():  # Add non-empty lines that do not match the pattern to unparsed lines
+                    self.unparsed_lines.append(line)
         
         return result
-    
 
 
     def save_unparsed_to_file(self):
@@ -91,8 +82,9 @@ class GPTOutputParsing:
             logging.info("No unparsed lines to save.")
             
 
-    def prepare_dataframe(self, parsed_data_dict):
-        return pd.DataFrame.from_dict(parsed_data_dict, orient='index').reset_index().rename(columns={'index': 'sample'})
+    def prepare_dataframe(self, parsed_data_list):
+        return pd.DataFrame(parsed_data_list)
+
 
     def save_cleaned_to_file(self):
         self.clean_filename = self.filepath.replace('gpt_raw_output', 'gpt_clean_output')
@@ -163,8 +155,6 @@ class GPTOutputParsing:
 # len(processed_records)
 # 
 # =============================================================================
-
-
 
 
 

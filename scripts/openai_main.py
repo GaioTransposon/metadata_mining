@@ -137,14 +137,36 @@ if __name__ == "__main__":
 # 4 samples per biome 
 # test editing prompt to ask table format 
 
+# 20240103
+# 200 samples per biome 
+# testing prompt with "lake" vs "river" as suggested sub-biome. 
+# 16:10 "lake"
+# 16:23 "river"
+# no answer because problem parsing output. solved. 
+
+# 20240103
+# 200 samples per biome 
+# testing prompt with "lake" vs "river" as suggested sub-biome. 
+# 17:45 "river" --> 982/984 rows 984 because 16 too large chunks
+# 18:00 "lake" --> 983/984 rows 984 because 16 too large chunks
+
+# 20240104
+# few samples per biome -  various tests
+# testing new prompt to extract only coordinates
+# when using "openai_system_prompt_coordinates.txt", use chunk_size 400
+
+# 20240104 15:32 
+# 200 nspb, "openai_system_prompt_coordinates.txt", chunk_size 400
+
+
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 4 \
-#     --chunk_size 1500 \
+#     --n_samples_per_biome 200 \
+#     --chunk_size 400 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "openai_system_prompt.txt" \
+#     --system_prompt_file "openai_system_prompt_coordinates.txt" \
 #     --encoding_name "cl100k_base" \
 #     --api_key_path "/Users/dgaio/my_api_key" \
 #     --model "gpt-3.5-turbo-1106" \

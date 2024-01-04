@@ -14,6 +14,7 @@ import tiktoken
 import pickle
 from datetime import datetime
 import logging
+import re
 
 
 # =======================================================
@@ -70,9 +71,35 @@ class MetadataProcessor:
         metadata_file_path = os.path.join(folder_path, f"{sample}_clean.txt")
         with open(metadata_file_path, 'r') as f:
             return f.read()
-        
+    
+
+    def filter_lines_for_coordinates(self, lines):
+        # Your existing regular expression
+        coord_pattern = re.compile(r'(\d+(\.\d+)?\s*[NS]\s*\d+(\.\d+)?\s*[EW])|(\bcoord\w*\b)|(\blat(itude)?\b)|(\blon(gitude)?\b)', re.IGNORECASE)
+    
+        filtered_lines = []
+        for line in lines:
+            # First check for the coordinate pattern
+            if coord_pattern.search(line):
+                word_count = len(line.split())
+                # Then check if the word count is <= 20
+                if word_count <= 20:
+                    filtered_lines.append(line)
+        return filtered_lines
+
+
+
+
+    
+
+    
 
     def process_metadata(self, samples):
+        
+        # Check if 'coordinates' is in the system prompt
+        system_prompt = self.load_system_prompt()
+        filter_for_coordinates = 'coordinates' in system_prompt
+        
         shuffled_samples = samples.sample(frac=1, random_state=self.seed).reset_index(drop=True)
         
         processed_samples_count = 0
@@ -87,23 +114,42 @@ class MetadataProcessor:
             
             processed_samples_count += 1
             processed_samples_list.append(row['sample'])
-            print(f"Processed samples count: {processed_samples_count}")        
+            print(f"Processed samples count: {processed_samples_count}")   
+
             
-            cleaned_metadata_lines = []
-            for line in metadata.splitlines():
-                stripped_line = line.strip()  # strips whitespace
-                cleaned_metadata_lines.append(stripped_line)
-            cleaned_metadata = "\n".join(cleaned_metadata_lines)
-            metadata_dict[row['sample']] = cleaned_metadata
+            if filter_for_coordinates:
+                # Use the filter_lines_for_coordinates function to filter lines
+                cleaned_metadata_lines = self.filter_lines_for_coordinates(metadata.splitlines())
+            else:
+                # If not filtering for coordinates, keep all lines
+                cleaned_metadata_lines = [line.strip() for line in metadata.splitlines()]
+                
+            # Check if cleaned_metadata_lines is not empty before adding to metadata_dict
+            if cleaned_metadata_lines:
+                cleaned_metadata = "\n".join(cleaned_metadata_lines)
+                metadata_dict[row['sample']] = cleaned_metadata
+            else:
+                continue
+    
+            print(f"Processed samples count: {processed_samples_count}")
+            print("Cleaned metadata:")
+            print(metadata_dict[row['sample']])
+            print("===================================")
             
-            #print("Cleaned metadata:")
-            #print(cleaned_metadata)
-            #print("===================================")
+# =============================================================================
+#             cleaned_metadata = "\n".join(cleaned_metadata_lines)
+#             metadata_dict[row['sample']] = cleaned_metadata
+#     
+#             print("Cleaned metadata:")
+#             print(cleaned_metadata)
+#             print("===================================")
+# =============================================================================
             
         logging.info(f"All processed samples: {processed_samples_list}")
         
         return metadata_dict
 
+                        
 
     def token_count(self, text, encoding_name):
         """Return the number of tokens in the text using tiktoken."""
