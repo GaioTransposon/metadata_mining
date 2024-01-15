@@ -305,13 +305,11 @@ for index, p in enumerate(bar_plot_combined.patches):
     bar_plot_combined.annotate(annotation, (p.get_x() + p.get_width() / 2, height), 
                                ha='center', va='bottom', fontsize=10)
 
-plt.legend(title='Sample Type', loc='upper left')
+# Move legend outside of the plot
+plt.legend(title='Sample Type', bbox_to_anchor=(1.01, 1), loc='upper left')
+
 plt.tight_layout()
 plt.show()
-
-
-
-
 
 
 
@@ -465,11 +463,3 @@ def create_and_plot_confusion_matrix(df_joao, df_gold_dict):
 # Step 5: Create and Plot the Confusion Matrix
 # -----------------------------
 create_and_plot_confusion_matrix(filtered_joao_df, filtered_gold_dict_df)
-
-
-
-
-
-
-
-
