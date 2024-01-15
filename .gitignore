@@ -1,5 +1,6 @@
 # ignore log files
 *.log
+sample.coordinates.reparsed.filtered
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
