@@ -63,65 +63,6 @@ else:
 
 
 
-# =============================================================================
-# replacing all unknown occurrences to other
-# 
-# import os
-# import pickle
-# 
-# GOLD_DICT_PATH = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gold_dict.pkl"
-# METADATA_DIRECTORY = "/path/to/metadata/directory"  # Replace with the actual directory path
-# 
-# # Function to fetch metadata
-# def fetch_metadata_from_sample(sample):
-#     folder_name = f"dir_{sample[-3:]}"
-#     folder_path = os.path.join(METADATA_DIRECTORY, folder_name)
-#     metadata_file_path = os.path.join(folder_path, f"{sample}_clean.txt")
-#     with open(metadata_file_path, 'r') as file:
-#         return file.read()
-# 
-# # Load the existing data
-# with open(GOLD_DICT_PATH, 'rb') as file:
-#     data, processed_pmids = pickle.load(file)
-#     
-# 
-# # Function to replace 'unknown' with 'other' in a value
-# def replace_unknown_with_other(value):
-#     return tuple('other' if isinstance(v, str) and v.lower() == 'unknown' else v for v in value)
-# 
-# # Replace 'unknown' with 'other' in the entire dictionary
-# data = {key: replace_unknown_with_other(value) for key, value in data.items()}
-# 
-# 
-# 
-# 
-# # Function to print the head and tail of the dictionary
-# def print_head_and_tail(dictionary, n=5):
-#     keys = list(dictionary.keys())
-#     head_keys = keys[:n]
-#     tail_keys = keys[-n:]
-# 
-#     print("Head of the dictionary:")
-#     for key in head_keys:
-#         print(f"{key}: {dictionary[key]}")
-# 
-#     print("\nTail of the dictionary:")
-#     for key in tail_keys:
-#         print(f"{key}: {dictionary[key]}")
-# 
-# # Print the head and tail of the dictionary
-# print_head_and_tail(data)
-# 
-# 
-# # Save the updated dictionary back to the .pkl file
-# with open(GOLD_DICT_PATH, 'wb') as file:
-#     pickle.dump((data, processed_pmids), file)
-# 
-# print("All occurrences of 'unknown' have been replaced with 'other' in the dictionary.")
-# 
-# 
-# =============================================================================
-
 ################################################################################
 ################################################################################
 

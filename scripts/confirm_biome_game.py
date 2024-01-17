@@ -60,11 +60,14 @@ def play_game(df):
     # Load gold_dict and processed_pmids from a previous game or start with an empty ones
     gold_dict, processed_pmids = load_gold_data()
     
+    # Debug: Print unique values in 'biome' column
+    print("Unique biome values in DataFrame:", df['biome'].unique())
+
     # Group by biome_gpt
     biomes_df = df.groupby('biome')
 
     # Ask user which biome to focus on
-    biome_input = input("Which biome do you want to focus on? (a for animal, w for water, s for soil, p for plant, l for lab, o for other): ")
+    biome_input = input("Which biome do you want to focus on? (a for animal, w for water, s for soil, p for plant, o for other): ")
     biome_mapping = {
         'a': 'animal',
         'w': 'water',
@@ -111,7 +114,7 @@ def play_game(df):
             continue
 
         # Ask for correct biome if the answer was 'n'
-        biome_input = input("Which biome is it? (a for animal, w for water, s for soil, p for plant, l for lab, o for other): ")
+        biome_input = input("Which biome is it? (a for animal, w for water, s for soil, p for plant, o for other): ")
         gold_dict[row['sample']] = (row['pmid'], biome_mapping.get(biome_input, 'other'))
         save_gold_data((gold_dict, processed_pmids))
 
@@ -124,8 +127,6 @@ def play_game(df):
 
 gold_dict = play_game(df)
 print("Gold Dictionary:", gold_dict)
-
-
 
 
 
