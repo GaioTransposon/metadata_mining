@@ -158,12 +158,14 @@ if __name__ == "__main__":
 # 20240104 15:32 
 # 200 nspb, "openai_system_prompt_coordinates.txt", chunk_size 400
 
+# 20240117
+# 200 nspb, "openai_system_prompt_coordinates.txt", chunk_size 400
 
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 2 \
+#     --n_samples_per_biome 200 \
 #     --chunk_size 1500 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \

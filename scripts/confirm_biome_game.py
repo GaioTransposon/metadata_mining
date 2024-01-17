@@ -44,7 +44,7 @@ def fetch_metadata_from_sample(sample):
     return metadata
 
 def display_biome_counts(gold_dict):
-    biomes = ['animal', 'plant', 'water', 'soil', 'unknown']
+    biomes = ['animal', 'plant', 'water', 'soil', 'other']
     print("\nBiome Counts in Gold Dictionary:")
     print("---------------------------------")
     for biome in biomes:
@@ -64,17 +64,16 @@ def play_game(df):
     biomes_df = df.groupby('biome')
 
     # Ask user which biome to focus on
-    biome_input = input("Which biome do you want to focus on? (a for animal, w for water, s for soil, p for plant, l for lab, u for unknown): ")
+    biome_input = input("Which biome do you want to focus on? (a for animal, w for water, s for soil, p for plant, l for lab, o for other): ")
     biome_mapping = {
         'a': 'animal',
         'w': 'water',
         's': 'soil',
         'p': 'plant',
-        'l': 'lab',
-        'u': 'unknown'
+        'o': 'other'
     }
     
-    selected_biome = biome_mapping.get(biome_input, 'unknown')
+    selected_biome = biome_mapping.get(biome_input, 'other')
     group = biomes_df.get_group(selected_biome)
 
     # Count gold_dict samples for the selected biome
@@ -112,8 +111,8 @@ def play_game(df):
             continue
 
         # Ask for correct biome if the answer was 'n'
-        biome_input = input("Which biome is it? (a for animal, w for water, s for soil, p for plant, l for lab, u for unknown): ")
-        gold_dict[row['sample']] = (row['pmid'], biome_mapping.get(biome_input, 'unknown'))
+        biome_input = input("Which biome is it? (a for animal, w for water, s for soil, p for plant, l for lab, o for other): ")
+        gold_dict[row['sample']] = (row['pmid'], biome_mapping.get(biome_input, 'other'))
         save_gold_data((gold_dict, processed_pmids))
 
         # Increment the count for the selected biome
