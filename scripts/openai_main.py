@@ -159,8 +159,7 @@ if __name__ == "__main__":
 # 200 nspb, "openai_system_prompt_coordinates.txt", chunk_size 400
 
 # 20240117
-# 200 nspb, "openai_system_prompt_coordinates.txt", chunk_size 400
-
+# 200 nspb, "openai_system_prompt_coordinates.txt" 
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
