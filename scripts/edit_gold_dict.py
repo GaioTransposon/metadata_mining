@@ -7,9 +7,19 @@ Created on Thu Nov  2 11:43:50 2023
 """
 
 
+import os
 import pickle
 
 GOLD_DICT_PATH = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gold_dict.pkl"
+METADATA_DIRECTORY = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs"  
+
+# Function to fetch metadata
+def fetch_metadata_from_sample(sample):
+    folder_name = f"dir_{sample[-3:]}"
+    folder_path = os.path.join(METADATA_DIRECTORY, folder_name)
+    metadata_file_path = os.path.join(folder_path, f"{sample}_clean.txt")
+    with open(metadata_file_path, 'r') as file:
+        return file.read()
 
 # Load the existing data
 with open(GOLD_DICT_PATH, 'rb') as file:
@@ -20,6 +30,10 @@ sample_key = input("What is the sample key you want to edit? ")
 
 # Check if the key exists in the dictionary
 if sample_key in data:
+    # Retrieve and print the metadata
+    metadata = fetch_metadata_from_sample(sample_key)
+    print(f"Metadata for '{sample_key}':\n{metadata}")
+
     # Retrieve the current tuple for the key
     values = list(data[sample_key])  # Convert tuple to list to allow modifications
     print(f"Current values for '{sample_key}': {values}")
@@ -45,8 +59,6 @@ if sample_key in data:
 
 else:
     print(f"The key '{sample_key}' was not found in the dictionary.")
-
-
 
 
 
