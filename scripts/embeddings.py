@@ -17,7 +17,7 @@ import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 import umap
 from sklearn.cluster import KMeans
-
+import matplotlib.pyplot as plt
 
 
 # compute cosine similarity
@@ -107,12 +107,24 @@ reducer = umap.UMAP()   # evt: random_state=42
 transformed_embeddings = reducer.fit_transform(all_embeddings)
 
 
-# Define colors for K-means clusters (you can adjust these colors)
-cluster_colors = ['red', 'green', 'blue', 'purple', 'orange'] * (n_clusters // 5 + 1)
+import matplotlib
+import matplotlib.pyplot as plt
+
+# Generate a list of 10 distinct colors
+n_colors = 10  # Adjust this if you have more than 10 clusters
+colors = plt.cm.get_cmap('tab10', n_colors)
+
+# Convert colors to hex format for Plotly
+hex_colors = [matplotlib.colors.rgb2hex(colors(i)) for i in range(n_colors)]
+
+
 
 # Initialize plot data and results
 plot_data = []
 results = []
+
+
+
 # Process each text embedding for plotting
 for i, embedding in enumerate(transformed_embeddings):
     # Calculate the max similarity for the current embedding
@@ -120,6 +132,7 @@ for i, embedding in enumerate(transformed_embeddings):
 
     # It's a text sample
     sample_id = sample_ids[i]
+    text_sample = texts[i]
     
     # Safely get biome from gold_dict_df
     biome = gold_dict_df.loc[gold_dict_df['Sample ID'] == sample_id, 'biome'].values
@@ -128,11 +141,16 @@ for i, embedding in enumerate(transformed_embeddings):
     text = f"ID: {sample_id}<br>Summary: {text_sample[:200]}..." if len(text_sample) > 200 else f"ID: {sample_id}<br>Summary: {text_sample}"
 
     # Populate your results DataFrame
-    results.append({"Sample ID": sample_id, "Biome": biome[0] if biome.size > 0 else "Unknown", "Cluster": clusters[i]})
-
+    results.append({
+        "Sample ID": sample_id, 
+        "Biome": biome[0] if biome.size > 0 else "Unknown", 
+        "Cluster": clusters[i],
+        "Summary": text_sample  # Add the full summary text
+    })
+    
     # Determine color based on user selection
     if color_by_cluster:
-        color = cluster_colors[clusters[i]]
+        color = hex_colors[clusters[i]]
     elif color_by_biome:
         biome_color = biome_colors.get(biome[0], 'grey') if biome.size > 0 else 'grey'
         color = biome_color
@@ -150,17 +168,35 @@ for i, embedding in enumerate(transformed_embeddings):
 # Create a Plotly scatter plot
 fig = go.Figure()
 
-# Add points to the scatter plot
-for data in plot_data:
-    fig.add_trace(go.Scatter(
-        x=[data['x']], 
-        y=[data['y']], 
-        mode='markers', 
-        marker=dict(color=data['color'], size=7), 
-        text=data['text'],
-        hoverinfo='text',
-        showlegend=False  # Set showlegend to False
-    ))
+# Initialize a set to keep track of clusters already plotted
+plotted_clusters = set()
+
+# Add points to the scatter plot with legend entries
+for i, data in enumerate(plot_data):
+    cluster_num = clusters[i]  # Use loop index for cluster number
+    if cluster_num not in plotted_clusters:
+        # Add trace with a legend entry
+        fig.add_trace(go.Scatter(
+            x=[data['x']], 
+            y=[data['y']], 
+            mode='markers',
+            marker=dict(color=hex_colors[cluster_num], size=7),
+            text=data['text'],
+            hoverinfo='text',
+            name=f'Cluster {cluster_num}'  # Set the name for the legend
+        ))
+        plotted_clusters.add(cluster_num)
+    else:
+        # Add trace without a legend entry
+        fig.add_trace(go.Scatter(
+            x=[data['x']], 
+            y=[data['y']], 
+            mode='markers',
+            marker=dict(color=hex_colors[cluster_num], size=7),
+            text=data['text'],
+            hoverinfo='text',
+            showlegend=False
+        ))
 
 # Update layout with titles and labels
 fig.update_layout(
@@ -186,6 +222,123 @@ print(df)
 
 
 
+################################
+
+# TD-IDF 
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+import numpy as np
+
+# Assuming 'df' is your DataFrame with 'Cluster' and 'Summary' columns
+clustered_texts = df.groupby('Cluster')['Summary'].apply(lambda texts: ' '.join(texts))
+
+# Initialize TF-IDF Vectorizer
+vectorizer = TfidfVectorizer(max_features=100, stop_words='english')
+
+# Fit and transform the texts
+tfidf_matrix = vectorizer.fit_transform(clustered_texts)
+
+# Get feature names to use for displaying top words
+feature_names = np.array(vectorizer.get_feature_names_out())
+
+# Function to get top words for each cluster
+def get_top_words(cluster_num, top_n):
+    row = np.squeeze(tfidf_matrix[cluster_num].toarray())
+    top_word_indices = np.argsort(row)[::-1][:top_n]
+    return feature_names[top_word_indices]
+
+# Display top words for each cluster
+for cluster in range(n_clusters):
+    print(f"Cluster {cluster}:")
+    print(get_top_words(cluster, 10))  # Change 10 to get more or fewer top words
+
+
+################################
+
+
+################################
+
+# SHAP
+
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+
+# Prepare your data
+X = text_embeddings  # Text embeddings as features
+y = clusters  # Cluster labels as target
+
+# Split your data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Train a classifier
+classifier = RandomForestClassifier(random_state=42)
+classifier.fit(X_train, y_train)
+
+
+import shap # Version: 0.44.0
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Initialize JS visualization in the notebook (if you're using Jupyter)
+shap.initjs()
+
+# Create a SHAP explainer and calculate SHAP values
+explainer = shap.TreeExplainer(classifier)
+shap_values = explainer.shap_values(X_test)
+
+
+# Assuming 'texts' is your list of text data
+vectorizer = TfidfVectorizer(stop_words='english')
+X = vectorizer.fit_transform(texts)
+
+# Now you can use vectorizer.get_feature_names_out() since the vectorizer has been fitted
+feature_names = vectorizer.get_feature_names_out()
+print(feature_names[1600:1650])  # Print first 10 feature names to check
+
+
+# Now this should work without error
+shap.summary_plot(shap_values[3], X_test, feature_names=feature_names)
+
+
+################################
+
+
+################################
+
+
+# wordclouds 
+
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+
+# Assuming 'df' is your DataFrame with 'Cluster' and 'Summary' columns
+# Create a dictionary to store text for each cluster
+cluster_texts = {}
+for cluster in df['Cluster'].unique():
+    texts = df[df['Cluster'] == cluster]['Summary'].str.cat(sep=' ')
+    cluster_texts[cluster] = texts
+
+# Generate word clouds for each cluster
+for cluster, texts in cluster_texts.items():
+    print(cluster)
+    wordcloud = WordCloud(width=800, height=800, 
+                          background_color='white', 
+                          min_font_size=10).generate(texts)
+    
+    # Plot the WordCloud image                        
+    plt.figure(figsize=(8, 8), facecolor=None) 
+    plt.imshow(wordcloud) 
+    plt.axis("off") 
+    plt.tight_layout(pad=0) 
+  
+    plt.title(f'Word Cloud for Cluster {cluster}')
+    plt.show()
+
+    # # Save the word cloud to a file
+    # wordcloud.to_file(f'wordcloud_cluster_{cluster}.png')
+
+
+################################
 
 
 
@@ -204,13 +357,22 @@ print(df)
 
 
 
+    
+    
+    
+    
+import matplotlib.pyplot as plt
 
+# Take average SHAP values per feature across all samples
+mean_shap_values = np.abs(shap_values[0]).mean(axis=0)
+sorted_indices = np.argsort(mean_shap_values)
 
-
-
-
-
-
-
+# Plot
+plt.figure(figsize=(10, 8))
+plt.title("Feature Importance based on SHAP values")
+plt.barh(range(20), mean_shap_values[sorted_indices][-20:], align='center')  # Top 20 features
+plt.yticks(range(20), feature_names[sorted_indices][-20:])
+plt.xlabel("SHAP Value (mean absolute value)")
+plt.show()
 
 
