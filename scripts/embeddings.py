@@ -11,7 +11,6 @@ import openai
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cosine
-from sklearn.decomposition import PCA
 import csv
 import plotly.graph_objects as go
 import pickle
@@ -60,22 +59,8 @@ gold_dict_df.drop(columns='tuple_data', inplace=True)
 ################################
 
 
-
-categories = ["animal", "plant", "water", "soil", "other"]
-
-category_descriptions = {
-    "animal": "Animals including various species, from mammals to birds, living in different environments",
-    "plant": "Diverse ecosystems of land plants including trees, flowers, and grasses",
-    "water": "Aquatic environments ranging from oceans and seas to lakes and rivers",
-    "soil": "Soil ecosystems comprising different types of soils, rich in minerals and organic matter",
-    "other": "laboratory, bioreactor, fungus, whole genome sequencing samples"
-}
-
-# define colors for categories
-category_colors = {"animal": "pink", "plant": "green", "water": "blue", "soil": "brown", "other": "gray"}
-
 # path
-file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gpt_clean_output_nspb100_chunksize1500_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_dt20240115_1716.txt'
+file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gpt_clean_output_nspb200_chunksize1500_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_dt20240117_1755.txt'
 
 # read file and extract summaries and smaple IDs
 texts = []
@@ -90,11 +75,10 @@ with open(file_path, mode='r', encoding='utf-8') as file:
 
 
 # get embeddings
-category_embeddings = get_embeddings(list(category_descriptions.values()))
 text_embeddings = get_embeddings(texts)
 
 # Compute similarities among all embeddings
-all_embeddings = np.vstack((category_embeddings, text_embeddings))
+all_embeddings = np.vstack((text_embeddings))
 
 similarity_matrix = cosine_similarity(all_embeddings)
 
@@ -105,17 +89,21 @@ biome_colors = {"plant": "green", "water": "blue", "animal": "pink", "soil": "br
 ################################
 
 
-
 # K-means 
+
+# Define your variables for coloring
+color_by_cluster = 0  # Set to 1 for coloring by cluster, 0 otherwise
+color_by_biome = 1    # Set to 1 for coloring by biome, 0 otherwise
 
 
 # K-means Clustering
-n_clusters = 5  # Change this number based on your expectation of distinct clusters
+n_clusters = 10  # Change this number based on your expectation of distinct clusters
 kmeans = KMeans(n_clusters=n_clusters, random_state=0)
 clusters = kmeans.fit_predict(all_embeddings)
 
 # UMAP for dimensionality reduction
-reducer = umap.UMAP()
+reducer = umap.UMAP()   # evt: random_state=42
+
 transformed_embeddings = reducer.fit_transform(all_embeddings)
 
 
@@ -125,39 +113,31 @@ cluster_colors = ['red', 'green', 'blue', 'purple', 'orange'] * (n_clusters // 5
 # Initialize plot data and results
 plot_data = []
 results = []
-
-
-# Process each embedding for plotting
+# Process each text embedding for plotting
 for i, embedding in enumerate(transformed_embeddings):
     # Calculate the max similarity for the current embedding
-    # Exclude the similarity with itself by setting diagonal to 0
-    similarity_matrix[i, i] = 0
     max_similarity = max(similarity_matrix[i])
+
+    # It's a text sample
+    sample_id = sample_ids[i]
     
-    
-    # Determine if the current point is a category or a text sample
-    if i < len(category_embeddings):
-        # It's a category
-        assigned_category = categories[i]
-        color = category_colors[assigned_category]
-        text = f"Category: {assigned_category}"
-    else:
-        # It's a text sample
-        sample_index = i - len(category_embeddings)
-        sample_id = sample_ids[sample_index]
-        
-        # Safely get biome from gold_dict_df
-        biome = gold_dict_df.loc[gold_dict_df['Sample ID'] == sample_id, 'biome'].values
+    # Safely get biome from gold_dict_df
+    biome = gold_dict_df.loc[gold_dict_df['Sample ID'] == sample_id, 'biome'].values
+
+    text_sample = texts[i]
+    text = f"ID: {sample_id}<br>Summary: {text_sample[:200]}..." if len(text_sample) > 200 else f"ID: {sample_id}<br>Summary: {text_sample}"
+
+    # Populate your results DataFrame
+    results.append({"Sample ID": sample_id, "Biome": biome[0] if biome.size > 0 else "Unknown", "Cluster": clusters[i]})
+
+    # Determine color based on user selection
+    if color_by_cluster:
+        color = cluster_colors[clusters[i]]
+    elif color_by_biome:
         biome_color = biome_colors.get(biome[0], 'grey') if biome.size > 0 else 'grey'
-
-        text_sample = texts[sample_index]
-        text = f"ID: {sample_id}<br>Summary: {text_sample[:200]}..." if len(text_sample) > 200 else f"ID: {sample_id}<br>Summary: {text_sample}"
-
-        # Populate your results DataFrame
-        results.append({"Sample ID": sample_id, "Biome": biome[0] if biome.size > 0 else "Unknown", "Cluster": clusters[sample_index]})
-
-        # Use biome color for each sample
         color = biome_color
+    else:
+        color = 'grey'  # Default color
 
     plot_data.append({
         "x": embedding[0],
@@ -167,7 +147,6 @@ for i, embedding in enumerate(transformed_embeddings):
         "opacity": max_similarity
     })
     
-
 # Create a Plotly scatter plot
 fig = go.Figure()
 
