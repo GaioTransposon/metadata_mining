@@ -17,7 +17,9 @@ import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 import umap
 from sklearn.cluster import KMeans
+import matplotlib
 import matplotlib.pyplot as plt
+
 
 
 # compute cosine similarity
@@ -73,7 +75,6 @@ with open(file_path, mode='r', encoding='utf-8') as file:
         texts.append(row[1])       # sample's summary 
 
 
-
 # get embeddings
 text_embeddings = get_embeddings(texts)
 
@@ -105,10 +106,6 @@ clusters = kmeans.fit_predict(all_embeddings)
 reducer = umap.UMAP()   # evt: random_state=42
 
 transformed_embeddings = reducer.fit_transform(all_embeddings)
-
-
-import matplotlib
-import matplotlib.pyplot as plt
 
 # Generate a list of 10 distinct colors
 n_colors = 10  # Adjust this if you have more than 10 clusters
@@ -230,7 +227,7 @@ import numpy as np
 import pandas as pd
 
 # Assuming 'df' is your DataFrame with 'Cluster' and 'Summary' columns
-clustered_texts = df.groupby('Cluster')['Metadata'].apply(lambda texts: ' '.join(texts))     ####### or Metadata
+clustered_texts = df.groupby('Cluster')['Summary'].apply(lambda texts: ' '.join(texts))     ####### or Metadata
 
 # Initialize TF-IDF Vectorizer
 vectorizer = TfidfVectorizer(max_features=100, stop_words='english')
@@ -421,13 +418,14 @@ for cluster, texts in cluster_texts.items():
 ################################
 
 
-
+# embeddings directly from clean metadata 
 
 
 import os
 import csv
 import openai
 import numpy as np
+import time
 
 # Your existing functions
 def get_embeddings(texts):
@@ -460,8 +458,14 @@ for sample_id in sample_ids:
     metadata = fetch_metadata_from_sample(sample_id)
     metadata_texts.append(metadata)
 
-metadata_embeddings = get_embeddings(metadata_texts)
 
+
+print(len(sample_ids))
+
+start = time.time()
+metadata_embeddings = get_embeddings(metadata_texts)
+end = time.time()
+print(end - start)
 
 # Compute similarities among all metadata embeddings
 all_metadata_embeddings = np.vstack((metadata_embeddings))
@@ -479,8 +483,7 @@ transformed_metadata_embeddings = reducer.fit_transform(all_metadata_embeddings)
 
 
 
-import matplotlib
-import matplotlib.pyplot as plt
+
 
 # Generate a list of 10 distinct colors
 n_colors = 10  # Adjust this if you have more than 10 clusters
