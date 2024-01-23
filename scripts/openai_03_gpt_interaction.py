@@ -13,6 +13,7 @@ from datetime import datetime
 import time
 import logging
 import glob 
+import json
 
 
 # =======================================================
@@ -82,7 +83,7 @@ class GPTInteractor:
     def gpt_request(self, content_string):
         openai.api_key = self.api_key
         system_prompt = self.load_system_prompt()  # load the system prompt
-
+        
         if not system_prompt:
             logging.error("System prompt is not available. Aborting request.")
             return None
@@ -105,7 +106,8 @@ class GPTInteractor:
             frequency_penalty=self.frequency_penalty,
             presence_penalty=self.presence_penalty
         )
-
+    
+        
         
     def interact_with_gpt(self):
         """Iterate over content strings and make requests to GPT."""
@@ -190,6 +192,10 @@ class GPTInteractor:
     
 
 
+
+
+
+    
 
 
 
