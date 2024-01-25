@@ -160,8 +160,8 @@ if __name__ == "__main__":
 #     --metadata_directory "sample.info_split_dirs/" \
 #     --embeddings_file "embeddings.json" \
 #     --temp_embeddings_file "temp_embeddings.json" \
-#     --batch_size 10 \
-#     --api_key_path "/mnt/mnemo5/dgaio/my_api_key" 
+#     --batch_size 100 \
+#     --api_key_path "/mnt/mnemo5/dgaio/my_api_key"
 
 
 
