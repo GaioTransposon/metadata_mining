@@ -189,6 +189,10 @@ if __name__ == "__main__":
 
 
 # =============================================================================
+# # 
+# # To run tests in console: 
+# #
+# 
 # import os
 # import openai
 # import numpy as np
