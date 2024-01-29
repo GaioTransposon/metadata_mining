@@ -198,36 +198,50 @@ cluster_colors = [
 
 
 
-
 # Visualization
 fig = go.Figure()
 
-# Plot non-gold dict samples
+# Track which biomes have been added to legend
+added_to_legend = set()
+
+
+# Plot non-gold dict samples without adding to legend
 for i, (emb, cluster) in enumerate(zip(transformed_embeddings[:len(filtered_embeddings)], clusters[:len(filtered_embeddings)])):
-    color = cluster_colors[cluster % len(cluster_colors)]  # Use modulo to cycle through cluster colors
+    color = cluster_colors[cluster % len(cluster_colors)]
     sample_id = filtered_sample_ids[i]
-    # Retrieve biome for the sample ID, default to 'Unknown'
-    biome = " "
-    hover_text = f'Sample ID: {sample_id}<br>Biome: {biome}'
-    fig.add_trace(go.Scatter(x=[emb[0]], y=[emb[1]], mode='markers', marker=dict(color=color, size=7), text=hover_text, hoverinfo='text', showlegend=False))
+    hover_text = f'Sample ID: {sample_id}'
+    fig.add_trace(go.Scatter(x=[emb[0]], y=[emb[1]], mode='markers',
+                             marker=dict(color=color, size=7),
+                             text=hover_text, hoverinfo='text',
+                             showlegend=False))  # Don't show these in legend
 
 # Plot gold dict samples with biome-specific colors
 for i, emb in enumerate(transformed_embeddings[len(filtered_embeddings):]):
     sample_id = selected_gd_df.iloc[i]["Sample ID"]
     biome = selected_gd_df.iloc[i]["Biome"]
-    # Ensure color is fetched correctly from biome_colors, default to 'gray'    
-    color = biome_colors.get(biome, "white")
+    color = biome_colors.get(biome, "white")  # Use white as default if biome not found
     hover_text = f'Sample ID: {sample_id}<br>Biome: {biome}'
-    fig.add_trace(go.Scatter(x=[emb[0]], y=[emb[1]], mode='markers', marker=dict(color=color, size=7, line=dict(width=2, color='black')), text=hover_text, hoverinfo='text', showlegend=True))
+
+    # Only add to legend if not already added
+    show_in_legend = biome not in added_to_legend
+    added_to_legend.add(biome)
+
+    fig.add_trace(go.Scatter(x=[emb[0]], y=[emb[1]], mode='markers',
+                             marker=dict(color=color, size=7, line=dict(width=2, color='black')),
+                             name=biome,  # This sets the legend name
+                             text=hover_text, hoverinfo='text',
+                             showlegend=show_in_legend))  # Show in legend only if not already added
+
 
 # Update layout
-fig.update_layout(title='UMAP Projection of Embeddings', xaxis_title='UMAP 1', yaxis_title='UMAP 2', showlegend=True)
+fig.update_layout(title='UMAP Projection of Embeddings', xaxis_title='UMAP 1', yaxis_title='UMAP 2')
 
 # Show plot
 fig.show()
 
 # Save the figure as an HTML file
 fig.write_html("text_embeddings_visualization.html")
+
 
 
 
