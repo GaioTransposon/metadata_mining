@@ -282,40 +282,47 @@ def load_processed_samples(EMBEDDINGS_FILE):
 # =============================================================================
 
 def main():
-    args = parse_arguments()  
-    # Your existing setup code...
+    args = parse_arguments()
 
+    # Initialize API key
+    with open(args.api_key_path, "r") as file:
+        openai.api_key = file.read().strip()
+
+    # Optional: Load gold dictionary if required
     gold_dict = {}
     if args.get_for_gold_dict.lower() == 'yes':
         gold_dict = load_gold_dict(os.path.join(args.work_dir, args.gold_dict_path))
-    
+
+    # Load set of already processed samples
     processed_samples = load_processed_samples(os.path.join(args.work_dir, args.embeddings_file))
     failed_samples = []
-    total_samples_processed_in_run = 0  
+    total_samples_processed_in_run = 0
 
     for subdir in os.listdir(os.path.join(args.work_dir, args.metadata_directory)):
         subdir_path = os.path.join(args.work_dir, args.metadata_directory, subdir)
         if not os.path.isdir(subdir_path):
-            continue
+            continue  # Skip non-directory files
 
         sample_files = [f for f in os.listdir(subdir_path) if f.endswith('_clean.txt')]
         batch = []
-        
+
         for sample_file in sample_files:
             sample_id = sample_file.split('_clean')[0]
-            if args.get_for_gold_dict.lower() == 'yes' and sample_id not in gold_dict:
-                continue
-            if sample_id in processed_samples:
-                continue
 
+            if args.get_for_gold_dict.lower() == 'yes' and sample_id not in gold_dict:
+                continue  # Skip samples not in the gold dictionary
+            if sample_id in processed_samples:
+                continue  # Skip already processed samples
+
+            metadata_file_path = os.path.join(subdir_path, sample_file)
             start_read_time = time.time()
-            with open(os.path.join(subdir_path, sample_file), 'r') as file:
+            with open(metadata_file_path, 'r') as file:
                 metadata = file.read()
             end_read_time = time.time()
             print(f"{datetime.now()} - Time taken to read {sample_file}: {end_read_time - start_read_time:.2f} seconds")
 
             batch.append((sample_id, metadata))
-            
+
             if len(batch) >= args.batch_size:
                 start_batch_time = time.time()
                 sample_ids, metadata_texts = zip(*batch)
@@ -340,6 +347,7 @@ def main():
     print(f"{datetime.now()} - All samples processed.")
     if failed_samples:
         print(f"{datetime.now()} - Failed samples: {failed_samples}")
+
 
     
     
