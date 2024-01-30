@@ -70,21 +70,48 @@ def get_embeddings(texts):
         return np.array([]), texts
   
     
-# creates empty json (if it doesn't exist)
+# =============================================================================
+# # creates empty json (if it doesn't exist)
+# def save_embeddings(EMBEDDINGS_FILE, TEMP_EMBEDDINGS_FILE, embeddings, sample_ids):
+#     if not os.path.exists(EMBEDDINGS_FILE):
+#         with open(EMBEDDINGS_FILE, 'w') as file:
+#             json.dump({}, file)  
+# 
+#     with open(EMBEDDINGS_FILE, 'r') as file:
+#         data = json.load(file)
+#         for sample_id, embedding in zip(sample_ids, embeddings):
+#             data[sample_id] = embedding.tolist()
+# 
+#     with open(TEMP_EMBEDDINGS_FILE, 'w') as temp_file:
+#         json.dump(data, temp_file)
+# 
+#     # replaces original file with updated temporary file
+#     shutil.move(TEMP_EMBEDDINGS_FILE, EMBEDDINGS_FILE)
+# =============================================================================
+
+
 def save_embeddings(EMBEDDINGS_FILE, TEMP_EMBEDDINGS_FILE, embeddings, sample_ids):
+    start_write_time = time.time()  # Start timing for writing operation
+
+    # Check if the embeddings file exists, create an empty one if it doesn't
     if not os.path.exists(EMBEDDINGS_FILE):
         with open(EMBEDDINGS_FILE, 'w') as file:
             json.dump({}, file)  
 
+    # Load existing data, update with new embeddings, and write to temp file
     with open(EMBEDDINGS_FILE, 'r') as file:
         data = json.load(file)
-        for sample_id, embedding in zip(sample_ids, embeddings):
-            data[sample_id] = embedding.tolist()
+    
+    for sample_id, embedding in zip(sample_ids, embeddings):
+        data[sample_id] = embedding.tolist()
 
     with open(TEMP_EMBEDDINGS_FILE, 'w') as temp_file:
         json.dump(data, temp_file)
 
-    # replaces original file with updated temporary file
+    end_write_time = time.time()  # End timing for writing operation
+    print(f"Time taken to write and update embeddings: {end_write_time - start_write_time:.2f} seconds")
+
+    # Replace original file with updated temporary file
     shutil.move(TEMP_EMBEDDINGS_FILE, EMBEDDINGS_FILE)
 
 
@@ -358,8 +385,8 @@ if __name__ == "__main__":
 # python /mnt/mnemo5/dgaio/github/metadata_mining/scripts/embeddings_from_metadata.py \
 #     --work_dir "/mnt/mnemo5/dgaio/MicrobeAtlasProject/" \
 #     --metadata_directory "sample.info_split_dirs/" \
-#     --embeddings_file "embeddings_gd.json" \
-#     --temp_embeddings_file "temp_embeddings_gd.json" \
+#     --embeddings_file "embeddings.json" \
+#     --temp_embeddings_file "temp_embeddings.json" \
 #     --batch_size 100 \
 #     --api_key_path "/mnt/mnemo5/dgaio/my_api_key" \
 #     --get_for_gold_dict "no" \
