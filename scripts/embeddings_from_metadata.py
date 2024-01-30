@@ -16,6 +16,7 @@ import time
 import json
 import shutil
 import pickle  
+from datetime import datetime
 
 
 def parse_arguments():
@@ -58,16 +59,17 @@ def load_gold_dict(gold_dict_path):
     
 
 def get_embeddings(texts):
+    start_api_call_time = time.time()
     try:
-        start_api_call_time = time.time()  # Start timing for API call
         response = openai.Embedding.create(input=texts, engine="text-embedding-ada-002")
-        end_api_call_time = time.time()  # End timing for API call
-        print(f"API call for {len(texts)} texts took {end_api_call_time - start_api_call_time:.2f} seconds")
         embeddings = [embedding['embedding'] for embedding in response['data']]
-        return np.array(embeddings), []
     except Exception as e:
-        print(f"Error in batch embedding: {e}")
-        return np.array([]), texts
+        print(f"{datetime.now()} - Error in batch embedding: {e}")
+        embeddings = []
+    end_api_call_time = time.time()
+    print(f"{datetime.now()} - API call for {len(texts)} texts took {end_api_call_time - start_api_call_time:.2f} seconds")
+    return np.array(embeddings), []
+
   
     
 # =============================================================================
@@ -91,8 +93,7 @@ def get_embeddings(texts):
 
 
 def save_embeddings(EMBEDDINGS_FILE, TEMP_EMBEDDINGS_FILE, embeddings, sample_ids):
-    start_write_time = time.time()  # Start timing for writing operation
-
+    start_write_time = time.time()
     # Check if the embeddings file exists, create an empty one if it doesn't
     if not os.path.exists(EMBEDDINGS_FILE):
         with open(EMBEDDINGS_FILE, 'w') as file:
@@ -101,18 +102,17 @@ def save_embeddings(EMBEDDINGS_FILE, TEMP_EMBEDDINGS_FILE, embeddings, sample_id
     # Load existing data, update with new embeddings, and write to temp file
     with open(EMBEDDINGS_FILE, 'r') as file:
         data = json.load(file)
-    
+
     for sample_id, embedding in zip(sample_ids, embeddings):
         data[sample_id] = embedding.tolist()
 
     with open(TEMP_EMBEDDINGS_FILE, 'w') as temp_file:
         json.dump(data, temp_file)
 
-    end_write_time = time.time()  # End timing for writing operation
-    print(f"Time taken to write and update embeddings: {end_write_time - start_write_time:.2f} seconds")
-
-    # Replace original file with updated temporary file
     shutil.move(TEMP_EMBEDDINGS_FILE, EMBEDDINGS_FILE)
+    end_write_time = time.time()
+    print(f"{datetime.now()} - Time taken to write and update embeddings: {end_write_time - start_write_time:.2f} seconds")
+
 
 
 
@@ -281,33 +281,20 @@ def load_processed_samples(EMBEDDINGS_FILE):
 # 
 # =============================================================================
 
-
 def main():
     args = parse_arguments()  
-
-    work_dir = args.work_dir
-    METADATA_DIRECTORY = os.path.join(work_dir, args.metadata_directory)
-    EMBEDDINGS_FILE = os.path.join(work_dir, args.embeddings_file)
-    TEMP_EMBEDDINGS_FILE = os.path.join(work_dir, args.temp_embeddings_file)
-    BATCH_SIZE = args.batch_size
-    api_key_path = args.api_key_path
-    get_for_gold_dict = args.get_for_gold_dict.lower() == 'yes'
-    gold_dict_path = os.path.join(work_dir, args.gold_dict_path)
-    
-    # Load API key
-    with open(api_key_path, "r") as file:
-        openai.api_key = file.read().strip()
+    # Your existing setup code...
 
     gold_dict = {}
-    if get_for_gold_dict:
-        gold_dict = load_gold_dict(gold_dict_path)
+    if args.get_for_gold_dict.lower() == 'yes':
+        gold_dict = load_gold_dict(os.path.join(args.work_dir, args.gold_dict_path))
     
-    processed_samples = load_processed_samples(EMBEDDINGS_FILE)
+    processed_samples = load_processed_samples(os.path.join(args.work_dir, args.embeddings_file))
     failed_samples = []
     total_samples_processed_in_run = 0  
 
-    for subdir in os.listdir(METADATA_DIRECTORY):
-        subdir_path = os.path.join(METADATA_DIRECTORY, subdir)
+    for subdir in os.listdir(os.path.join(args.work_dir, args.metadata_directory)):
+        subdir_path = os.path.join(args.work_dir, args.metadata_directory, subdir)
         if not os.path.isdir(subdir_path):
             continue
 
@@ -316,47 +303,43 @@ def main():
         
         for sample_file in sample_files:
             sample_id = sample_file.split('_clean')[0]
-            
-            if get_for_gold_dict and sample_id not in gold_dict:
+            if args.get_for_gold_dict.lower() == 'yes' and sample_id not in gold_dict:
                 continue
-            
             if sample_id in processed_samples:
                 continue
 
-            metadata_file_path = os.path.join(subdir_path, sample_file)
-            start_read_time = time.time()  # Start timing for reading file
-            with open(metadata_file_path, 'r') as file:
+            start_read_time = time.time()
+            with open(os.path.join(subdir_path, sample_file), 'r') as file:
                 metadata = file.read()
-            end_read_time = time.time()  # End timing for reading file
-            print(f"Time taken to read {sample_file}: {end_read_time - start_read_time:.2f} seconds")
+            end_read_time = time.time()
+            print(f"{datetime.now()} - Time taken to read {sample_file}: {end_read_time - start_read_time:.2f} seconds")
 
             batch.append((sample_id, metadata))
             
-            if len(batch) >= BATCH_SIZE:
-                start_batch_time = time.time()  # Start timing for batch processing
+            if len(batch) >= args.batch_size:
+                start_batch_time = time.time()
                 sample_ids, metadata_texts = zip(*batch)
                 metadata_embeddings, batch_failed_samples = get_embeddings(metadata_texts)
                 failed_samples.extend(batch_failed_samples)
-                save_embeddings(EMBEDDINGS_FILE, TEMP_EMBEDDINGS_FILE, metadata_embeddings, [id for id, _ in batch if id not in batch_failed_samples])
-                end_batch_time = time.time()  # End timing for batch processing
-                time_per_sample = (end_batch_time - start_batch_time) / len(batch)
+                save_embeddings(os.path.join(args.work_dir, args.embeddings_file), os.path.join(args.work_dir, args.temp_embeddings_file), metadata_embeddings, sample_ids)
+                end_batch_time = time.time()
                 total_samples_processed_in_run += len(batch)
-                print(f"Processed batch of {len(batch)} samples in {end_batch_time - start_batch_time:.2f} seconds, n={total_samples_processed_in_run} samples processed in run, {time_per_sample:.2f} sec/sample.")
+                print(f"{datetime.now()} - Processed batch of {len(batch)} samples in {end_batch_time - start_batch_time:.2f} seconds, n={total_samples_processed_in_run} samples processed in run, {(end_batch_time - start_batch_time) / len(batch):.2f} sec/sample.")
                 batch = []
 
         # Handle the last batch if it exists
         if batch:
-            start_batch_time = time.time()  # Start timing for last batch processing
+            start_batch_time = time.time()
             sample_ids, metadata_texts = zip(*batch)
             metadata_embeddings, batch_failed_samples = get_embeddings(metadata_texts)
             failed_samples.extend(batch_failed_samples)
-            save_embeddings(EMBEDDINGS_FILE, TEMP_EMBEDDINGS_FILE, metadata_embeddings, [id for id, _ in batch if id not in batch_failed_samples])
-            end_batch_time = time.time()  # End timing for last batch processing
-            time_per_sample = (end_batch_time - start_batch_time) / len(batch)
-            print(f"Processed last batch of {len(batch)} samples in {end_batch_time - start_batch_time:.2f} seconds, {time_per_sample:.2f} sec/sample.")
+            save_embeddings(os.path.join(args.work_dir, args.embeddings_file), os.path.join(args.work_dir, args.temp_embeddings_file), metadata_embeddings, sample_ids)
+            end_batch_time = time.time()
+            print(f"{datetime.now()} - Processed last batch of {len(batch)} samples in {end_batch_time - start_batch_time:.2f} seconds, {(end_batch_time - start_batch_time) / len(batch):.2f} sec/sample.")
 
-    print("All samples processed.")
-    print("Failed samples:", failed_samples)
+    print(f"{datetime.now()} - All samples processed.")
+    if failed_samples:
+        print(f"{datetime.now()} - Failed samples: {failed_samples}")
 
     
     
