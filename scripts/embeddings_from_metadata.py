@@ -7,91 +7,67 @@ Created on Tue Jan 23 16:51:32 2024
 """
 
 
-
 import argparse
 import os
 import openai
 import numpy as np
 import time
 import json
-import shutil
-import pickle  
 from datetime import datetime
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
-    # Existing arguments
-    parser.add_argument('--work_dir', type=str, required=True, help='Working directory path e.g.: "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" ')
-    parser.add_argument('--metadata_directory', type=str, required=True, help='Directory with split metadata followed by "/" e.g.: "sample.info_split_dirs/" ') 
-    parser.add_argument('--embeddings_file', type=str, required=True, help='name given to embeddings file e.g.: "embeddings.json" ')
-    parser.add_argument('--temp_embeddings_file', type=str, required=True, help='name given to temporary embeddings file e.g.: "temp_embeddings.json" ')
-    parser.add_argument('--batch_size', type=int, required=True, help='number of samples to process at a time (one API call) (nb: above 100 it doesn t go faster than 0.02 sec/sample)')
-    parser.add_argument('--api_key_path', type=str, required=True, help='path to api key e.g.: "/Users/dgaio/my_api_key" ')
-    
-    # New optional arguments
-    parser.add_argument('--get_for_gold_dict', type=str, default="no", help='Flag to process only samples in the gold dictionary. Options: "yes" or "no"')
-    parser.add_argument('--gold_dict_path', type=str, default="gold_dict.pkl", help='Path to the gold dictionary file, relative to work_dir')
+    # Existing arguments unchanged
+    parser.add_argument('--work_dir', type=str, required=True, help='Working directory path')
+    parser.add_argument('--metadata_directory', type=str, required=True, help='Directory with split metadata')
+    parser.add_argument('--batch_size', type=int, required=True, help='Number of samples to process at a time')
+    parser.add_argument('--api_key_path', type=str, required=True, help='Path to api key')
+
+    # New argument for the processed samples file
+    parser.add_argument('--processed_samples_file', type=str, required=True, help='File to track processed sample IDs')
 
     return parser.parse_args()
 
 
+def load_processed_samples(processed_samples_file):
+    if not os.path.exists(processed_samples_file):
+        return set()
+    with open(processed_samples_file, 'r') as file:
+        return set(file.read().splitlines())
 
-def load_gold_dict(gold_dict_path):
-    with open(gold_dict_path, 'rb') as file:
-        gold_dict = pickle.load(file)
-    return gold_dict[0]  # Assuming gold_dict is a tuple and the first element is the dictionary
 
-
+def append_processed_samples(processed_samples_file, sample_ids):
+    with open(processed_samples_file, 'a') as file:
+        for sample_id in sample_ids:
+            file.write(sample_id + '\n')
 
 
 def get_embeddings(texts):
     start_api_call_time = time.time()
-    try:
-        response = openai.Embedding.create(input=texts, engine="text-embedding-ada-002")
-        embeddings = [embedding['embedding'] for embedding in response['data']]
-    except Exception as e:
-        print(f"{datetime.now()} - Error in batch embedding: {e}")
-        embeddings = []
+    # Simulate API call with a placeholder function
+    embeddings = np.random.rand(len(texts), 512)  # Placeholder for actual embeddings
     end_api_call_time = time.time()
     print(f"{datetime.now()} - API call for {len(texts)} texts took {end_api_call_time - start_api_call_time:.2f} seconds")
-    return np.array(embeddings), []
-
-  
-    
+    return embeddings, []
 
 
-def save_embeddings(EMBEDDINGS_FILE, TEMP_EMBEDDINGS_FILE, embeddings, sample_ids):
+
+
+
+def save_embeddings_batch(embeddings, sample_ids, temp_dir):
     start_write_time = time.time()
-    # Check if the embeddings file exists, create an empty one if it doesn't
-    if not os.path.exists(EMBEDDINGS_FILE):
-        with open(EMBEDDINGS_FILE, 'w') as file:
-            json.dump({}, file)  
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    temp_filename = os.path.join(temp_dir, f"embeddings_batch_{timestamp}.json")
 
-    # Load existing data, update with new embeddings, and write to temp file
-    with open(EMBEDDINGS_FILE, 'r') as file:
-        data = json.load(file)
+    batch_data = {sample_id: embedding.tolist() for sample_id, embedding in zip(sample_ids, embeddings)}
+    with open(temp_filename, 'w') as file:
+        json.dump(batch_data, file)
 
-    for sample_id, embedding in zip(sample_ids, embeddings):
-        data[sample_id] = embedding.tolist()
-
-    with open(TEMP_EMBEDDINGS_FILE, 'w') as temp_file:
-        json.dump(data, temp_file)
-
-    shutil.move(TEMP_EMBEDDINGS_FILE, EMBEDDINGS_FILE)
     end_write_time = time.time()
     print(f"{datetime.now()} - Time taken to write and update embeddings: {end_write_time - start_write_time:.2f} seconds")
-
-
-
-
-def load_processed_samples(EMBEDDINGS_FILE):
-    if not os.path.exists(EMBEDDINGS_FILE):
-        return set()
-    with open(EMBEDDINGS_FILE, 'r') as file:
-        data = json.load(file)
-    return set(data.keys())
+    print(f"{datetime.now()} - Saved batch to {temp_filename}")
 
 
 
@@ -102,20 +78,15 @@ def main():
     with open(args.api_key_path, "r") as file:
         openai.api_key = file.read().strip()
 
-    # Optional: Load gold dictionary if required
-    gold_dict = {}
-    if args.get_for_gold_dict.lower() == 'yes':
-        gold_dict = load_gold_dict(os.path.join(args.work_dir, args.gold_dict_path))
+    processed_samples = load_processed_samples(os.path.join(args.work_dir, args.processed_samples_file))
+    temp_dir = os.path.join(args.work_dir, 'temp')
+    os.makedirs(temp_dir, exist_ok=True)  # Ensure temp directory exists
 
-    # Load set of already processed samples
-    processed_samples = load_processed_samples(os.path.join(args.work_dir, args.embeddings_file))
-    failed_samples = []
     total_samples_processed_in_run = 0
-
     for subdir in os.listdir(os.path.join(args.work_dir, args.metadata_directory)):
         subdir_path = os.path.join(args.work_dir, args.metadata_directory, subdir)
         if not os.path.isdir(subdir_path):
-            continue  # Skip non-directory files
+            continue
 
         sample_files = [f for f in os.listdir(subdir_path) if f.endswith('_clean.txt')]
         batch = []
@@ -123,28 +94,23 @@ def main():
         for sample_file in sample_files:
             sample_id = sample_file.split('_clean')[0]
 
-            if args.get_for_gold_dict.lower() == 'yes' and sample_id not in gold_dict:
-                continue  # Skip samples not in the gold dictionary
             if sample_id in processed_samples:
-                continue  # Skip already processed samples
+                continue
 
             metadata_file_path = os.path.join(subdir_path, sample_file)
-            start_read_time = time.time()
             with open(metadata_file_path, 'r') as file:
                 metadata = file.read()
-            end_read_time = time.time()
-            print(f"{datetime.now()} - Time taken to read {sample_file}: {end_read_time - start_read_time:.2f} seconds")
 
             batch.append((sample_id, metadata))
 
             if len(batch) >= args.batch_size:
                 start_batch_time = time.time()
                 sample_ids, metadata_texts = zip(*batch)
-                metadata_embeddings, batch_failed_samples = get_embeddings(metadata_texts)
-                failed_samples.extend(batch_failed_samples)
-                save_embeddings(os.path.join(args.work_dir, args.embeddings_file), os.path.join(args.work_dir, args.temp_embeddings_file), metadata_embeddings, sample_ids)
-                end_batch_time = time.time()
+                metadata_embeddings, _ = get_embeddings(metadata_texts)
+                save_embeddings_batch(metadata_embeddings, sample_ids, temp_dir)
+                append_processed_samples(os.path.join(args.work_dir, args.processed_samples_file), sample_ids)
                 total_samples_processed_in_run += len(batch)
+                end_batch_time = time.time()
                 print(f"{datetime.now()} - Processed batch of {len(batch)} samples in {end_batch_time - start_batch_time:.2f} seconds, n={total_samples_processed_in_run} samples processed in run, {(end_batch_time - start_batch_time) / len(batch):.2f} sec/sample.")
                 batch = []
 
@@ -152,25 +118,224 @@ def main():
         if batch:
             start_batch_time = time.time()
             sample_ids, metadata_texts = zip(*batch)
-            metadata_embeddings, batch_failed_samples = get_embeddings(metadata_texts)
-            failed_samples.extend(batch_failed_samples)
-            save_embeddings(os.path.join(args.work_dir, args.embeddings_file), os.path.join(args.work_dir, args.temp_embeddings_file), metadata_embeddings, sample_ids)
+            metadata_embeddings, _ = get_embeddings(metadata_texts)
+            save_embeddings_batch(metadata_embeddings, sample_ids, temp_dir)
+            append_processed_samples(os.path.join(args.work_dir, args.processed_samples_file), sample_ids)
+            total_samples_processed_in_run += len(batch)
             end_batch_time = time.time()
-            print(f"{datetime.now()} - Processed last batch of {len(batch)} samples in {end_batch_time - start_batch_time:.2f} seconds, {(end_batch_time - start_batch_time) / len(batch):.2f} sec/sample.")
+            print(f"{datetime.now()} - Processed last batch of {len(batch)} samples in {end_batch_time - start_batch_time:.2f} seconds, n={total_samples_processed_in_run} samples processed in run, {(end_batch_time - start_batch_time) / len(batch):.2f} sec/sample.")
 
     print(f"{datetime.now()} - All samples processed.")
-    if failed_samples:
-        print(f"{datetime.now()} - Failed samples: {failed_samples}")
 
 
-    
-    
 if __name__ == "__main__":
     main()
 
         
 
 
+
+# python /Users/dgaio/github/metadata_mining/scripts/embeddings_from_metadata.py \
+#     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
+#     --metadata_directory "sample.info_split_dirs/" \
+#     --batch_size 10 \
+#     --api_key_path "/Users/dgaio/my_api_key" \
+#     --processed_samples_file "processed_samples_file.txt"
+
+
+# ssh dgaio@phobos.mls.uzh.ch
+# python /mnt/mnemo5/dgaio/github/metadata_mining/scripts/embeddings_from_metadata.py \
+#     --work_dir "/mnt/mnemo5/dgaio/MicrobeAtlasProject/" \
+#     --metadata_directory "sample.info_split_dirs/" \
+#     --batch_size 10 \
+#     --api_key_path "/mnt/mnemo5/dgaio/my_api_key" \
+#     --processed_samples_file "processed_samples_file.txt"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# =============================================================================
+# # ORI: 
+# import argparse
+# import os
+# import openai
+# import numpy as np
+# import time
+# import json
+# import shutil
+# import pickle  
+# from datetime import datetime
+# 
+# 
+# def parse_arguments():
+#     parser = argparse.ArgumentParser()
+# 
+#     # Existing arguments
+#     parser.add_argument('--work_dir', type=str, required=True, help='Working directory path e.g.: "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" ')
+#     parser.add_argument('--metadata_directory', type=str, required=True, help='Directory with split metadata followed by "/" e.g.: "sample.info_split_dirs/" ') 
+#     parser.add_argument('--embeddings_file', type=str, required=True, help='name given to embeddings file e.g.: "embeddings.json" ')
+#     parser.add_argument('--temp_embeddings_file', type=str, required=True, help='name given to temporary embeddings file e.g.: "temp_embeddings.json" ')
+#     parser.add_argument('--batch_size', type=int, required=True, help='number of samples to process at a time (one API call) (nb: above 100 it doesn t go faster than 0.02 sec/sample)')
+#     parser.add_argument('--api_key_path', type=str, required=True, help='path to api key e.g.: "/Users/dgaio/my_api_key" ')
+#     
+#     # New optional arguments
+#     parser.add_argument('--get_for_gold_dict', type=str, default="no", help='Flag to process only samples in the gold dictionary. Options: "yes" or "no"')
+#     parser.add_argument('--gold_dict_path', type=str, default="gold_dict.pkl", help='Path to the gold dictionary file, relative to work_dir')
+# 
+#     return parser.parse_args()
+# 
+# 
+# 
+# def load_gold_dict(gold_dict_path):
+#     with open(gold_dict_path, 'rb') as file:
+#         gold_dict = pickle.load(file)
+#     return gold_dict[0]  # Assuming gold_dict is a tuple and the first element is the dictionary
+# 
+# 
+# 
+# 
+# def get_embeddings(texts):
+#     start_api_call_time = time.time()
+#     try:
+#         response = openai.Embedding.create(input=texts, engine="text-embedding-ada-002")
+#         embeddings = [embedding['embedding'] for embedding in response['data']]
+#     except Exception as e:
+#         print(f"{datetime.now()} - Error in batch embedding: {e}")
+#         embeddings = []
+#     end_api_call_time = time.time()
+#     print(f"{datetime.now()} - API call for {len(texts)} texts took {end_api_call_time - start_api_call_time:.2f} seconds")
+#     return np.array(embeddings), []
+# 
+#   
+#     
+# 
+# 
+# def save_embeddings(EMBEDDINGS_FILE, TEMP_EMBEDDINGS_FILE, embeddings, sample_ids):
+#     start_write_time = time.time()
+#     # Check if the embeddings file exists, create an empty one if it doesn't
+#     if not os.path.exists(EMBEDDINGS_FILE):
+#         with open(EMBEDDINGS_FILE, 'w') as file:
+#             json.dump({}, file)  
+# 
+#     # Load existing data, update with new embeddings, and write to temp file
+#     with open(EMBEDDINGS_FILE, 'r') as file:
+#         data = json.load(file)
+# 
+#     for sample_id, embedding in zip(sample_ids, embeddings):
+#         data[sample_id] = embedding.tolist()
+# 
+#     with open(TEMP_EMBEDDINGS_FILE, 'w') as temp_file:
+#         json.dump(data, temp_file)
+# 
+#     shutil.move(TEMP_EMBEDDINGS_FILE, EMBEDDINGS_FILE)
+#     end_write_time = time.time()
+#     print(f"{datetime.now()} - Time taken to write and update embeddings: {end_write_time - start_write_time:.2f} seconds")
+# 
+# 
+# 
+# 
+# def load_processed_samples(EMBEDDINGS_FILE):
+#     if not os.path.exists(EMBEDDINGS_FILE):
+#         return set()
+#     with open(EMBEDDINGS_FILE, 'r') as file:
+#         data = json.load(file)
+#     return set(data.keys())
+# 
+# 
+# 
+# def main():
+#     args = parse_arguments()
+# 
+#     # Initialize API key
+#     with open(args.api_key_path, "r") as file:
+#         openai.api_key = file.read().strip()
+# 
+#     # Optional: Load gold dictionary if required
+#     gold_dict = {}
+#     if args.get_for_gold_dict.lower() == 'yes':
+#         gold_dict = load_gold_dict(os.path.join(args.work_dir, args.gold_dict_path))
+# 
+#     # Load set of already processed samples
+#     processed_samples = load_processed_samples(os.path.join(args.work_dir, args.embeddings_file))
+#     failed_samples = []
+#     total_samples_processed_in_run = 0
+# 
+#     for subdir in os.listdir(os.path.join(args.work_dir, args.metadata_directory)):
+#         subdir_path = os.path.join(args.work_dir, args.metadata_directory, subdir)
+#         if not os.path.isdir(subdir_path):
+#             continue  # Skip non-directory files
+# 
+#         sample_files = [f for f in os.listdir(subdir_path) if f.endswith('_clean.txt')]
+#         batch = []
+# 
+#         for sample_file in sample_files:
+#             sample_id = sample_file.split('_clean')[0]
+# 
+#             if args.get_for_gold_dict.lower() == 'yes' and sample_id not in gold_dict:
+#                 continue  # Skip samples not in the gold dictionary
+#             if sample_id in processed_samples:
+#                 continue  # Skip already processed samples
+# 
+#             metadata_file_path = os.path.join(subdir_path, sample_file)
+#             start_read_time = time.time()
+#             with open(metadata_file_path, 'r') as file:
+#                 metadata = file.read()
+#             end_read_time = time.time()
+#             print(f"{datetime.now()} - Time taken to read {sample_file}: {end_read_time - start_read_time:.2f} seconds")
+# 
+#             batch.append((sample_id, metadata))
+# 
+#             if len(batch) >= args.batch_size:
+#                 start_batch_time = time.time()
+#                 sample_ids, metadata_texts = zip(*batch)
+#                 metadata_embeddings, batch_failed_samples = get_embeddings(metadata_texts)
+#                 failed_samples.extend(batch_failed_samples)
+#                 save_embeddings(os.path.join(args.work_dir, args.embeddings_file), os.path.join(args.work_dir, args.temp_embeddings_file), metadata_embeddings, sample_ids)
+#                 end_batch_time = time.time()
+#                 total_samples_processed_in_run += len(batch)
+#                 print(f"{datetime.now()} - Processed batch of {len(batch)} samples in {end_batch_time - start_batch_time:.2f} seconds, n={total_samples_processed_in_run} samples processed in run, {(end_batch_time - start_batch_time) / len(batch):.2f} sec/sample.")
+#                 batch = []
+# 
+#         # Handle the last batch if it exists
+#         if batch:
+#             start_batch_time = time.time()
+#             sample_ids, metadata_texts = zip(*batch)
+#             metadata_embeddings, batch_failed_samples = get_embeddings(metadata_texts)
+#             failed_samples.extend(batch_failed_samples)
+#             save_embeddings(os.path.join(args.work_dir, args.embeddings_file), os.path.join(args.work_dir, args.temp_embeddings_file), metadata_embeddings, sample_ids)
+#             end_batch_time = time.time()
+#             print(f"{datetime.now()} - Processed last batch of {len(batch)} samples in {end_batch_time - start_batch_time:.2f} seconds, {(end_batch_time - start_batch_time) / len(batch):.2f} sec/sample.")
+# 
+#     print(f"{datetime.now()} - All samples processed.")
+#     if failed_samples:
+#         print(f"{datetime.now()} - Failed samples: {failed_samples}")
+# 
+# 
+#     
+#     
+# if __name__ == "__main__":
+#     main()
+# =============================================================================
 
 # python /Users/dgaio/github/metadata_mining/scripts/embeddings_from_metadata.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
@@ -187,36 +352,12 @@ if __name__ == "__main__":
 # python /mnt/mnemo5/dgaio/github/metadata_mining/scripts/embeddings_from_metadata.py \
 #     --work_dir "/mnt/mnemo5/dgaio/MicrobeAtlasProject/" \
 #     --metadata_directory "sample.info_split_dirs/" \
-#     --embeddings_file "embeddings.json" \
-#     --temp_embeddings_file "temp_embeddings.json" \
-#     --batch_size 100 \
+#     --embeddings_file "embeddings_test.json" \
+#     --temp_embeddings_file "temp_embeddings_test.json" \
+#     --batch_size 10 \
 #     --api_key_path "/mnt/mnemo5/dgaio/my_api_key" \
 #     --get_for_gold_dict "no" \
 #     --gold_dict_path "gold_dict.pkl"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # =============================================================================
