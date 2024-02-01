@@ -62,6 +62,26 @@ def get_embeddings(texts, verbose):
 
 
 
+# =============================================================================
+# # for the real deal: 
+# def get_embeddings(texts, verbose):
+#     try:
+#         start_api_call_time = time.time()
+#         response = openai.Embedding.create(input=texts, engine="text-embedding-ada-002")
+#         embeddings = [embedding['embedding'] for embedding in response['data']]
+#         end_api_call_time = time.time()
+#         
+#         if verbose:
+#             print(f"{datetime.now()} - API call for {len(texts)} texts took {end_api_call_time - start_api_call_time:.2f} seconds")
+#         
+#         return np.array(embeddings), []
+#     except Exception as e:
+#         print(f"Error in batch embedding: {e}")
+#         # Return empty embeddings and the full list of texts as failed samples
+#         return np.array([]), texts
+# =============================================================================
+
+
 def save_embeddings_batch(embeddings, sample_ids, temp_dir, verbose):
     start_write_time = time.time()
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
@@ -76,6 +96,98 @@ def save_embeddings_batch(embeddings, sample_ids, temp_dir, verbose):
         print(f"{datetime.now()} - Time taken to write and update embeddings: {end_write_time - start_write_time:.2f} seconds")
         print(f"{datetime.now()} - Saved batch to {temp_filename}")
 
+
+
+
+# =============================================================================
+# def main():
+#     args = parse_arguments()
+# 
+#     # Initialize API key
+#     with open(args.api_key_path, "r") as file:
+#         openai.api_key = file.read().strip()
+# 
+#     processed_samples = load_processed_samples(os.path.join(args.work_dir, args.processed_samples_file))
+#     temp_dir = os.path.join(args.work_dir, 'temp')
+#     os.makedirs(temp_dir, exist_ok=True)  # Ensure temp directory exists
+# 
+#     total_samples_processed_in_run = 0
+#     batch_counter = 0  # Initialize batch counter
+#     start_time_of_100_batch_series = None  # Initialize start time for the series of 100 batches
+# 
+#     for subdir in os.listdir(os.path.join(args.work_dir, args.metadata_directory)):
+#         subdir_path = os.path.join(args.work_dir, args.metadata_directory, subdir)
+#         if not os.path.isdir(subdir_path):
+#             continue
+# 
+#         #print(f"Starting processing for subdirectory: {subdir}")  
+# 
+#         sample_files = [f for f in os.listdir(subdir_path) if f.endswith('_clean.txt')]
+#         batch = []
+# 
+#         for sample_file in sample_files:
+#             sample_id = sample_file.split('_clean')[0]
+# 
+#             if sample_id in processed_samples:
+#                 continue
+# 
+#             metadata_file_path = os.path.join(subdir_path, sample_file)
+#             with open(metadata_file_path, 'r') as file:
+#                 metadata = file.read()
+# 
+#             batch.append((sample_id, metadata))
+# 
+#             if len(batch) >= args.batch_size:
+#                 if start_time_of_100_batch_series is None:  # Start timing the series of 100 batches
+#                     start_time_of_100_batch_series = time.time()
+# 
+#                 sample_ids, metadata_texts = zip(*batch)
+#                 metadata_embeddings, _ = get_embeddings(metadata_texts, args.verbose)
+#                 save_embeddings_batch(metadata_embeddings, sample_ids, temp_dir, args.verbose)
+#                 
+#                 # After processing each batch and saving embeddings
+#                 del metadata_embeddings  # Explicitly delete large objects
+# 
+#                 append_processed_samples(os.path.join(args.work_dir, args.processed_samples_file), sample_ids)
+#                 total_samples_processed_in_run += len(batch)
+#                 batch_counter += 1  # Increment batch counter
+# 
+#                 # Print progress every 100 batches
+#                 if batch_counter % 100 == 0:
+#                     end_time_of_100_batch_series = time.time()
+#                     print(f"{datetime.now()} - Milestone: Processed 100 batches of {args.batch_size} samples each, total time for these batches: {end_time_of_100_batch_series - start_time_of_100_batch_series:.2f} seconds, n={total_samples_processed_in_run} samples processed so far.")
+#                     start_time_of_100_batch_series = None  # Reset start time for the next series of 100 batches
+# 
+#                 batch = []
+# 
+#                 # Check if the total processed samples have reached or exceeded 500,000
+#                 if total_samples_processed_in_run >= 20001:
+#                     print(f"Reached the limit of 200,001 processed samples. Stopping...")
+#                     break  # Break out of the loop processing sample files
+# 
+#         # Handle the last batch if it exists
+#         if batch:
+#             sample_ids, metadata_texts = zip(*batch)
+#             metadata_embeddings, _ = get_embeddings(metadata_texts, args.verbose)
+#             save_embeddings_batch(metadata_embeddings, sample_ids, temp_dir, args.verbose)
+#             
+#             # After processing the last batch and saving embeddings
+#             del metadata_embeddings  # Explicitly delete large objects
+# 
+#             append_processed_samples(os.path.join(args.work_dir, args.processed_samples_file), sample_ids)
+#             total_samples_processed_in_run += len(batch)
+#             #print(f"{datetime.now()} - Subdirectory '{subdir}' completed: Processed last batch of {len(batch)} samples, n={total_samples_processed_in_run} samples processed in run so far.")
+#             
+#             # Check if the total processed samples have reached or exceeded 500,000 after the last batch
+#             if total_samples_processed_in_run >= 20001:
+#                 print(f"Reached the limit of 500,000 processed samples after the last batch in a subdirectory. Stopping...")
+#                 break  # Break out of the loop for subdirectories
+# 
+#         if total_samples_processed_in_run >= 20001:
+#             break  # Ensure we break out of the outer loop if we've processed enough samples
+# 
+#     print(f"{datetime.now()} - Processing stopped, total samples processed: {total_samples_processed_in_run}.")
+# =============================================================================
 
 
 def main():
@@ -93,12 +205,14 @@ def main():
     batch_counter = 0  # Initialize batch counter
     start_time_of_100_batch_series = None  # Initialize start time for the series of 100 batches
 
+    # Rate limiting variables
+    samples_processed_this_minute = 0
+    minute_start_time = time.time()
+
     for subdir in os.listdir(os.path.join(args.work_dir, args.metadata_directory)):
         subdir_path = os.path.join(args.work_dir, args.metadata_directory, subdir)
         if not os.path.isdir(subdir_path):
             continue
-
-        #print(f"Starting processing for subdirectory: {subdir}")  
 
         sample_files = [f for f in os.listdir(subdir_path) if f.endswith('_clean.txt')]
         batch = []
@@ -116,42 +230,64 @@ def main():
             batch.append((sample_id, metadata))
 
             if len(batch) >= args.batch_size:
-                if start_time_of_100_batch_series is None:  # Start timing the series of 100 batches
+                if start_time_of_100_batch_series is None:
                     start_time_of_100_batch_series = time.time()
 
                 sample_ids, metadata_texts = zip(*batch)
                 metadata_embeddings, _ = get_embeddings(metadata_texts, args.verbose)
                 save_embeddings_batch(metadata_embeddings, sample_ids, temp_dir, args.verbose)
-                
-                # After processing each batch and saving embeddings
                 del metadata_embeddings  # Explicitly delete large objects
 
                 append_processed_samples(os.path.join(args.work_dir, args.processed_samples_file), sample_ids)
                 total_samples_processed_in_run += len(batch)
-                batch_counter += 1  # Increment batch counter
+                samples_processed_this_minute += len(batch)  # Update samples processed for rate limiting
+                batch_counter += 1
 
-                # Print progress every 100 batches
+                # Rate limiting check
+                current_time = time.time()
+                if samples_processed_this_minute >= 10000 and current_time - minute_start_time < 60:
+                    time_to_wait = 60 - (current_time - minute_start_time)
+                    if args.verbose:
+                        print(f"Rate limit approached, pausing for {time_to_wait:.2f} seconds.")
+                    time.sleep(time_to_wait)
+                    samples_processed_this_minute = 0
+                    minute_start_time = time.time()
+
+                # Milestone print statement
                 if batch_counter % 100 == 0:
                     end_time_of_100_batch_series = time.time()
                     print(f"{datetime.now()} - Milestone: Processed 100 batches of {args.batch_size} samples each, total time for these batches: {end_time_of_100_batch_series - start_time_of_100_batch_series:.2f} seconds, n={total_samples_processed_in_run} samples processed so far.")
-                    start_time_of_100_batch_series = None  # Reset start time for the next series of 100 batches
+                    start_time_of_100_batch_series = None
 
                 batch = []
 
-        # Handle the last batch if it exists
+                if total_samples_processed_in_run >= 20001:
+                    print(f"Reached the limit of 20,001 processed samples. Stopping...")
+                    break
+
         if batch:
             sample_ids, metadata_texts = zip(*batch)
             metadata_embeddings, _ = get_embeddings(metadata_texts, args.verbose)
             save_embeddings_batch(metadata_embeddings, sample_ids, temp_dir, args.verbose)
-            
-            # After processing each batch and saving embeddings
-            del metadata_embeddings  # Explicitly delete large objects
+            del metadata_embeddings
 
             append_processed_samples(os.path.join(args.work_dir, args.processed_samples_file), sample_ids)
             total_samples_processed_in_run += len(batch)
-            #print(f"{datetime.now()} - Subdirectory '{subdir}' completed: Processed last batch of {len(batch)} samples, n={total_samples_processed_in_run} samples processed in run so far.")
+            samples_processed_this_minute += len(batch)  # Update samples processed for rate limiting
 
-    print(f"{datetime.now()} - All samples processed, total samples: {total_samples_processed_in_run}.")
+            if total_samples_processed_in_run >= 20001:
+                print(f"Reached the limit of 20,001 processed samples. Stopping...")
+                break
+
+        if samples_processed_this_minute >= 10000:
+            current_time = time.time()
+            if current_time - minute_start_time < 60:
+                time_to_wait = 60 - (current_time - minute_start_time)
+                if args.verbose:
+                    print(f"Rate limit approached at the end of processing, pausing for {time_to_wait:.2f} seconds.")
+                time.sleep(time_to_wait)
+
+    print(f"{datetime.now()} - Processing stopped, total samples processed: {total_samples_processed_in_run}.")
 
 
 
@@ -198,24 +334,7 @@ if __name__ == "__main__":
 
 
 
-# =============================================================================
-# # for the real deal: 
-# def get_embeddings(texts, verbose):
-#     try:
-#         start_api_call_time = time.time()
-#         response = openai.Embedding.create(input=texts, engine="text-embedding-ada-002")
-#         embeddings = [embedding['embedding'] for embedding in response['data']]
-#         end_api_call_time = time.time()
-#         
-#         if verbose:
-#             print(f"{datetime.now()} - API call for {len(texts)} texts took {end_api_call_time - start_api_call_time:.2f} seconds")
-#         
-#         return np.array(embeddings), []
-#     except Exception as e:
-#         print(f"Error in batch embedding: {e}")
-#         # Return empty embeddings and the full list of texts as failed samples
-#         return np.array([]), texts
-# =============================================================================
+
 
 
 
