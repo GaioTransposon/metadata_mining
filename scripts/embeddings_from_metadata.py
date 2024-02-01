@@ -12,6 +12,12 @@ import numpy as np
 import time
 import json
 from datetime import datetime
+import gc
+import cProfile
+import pickle  # Add this import at the top of your script
+
+
+
 
 
 def parse_arguments():
@@ -43,10 +49,12 @@ def append_processed_samples(processed_samples_file, sample_ids):
             file.write(sample_id + '\n')
 
 
+
+# to make a dummy test: 
 def get_embeddings(texts, verbose):
     start_api_call_time = time.time()
     # Simulate API call with a placeholder function
-    embeddings = np.random.rand(len(texts), 512)  # Placeholder for actual embeddings
+    embeddings = np.random.rand(len(texts), 1536)  # Placeholder for actual embeddings
     end_api_call_time = time.time()
     if verbose:
         print(f"{datetime.now()} - API call for {len(texts)} texts took {end_api_call_time - start_api_call_time:.2f} seconds")
@@ -54,16 +62,14 @@ def get_embeddings(texts, verbose):
 
 
 
-
-
 def save_embeddings_batch(embeddings, sample_ids, temp_dir, verbose):
     start_write_time = time.time()
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")  # Including microseconds
-    temp_filename = os.path.join(temp_dir, f"embeddings_batch_{timestamp}.json")
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
+    temp_filename = os.path.join(temp_dir, f"embeddings_batch_{timestamp}.pkl")  # Change file extension to .pkl
 
-    batch_data = {sample_id: embedding.tolist() for sample_id, embedding in zip(sample_ids, embeddings)}
-    with open(temp_filename, 'w') as file:
-        json.dump(batch_data, file)
+    batch_data = {sample_id: embedding for sample_id, embedding in zip(sample_ids, embeddings)}
+    with open(temp_filename, 'wb') as file:  # Note 'wb' mode for binary write
+        pickle.dump(batch_data, file)
 
     end_write_time = time.time()
     if verbose:
@@ -84,10 +90,15 @@ def main():
     os.makedirs(temp_dir, exist_ok=True)  # Ensure temp directory exists
 
     total_samples_processed_in_run = 0
+    batch_counter = 0  # Initialize batch counter
+    start_time_of_100_batch_series = None  # Initialize start time for the series of 100 batches
+
     for subdir in os.listdir(os.path.join(args.work_dir, args.metadata_directory)):
         subdir_path = os.path.join(args.work_dir, args.metadata_directory, subdir)
         if not os.path.isdir(subdir_path):
             continue
+
+        #print(f"Starting processing for subdirectory: {subdir}")  
 
         sample_files = [f for f in os.listdir(subdir_path) if f.endswith('_clean.txt')]
         batch = []
@@ -105,32 +116,49 @@ def main():
             batch.append((sample_id, metadata))
 
             if len(batch) >= args.batch_size:
-                start_batch_time = time.time()
+                if start_time_of_100_batch_series is None:  # Start timing the series of 100 batches
+                    start_time_of_100_batch_series = time.time()
+
                 sample_ids, metadata_texts = zip(*batch)
                 metadata_embeddings, _ = get_embeddings(metadata_texts, args.verbose)
                 save_embeddings_batch(metadata_embeddings, sample_ids, temp_dir, args.verbose)
+                
+                # After processing each batch and saving embeddings
+                del metadata_embeddings  # Explicitly delete large objects
+
                 append_processed_samples(os.path.join(args.work_dir, args.processed_samples_file), sample_ids)
                 total_samples_processed_in_run += len(batch)
-                end_batch_time = time.time()
-                print(f"{datetime.now()} - Processed batch of {len(batch)} samples in {end_batch_time - start_batch_time:.2f} seconds, n={total_samples_processed_in_run} samples processed in run, {(end_batch_time - start_batch_time) / len(batch):.2f} sec/sample.")
+                batch_counter += 1  # Increment batch counter
+
+                # Print progress every 100 batches
+                if batch_counter % 100 == 0:
+                    end_time_of_100_batch_series = time.time()
+                    print(f"{datetime.now()} - Milestone: Processed 100 batches of {args.batch_size} samples each, total time for these batches: {end_time_of_100_batch_series - start_time_of_100_batch_series:.2f} seconds, n={total_samples_processed_in_run} samples processed so far.")
+                    start_time_of_100_batch_series = None  # Reset start time for the next series of 100 batches
+
                 batch = []
 
         # Handle the last batch if it exists
         if batch:
-            start_batch_time = time.time()
             sample_ids, metadata_texts = zip(*batch)
             metadata_embeddings, _ = get_embeddings(metadata_texts, args.verbose)
             save_embeddings_batch(metadata_embeddings, sample_ids, temp_dir, args.verbose)
+            
+            # After processing each batch and saving embeddings
+            del metadata_embeddings  # Explicitly delete large objects
+
             append_processed_samples(os.path.join(args.work_dir, args.processed_samples_file), sample_ids)
             total_samples_processed_in_run += len(batch)
-            end_batch_time = time.time()
-            print(f"{datetime.now()} - Processed last batch of {len(batch)} samples in {end_batch_time - start_batch_time:.2f} seconds, n={total_samples_processed_in_run} samples processed in run, {(end_batch_time - start_batch_time) / len(batch):.2f} sec/sample.")
+            #print(f"{datetime.now()} - Subdirectory '{subdir}' completed: Processed last batch of {len(batch)} samples, n={total_samples_processed_in_run} samples processed in run so far.")
 
-    print(f"{datetime.now()} - All samples processed.")
+    print(f"{datetime.now()} - All samples processed, total samples: {total_samples_processed_in_run}.")
 
 
+
+    
 if __name__ == "__main__":
-    main()
+    cProfile.runctx('main()', globals(), locals(), 'profile_output')
+
 
         
 
@@ -170,6 +198,24 @@ if __name__ == "__main__":
 
 
 
+# =============================================================================
+# # for the real deal: 
+# def get_embeddings(texts, verbose):
+#     try:
+#         start_api_call_time = time.time()
+#         response = openai.Embedding.create(input=texts, engine="text-embedding-ada-002")
+#         embeddings = [embedding['embedding'] for embedding in response['data']]
+#         end_api_call_time = time.time()
+#         
+#         if verbose:
+#             print(f"{datetime.now()} - API call for {len(texts)} texts took {end_api_call_time - start_api_call_time:.2f} seconds")
+#         
+#         return np.array(embeddings), []
+#     except Exception as e:
+#         print(f"Error in batch embedding: {e}")
+#         # Return empty embeddings and the full list of texts as failed samples
+#         return np.array([]), texts
+# =============================================================================
 
 
 
