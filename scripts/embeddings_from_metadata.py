@@ -11,7 +11,6 @@ import os
 import openai
 import numpy as np
 import time
-import json
 from datetime import datetime
 import gc
 import cProfile
@@ -47,40 +46,41 @@ def append_processed_samples(processed_samples_file, sample_ids):
 
 
 
-# to make a dummy test: 
-def get_embeddings(texts, verbose):
-    start_api_call_time = time.time()
-    # Simulate API call with a placeholder function
-    embeddings = np.random.rand(len(texts), 1536).astype(np.float32)  # Placeholder for actual embeddings
-    end_api_call_time = time.time()
-    if verbose.lower() == 'yes':
-        print(f"{datetime.now()} - API call for {len(texts)} texts took {end_api_call_time - start_api_call_time:.2f} seconds")
-    return embeddings, []
-
-
 # =============================================================================
-# # for the real deal: 
+# # to make a dummy test: 
 # def get_embeddings(texts, verbose):
-#     try:
-#         start_api_call_time = time.time()
-#         response = openai.Embedding.create(input=texts, engine="text-embedding-ada-002")
-#         embeddings = [embedding['embedding'] for embedding in response['data']]
-#         end_api_call_time = time.time()
-#         
-#         if verbose.lower() == 'yes':
-#             print(f"{datetime.now()} - API call for {len(texts)} texts took {end_api_call_time - start_api_call_time:.2f} seconds")
-#         
-#         # Convert embeddings to np.array and change dtype to float32
-#         embeddings_array = np.array(embeddings).astype(np.float32)
-# 
-#         return embeddings_array, []
-#     except Exception as e:
-#         print(f"Error in batch embedding: {e}")
-#         # Return empty embeddings and the full list of texts as failed samples
-#         return np.array([]), texts
+#     start_api_call_time = time.time()
+#     # Simulate API call with a placeholder function
+#     embeddings = np.random.rand(len(texts), 1536).astype(np.float32)  # Placeholder for actual embeddings
+#     end_api_call_time = time.time()
+#     if verbose.lower() == 'yes':
+#         print(f"{datetime.now()} - API call for {len(texts)} texts took {end_api_call_time - start_api_call_time:.2f} seconds")
+#     return embeddings, []
 # =============================================================================
 
 
+# for the real deal: 
+def get_embeddings(texts, verbose):
+    try:
+        start_api_call_time = time.time()
+        response = openai.Embedding.create(input=texts, engine="text-embedding-ada-002")
+        embeddings = [embedding['embedding'] for embedding in response['data']]
+        end_api_call_time = time.time()
+        
+        if verbose.lower() == 'yes':
+            print(f"{datetime.now()} - API call for {len(texts)} texts took {end_api_call_time - start_api_call_time:.2f} seconds")
+        
+        # Convert embeddings to np.array and change dtype to float32
+        embeddings_array = np.array(embeddings).astype(np.float32)
+
+        return embeddings_array, []
+    except Exception as e:
+        print(f"Error in batch embedding: {e}")
+        # Return empty embeddings and the full list of texts as failed samples
+        return np.array([]), texts
+
+
+# save as pkl:
 def save_embeddings_batch(embeddings, sample_ids, temp_dir, verbose):
     start_write_time = time.time()
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
@@ -94,6 +94,7 @@ def save_embeddings_batch(embeddings, sample_ids, temp_dir, verbose):
     if verbose.lower() == 'yes':
         print(f"{datetime.now()} - Time taken to write and update embeddings: {end_write_time - start_write_time:.2f} seconds")
         print(f"{datetime.now()} - Saved batch to {temp_filename}")
+
 
 
 def main():
@@ -215,8 +216,8 @@ if __name__ == "__main__":
 #     --metadata_directory "sample.info_split_dirs/" \
 #     --batch_size 100 \
 #     --api_key_path "/mnt/mnemo5/dgaio/my_api_key" \
-#     --max_samples 10000 \
-#     --verbose "yes"
+#     --max_samples 30000 \
+#     --verbose "no"
 
 
 
