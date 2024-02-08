@@ -8,48 +8,31 @@ Created on Thu Feb  8 15:16:55 2024
 
 import os
 import pickle
+from datetime import datetime
 
-def load_gold_dict(gold_dict_path):
-    if not os.path.exists(gold_dict_path):
-        print(f"Gold dict file not found: {gold_dict_path}")
-        return {}
-    with open(gold_dict_path, 'rb') as file:
-        gold_dict = pickle.load(file)
-        gold_dict = gold_dict[0]
-    print(f"Loaded {len(gold_dict)} entries from the gold dictionary.")
-    return gold_dict if isinstance(gold_dict, list) else gold_dict
-
-def find_files_with_gold_samples(temp_dir, gold_dict):
-    if not os.path.exists(temp_dir):
-        print(f"Temp directory not found: {temp_dir}")
-        return []
-    gold_sample_files = []
+def get_sample_ids_from_files(temp_dir, target_date):
+    sample_ids = set()  # Using a set to avoid duplicates
     for filename in os.listdir(temp_dir):
-        if filename.endswith('.pkl'):
+        # Check if file is an embeddings file and if the date in the filename matches the target date
+        if filename.startswith("embeddings_batch_") and target_date in filename:
             file_path = os.path.join(temp_dir, filename)
             with open(file_path, 'rb') as file:
                 batch_data = pickle.load(file)
-                if any(sample_id in gold_dict for sample_id in batch_data.keys()):
-                    gold_sample_files.append(filename)
-    return gold_sample_files
+                # Add all sample IDs from this file to the set
+                sample_ids.update(batch_data.keys())
+    return sample_ids
 
 def main():
     work_dir = "/mnt/mnemo5/dgaio/MicrobeAtlasProject/"
     temp_dir = os.path.join(work_dir, 'temp')
-    gold_dict_path = os.path.join(work_dir, 'gold_dict.pkl')
+    target_date = "20240207"  # Format: YYYYMMDD
 
-    gold_dict = load_gold_dict(gold_dict_path)
-    if not gold_dict:
-        return
+    sample_ids = get_sample_ids_from_files(temp_dir, target_date)
 
-    gold_sample_files = find_files_with_gold_samples(temp_dir, gold_dict)
-    if not gold_sample_files:
-        print("No files found containing gold dict samples.")
-        return
-
-    print("Files containing gold dict samples:")
-    for filename in gold_sample_files:
-        print(filename)
+    print(f"Found {len(sample_ids)} unique sample IDs in files generated on {target_date}:")
+    for sample_id in sample_ids:
+        print(sample_id)
 
 if __name__ == "__main__":
     main()
+
