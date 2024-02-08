@@ -8,17 +8,14 @@ Created on Thu Feb  8 15:16:55 2024
 
 import os
 import pickle
-from datetime import datetime
 
 def get_sample_ids_from_files(temp_dir, target_date):
     sample_ids = set()  # Using a set to avoid duplicates
     for filename in os.listdir(temp_dir):
-        # Check if file is an embeddings file and if the date in the filename matches the target date
         if filename.startswith("embeddings_batch_") and target_date in filename:
             file_path = os.path.join(temp_dir, filename)
             with open(file_path, 'rb') as file:
                 batch_data = pickle.load(file)
-                # Add all sample IDs from this file to the set
                 sample_ids.update(batch_data.keys())
     return sample_ids
 
@@ -29,10 +26,12 @@ def main():
 
     sample_ids = get_sample_ids_from_files(temp_dir, target_date)
 
-    print(f"Found {len(sample_ids)} unique sample IDs in files generated on {target_date}:")
-    for sample_id in sample_ids:
-        print(sample_id)
+    # Write the sample IDs to to_del.txt
+    with open(os.path.join(work_dir, 'to_del.txt'), 'w') as f:
+        for sample_id in sample_ids:
+            f.write(f"{sample_id}\n")
 
 if __name__ == "__main__":
     main()
+
 
