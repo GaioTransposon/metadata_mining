@@ -15,8 +15,9 @@ def load_gold_dict(gold_dict_path):
         return {}
     with open(gold_dict_path, 'rb') as file:
         gold_dict = pickle.load(file)
+        gold_dict = gold_dict[0]
     print(f"Loaded {len(gold_dict)} entries from the gold dictionary.")
-    return gold_dict[0] if isinstance(gold_dict, list) else gold_dict
+    return gold_dict if isinstance(gold_dict, list) else gold_dict
 
 def find_files_with_gold_samples(temp_dir, gold_dict):
     if not os.path.exists(temp_dir):
