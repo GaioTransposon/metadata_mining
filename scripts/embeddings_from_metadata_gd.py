@@ -190,7 +190,7 @@ if __name__ == "__main__":
 # python /mnt/mnemo5/dgaio/github/metadata_mining/scripts/embeddings_from_metadata_gd.py \
 #     --work_dir "/mnt/mnemo5/dgaio/MicrobeAtlasProject/" \
 #     --metadata_directory "sample.info_split_dirs/" \
-#     --batch_size 10 \
+#     --batch_size 100 \
 #     --api_key_path "/mnt/mnemo5/dgaio/my_api_key" \
 #     --processed_samples_file "processed_samples_file.txt" \
 #     --max_samples 2000 \
