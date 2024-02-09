@@ -65,7 +65,7 @@ embeddings_file_path = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/combined
 gold_embeddings, other_embeddings = load_embeddings(embeddings_file_path, gold_dict)
 
 # Optional: Subset the embeddings to a specific number if they exceed that number
-max_embeddings = 5000  # Maximum number of embeddings to use
+max_embeddings = 50000  # Maximum number of embeddings to use
 if len(other_embeddings) > max_embeddings:
     # Randomly select a subset of other_embeddings to reduce the size to max_embeddings
     # Ensure that this random selection is reproducible by setting a random seed
@@ -77,8 +77,6 @@ if len(other_embeddings) > max_embeddings:
 gold_df = pd.DataFrame(gold_embeddings, columns=['Sample ID', 'Embedding'])
 other_df = pd.DataFrame(other_embeddings, columns=['Sample ID', 'Embedding'])
 
-# Continue with the rest of the script as before...
-
 
 # Merge gold_df with gold_dict information to label biomes
 gold_dict_df = pd.DataFrame(gold_dict.items(), columns=['Sample ID', 'Biome'])
@@ -88,11 +86,43 @@ gold_df = gold_df.merge(gold_dict_df, on='Sample ID', how='left')
 
 # Randomly select 10 samples per biome from gold_df and reset the index
 selected_gold_df = pd.concat([
-    df.sample(n=min(10, len(df)), random_state=42) for _, df in gold_df.groupby('Biome')
+    df.sample(n=min(100, len(df)), random_state=42) for _, df in gold_df.groupby('Biome')
 ]).reset_index(drop=True)
 
 # Combine selected gold embeddings with the rest for analysis
 combined_embeddings = np.vstack([emb for _, emb in other_df['Embedding'].iteritems()] + selected_gold_df['Embedding'].tolist())
+
+len(combined_embeddings)
+
+
+################################################################################
+
+
+# How many clusters? 
+
+
+### Gaussian Mixture Method (on reduced data): 
+    
+# Dimensionality reduction with PCA
+pca = PCA(n_components=2)  
+reduced_embeddings = pca.fit_transform(combined_embeddings)
+
+# Use a subset of data for faster computation
+subset_indices = np.random.choice(reduced_embeddings.shape[0], size=5000, replace=False)  # Adjust size as needed
+reduced_embeddings_subset = reduced_embeddings[subset_indices]
+
+# Fit GMMs on the reduced subset
+n_components = np.arange(1, 11)  # Adjust range based on previous findings
+models = [GaussianMixture(n, covariance_type='diag', random_state=42, max_iter=100).fit(reduced_embeddings_subset) for n in n_components]
+
+bic_scores = [model.bic(reduced_embeddings_subset) for model in models]
+
+plt.figure(figsize=(10, 6))
+plt.plot(n_components, bic_scores, marker='o')
+plt.title('BIC Score for Gaussian Mixture Models on Reduced Data')
+plt.xlabel('Number of components')
+plt.ylabel('BIC Score')
+plt.show()
 
 
 ################################################################################
@@ -103,13 +133,22 @@ combined_embeddings = np.vstack([emb for _, emb in other_df['Embedding'].iterite
 # Proceed with clustering and UMAP
 optimal_k = 8     # the number of clusters you found optimal to describe the data (via Gaussian or Elbow)
 kmeans = KMeans(n_clusters=optimal_k, random_state=42)
-
 # takes longish: 
 clusters = kmeans.fit_predict(combined_embeddings)
 
-reducer = umap.UMAP(random_state=42)
+
+###
+# Print the unique cluster labels and their counts
+unique_clusters, counts = np.unique(clusters, return_counts=True)
+for cluster, count in zip(unique_clusters, counts):
+    print(f"Cluster {cluster}: {count} samples")
+    
+print(np.unique(clusters[:len(other_embeddings)]))
+###
+
 
 # takes looooong: 
+reducer = umap.UMAP(n_components=2, random_state=42)
 transformed_embeddings = reducer.fit_transform(combined_embeddings)
 
 
@@ -157,48 +196,49 @@ added_to_legend_biomes = set()
 added_to_legend_clusters = set()
 
 
-# Modified add_trace function with debugging print statements
 def add_trace(embeddings, sample_ids, clusters=None, biomes=None, is_gold=False):
     for i, emb in enumerate(embeddings):
-        # Accessing sample IDs directly without assuming Series or list
         sample_id = sample_ids[i]
-
         hover_text = f'Sample ID: {sample_id}'
 
         if is_gold:
-            # Directly accessing biome assuming it's a list or similar structure
             biome = biomes[i]
             color = biome_colors.get(biome, "white")  # Default to white if biome not found
             hover_text += f'<br>Biome: {biome}'
             show_in_legend = biome not in added_to_legend_biomes
             added_to_legend_biomes.add(biome)
 
-            print(f"Gold sample - Biome: {biome}, Assigned Color: {color}")  # Debugging print statement for gold samples
+            # Outline settings for gold samples
+            marker_settings = dict(
+                color=color,  # Fill color remains the same
+                size=7,  # Size consistent with non-gold samples
+                line=dict(color='black', width=2)  # Black outline with a width of 2
+            )
+
         else:
             cluster = clusters[i]
-            color = cluster_colors[cluster % len(cluster_colors)]  # Ensuring color is picked from the list based on cluster index
-
-            # Ensure each cluster is added as a separate trace
+            color = cluster_colors[cluster % len(cluster_colors)]
             show_in_legend = cluster not in added_to_legend_clusters
             added_to_legend_clusters.add(cluster)
-            
-            if cluster==0:
-                pass
-            else:
 
-                print(f"Non-Gold Sample - Cluster: {cluster}, Assigned Color: {color}")  # Debugging print statement for non-gold samples
+            # Standard settings for non-gold samples, no outline
+            marker_settings = dict(
+                color=color,
+                size=7,  # Consistent size with gold samples
+                opacity=0.7  # Consistent opacity with gold samples (if needed)
+            )
 
-        # Adding trace to the figure
+
+        # Adding trace with updated marker settings
         fig.add_trace(go.Scatter(
             x=[emb[0]], y=[emb[1]],
             mode='markers',
-            marker=dict(color=color, size=10 if is_gold else 7, opacity=0.7),  # Slightly larger and opaque for gold samples
+            marker=marker_settings,
             text=hover_text,
             hoverinfo='text',
             name=f"Biome: {biome}" if is_gold else f"Cluster: {cluster}",
             showlegend=show_in_legend
         ))
-
 
 
 
@@ -238,83 +278,83 @@ print(f"time taken to plot: {z}")
 ################################################################################
 
 
-np.unique(clusters)
+# Initialize UMAP with 3 components for 3D projection
+reducer = umap.UMAP(n_components=3, random_state=42)
 
-# Print the unique cluster labels and their counts
-unique_clusters, counts = np.unique(clusters, return_counts=True)
-for cluster, count in zip(unique_clusters, counts):
-    print(f"Cluster {cluster}: {count} samples")
-
-
-
-print(np.unique(clusters[:len(other_embeddings)]))
-
-
-unique_clusters_in_non_gold = np.unique(clusters[:len(other_embeddings)])
-print("Unique clusters in non-gold samples:", unique_clusters_in_non_gold)
+# Fit and transform the embeddings into 3D space
+transformed_embeddings_3d = reducer.fit_transform(combined_embeddings)
 
 
 
+# Initialize a new figure for 3D plotting
+fig_3d = go.Figure()
+
+# Non-gold samples with cluster-based coloring
+non_gold_embeddings = transformed_embeddings_3d[:len(other_embeddings)]
+non_gold_clusters = clusters[:len(other_embeddings)]
+for cluster in np.unique(non_gold_clusters):
+    cluster_indices = np.where(non_gold_clusters == cluster)[0]
+    cluster_embeddings = non_gold_embeddings[cluster_indices]
+    fig_3d.add_trace(go.Scatter3d(
+        x=cluster_embeddings[:, 0],  # X coordinates
+        y=cluster_embeddings[:, 1],  # Y coordinates
+        z=cluster_embeddings[:, 2],  # Z coordinates
+        mode='markers',
+        marker=dict(
+            size=5,  # Adjust size as needed
+            color=cluster_colors[cluster % len(cluster_colors)],  # Use modular arithmetic for color selection
+            opacity=0.7  # Adjust opacity as needed
+        ),
+        name=f'Cluster {cluster}'
+    ))
+
+# Gold samples with biome-based coloring
+gold_embeddings = transformed_embeddings_3d[len(other_embeddings):]
+gold_biomes = selected_gold_df['Biome'].values
+unique_biomes = selected_gold_df['Biome'].unique()
+for biome in unique_biomes:
+    biome_indices = np.where(gold_biomes == biome)[0]
+    biome_embeddings = gold_embeddings[biome_indices]
+    fig_3d.add_trace(go.Scatter3d(
+        x=biome_embeddings[:, 0],  # X coordinates
+        y=biome_embeddings[:, 1],  # Y coordinates
+        z=biome_embeddings[:, 2],  # Z coordinates
+        mode='markers',
+        marker=dict(
+            size=5,  # Adjust size as needed
+            color=biome_colors.get(biome, 'gray'),  # Default to gray if biome not found in the dictionary
+            line=dict(
+                color='black',  # Black outline for gold samples
+                width=1  # Outline width
+            ),
+            opacity=0.7  # Adjust opacity as needed
+        ),
+        name=f'Biome: {biome}'
+    ))
+
+# Update layout for better visualization
+fig_3d.update_layout(
+    title='3D UMAP Projection of Embeddings with Cluster and Biome Colors',
+    scene=dict(
+        xaxis_title='UMAP 1',
+        yaxis_title='UMAP 2',
+        zaxis_title='UMAP 3'
+    ),
+    legend_title_text='Legend',
+    legend=dict(
+        itemsizing='constant'  # Ensure consistent legend marker size
+    )
+)
+
+# Show the plot
+fig_3d.show()
 
 
-
-# =============================================================================
-# cluster_7_indices = [i for i, c in enumerate(clusters[:len(other_embeddings)]) if c == 7]
-# cluster_7_embeddings = [transformed_embeddings[i] for i in cluster_7_indices]
-# cluster_7_sample_ids = [other_embeddings[i][0] for i in cluster_7_indices]  # Assuming other_embeddings is a list of (sample_id, embedding) tuples
-# 
-# if cluster_7_embeddings:
-#     add_trace(cluster_7_embeddings, cluster_7_sample_ids, [7] * len(cluster_7_embeddings))
-# else:
-#     print("No samples found in Cluster 7")
-# 
-# =============================================================================
+fig_3d.write_html("/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/3d_text_embeddings_visualization.html")
 
 
-
-# =============================================================================
-# ### Elbow method: 
-# 
-# sse = []
-# k_list = range(1, 20)  # Adjust the range of k as needed
-# for k in k_list:
-#     kmeans = KMeans(n_clusters=k, random_state=42).fit(combined_embeddings)
-#     sse.append(kmeans.inertia_)
-# 
-# plt.figure(figsize=(10, 6))
-# plt.plot(k_list, sse, marker='o')
-# plt.title('Elbow Method For Optimal k')
-# plt.xlabel('Number of clusters k')
-# plt.ylabel('Sum of squared distances')
-# plt.show()
-# 
-# 
-# 
-# 
-# ### Gaussian Mixture Method (on reduced data): 
-#     
-# # Dimensionality reduction with PCA
-# pca = PCA(n_components=5)  
-# reduced_embeddings = pca.fit_transform(combined_embeddings)
-# 
-# # Use a subset of data for faster computation
-# subset_indices = np.random.choice(reduced_embeddings.shape[0], size=100, replace=False)  # Adjust size as needed
-# reduced_embeddings_subset = reduced_embeddings[subset_indices]
-# 
-# # Fit GMMs on the reduced subset
-# n_components = np.arange(1, 11)  # Adjust range based on previous findings
-# models = [GaussianMixture(n, covariance_type='diag', random_state=42, max_iter=100).fit(reduced_embeddings_subset) for n in n_components]
-# 
-# bic_scores = [model.bic(reduced_embeddings_subset) for model in models]
-# 
-# plt.figure(figsize=(10, 6))
-# plt.plot(n_components, bic_scores, marker='o')
-# plt.title('BIC Score for Gaussian Mixture Models on Reduced Data')
-# plt.xlabel('Number of components')
-# plt.ylabel('BIC Score')
-# plt.show()
-# =============================================================================
-
+################################################################################
+################################################################################
 
 
 
@@ -338,8 +378,7 @@ print("Unique clusters in non-gold samples:", unique_clusters_in_non_gold)
 
 
 
-
-
+################################
 
 
 
