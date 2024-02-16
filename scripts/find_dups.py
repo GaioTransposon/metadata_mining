@@ -6,6 +6,7 @@ Created on Mon Feb 12 16:40:08 2024
 @author: dgaio
 """
 
+
 import os
 import pickle
 import numpy as np
@@ -16,7 +17,10 @@ import difflib
 import time
 import networkx as nx
 from sklearn.preprocessing import normalize
-
+from annoy import AnnoyIndex
+from sklearn.cluster import MiniBatchKMeans
+from sklearn.preprocessing import StandardScaler
+from scipy.spatial.distance import cdist
 
 
 # Path to the embeddings file
@@ -29,22 +33,107 @@ with open(embeddings_file_path, 'rb') as file:
     
     
 # Convert data to list and slice
-sample_ids = list(data.keys())[:10000]  # Adjust the slice size as needed
-all_embeddings = np.array(list(data.values()))[:10000]  # Slicing to match sample IDs
+sample_ids = list(data.keys())[:250000]  # Adjust the slice size as needed
+all_embeddings = np.array(list(data.values()))[:250000]  # Slicing to match sample IDs
+
+
+
+
+# part 1. split into minimum 100 clusters
+
+
+def cluster_kmeans_exclude_singles(embeddings, sample_ids, n_clusters):
+    start_time = time.time()
+
+    # Apply k-means clustering
+    kmeans = MiniBatchKMeans(n_clusters=n_clusters, init='k-means++', random_state=0, batch_size=100)
+    kmeans.fit(embeddings)
+
+    # Initialize a dictionary to hold clusters
+    clusters = {}
+
+    # Group sample IDs based on cluster labels, excluding clusters with only one sample
+    for idx, label in enumerate(kmeans.labels_):
+        # Add sample ID to the corresponding cluster
+        clusters.setdefault(label, []).append(sample_ids[idx])
+
+    # Remove clusters that contain only one sample
+    clusters = {label: members for label, members in clusters.items() if len(members) > 1}
+
+    duration = time.time() - start_time
+
+    return clusters, duration
+
+
+
+clusters, duration = cluster_kmeans_exclude_singles(all_embeddings, sample_ids, 100)
+duration
+
+list(clusters.values())
+len(list(clusters.values()))
 
 
 
 
 
 
+# part 2. within each of the 100 clusters, split into further 10 clusters 
 
 
-# 1. 
+# Assume 'clusters' is a dictionary from the initial clustering, where each key is a cluster label
+# and each value is a list of sample IDs in that cluster.
+
+start_time = time.time()
+
+# Initialize a list to store all final sub-clusters
+final_sub_clusters = []
+
+# Iterate over each initial cluster to further cluster its embeddings
+for initial_cluster_label, member_ids in clusters.items():
+    # Retrieve the embeddings for the current cluster's members
+    member_embeddings = np.array([data[id] for id in member_ids])
+
+    # Check if the current cluster has more than one member to avoid re-clustering single-member clusters
+    if len(member_embeddings) > 1:
+        # Apply sub-clustering to this subset
+        sub_clusters, _ = cluster_kmeans_exclude_singles(member_embeddings, member_ids, 10)
+
+        # Extend the list of final sub-clusters with the newly formed sub-clusters
+        final_sub_clusters.extend(sub_clusters.values())
+
+# The final_sub_clusters list now contains the sub-clusters formed within each of the initial clusters.
+# Note that the total number of sub-clusters might be less than 1000 due to the exclusion of single-member clusters.
+
+# Display the total number of sub-clusters obtained
+total_sub_clusters = len(final_sub_clusters)
+print(f"Total number of sub-clusters obtained: {total_sub_clusters}")
+
+
+duration = time.time() - start_time
+duration
+
+
+len(final_sub_clusters[1])
+
+
+
+
+
+
+# part 3. for each final sub-cluster, compute similarity matrix: 
+
+# Assuming final_sub_clusters[0] contains the sample IDs for the first sub-cluster
+sub_cluster_sample_ids = final_sub_clusters[1]  # Sample IDs in the first sub-cluster
+
+# Extract the embeddings for these sample IDs
+sub_cluster_embeddings = np.array([data[id] for id in sub_cluster_sample_ids])
+
+# 1. Method 1: Cosine Similarity with Graphs
 
 start = time.time()
 
 # Calculate cosine similarity matrix for the subset
-similarity_matrix = cosine_similarity(all_embeddings)
+similarity_matrix = cosine_similarity(sub_cluster_embeddings)  # Use sub-cluster embeddings
 
 # Set a threshold for considering embeddings as 'nearly identical'
 similarity_threshold = 0.99
@@ -54,14 +143,14 @@ similar_pairs = []
 for i in range(len(similarity_matrix)):
     for j in range(i+1, len(similarity_matrix)):  # Compare each pair only once
         if similarity_matrix[i, j] >= similarity_threshold:
-            similar_pairs.append((sample_ids[i], sample_ids[j], similarity_matrix[i, j]))
+            similar_pairs.append((sub_cluster_sample_ids[i], sub_cluster_sample_ids[j], similarity_matrix[i, j]))
 
 # Create a graph
 G = nx.Graph()
 
 # Add edges for pairs with high similarity
 for sample1, sample2, score in similar_pairs:
-    if score >= 0.99:  # similarity threshold
+    if score >= similarity_threshold:  # Use the threshold variable
         G.add_edge(sample1, sample2)
 
 # Find connected components, which represent groups of similar samples
@@ -75,170 +164,12 @@ for i, component in enumerate(connected_components):
 
 # Print the groups
 for group_name, samples in groups.items():
-    pass
-    #print(f"{group_name}: {samples}")
+    pass  # Replace 'pass' with 'print(f"{group_name}: {samples}")' to print the groups
+
+len(groups)
 
 end = time.time()
-print(end-start)
-
-
-
-
-
-# 2. 
-
-start = time.time()
-
-# Normalize the embeddings
-normalized_embeddings = normalize(all_embeddings)
-
-# Optional: Sort embeddings by a density measure, such as the sum of vector components
-sorted_indices = np.argsort(np.sum(normalized_embeddings, axis=1))[::-1]
-sorted_embeddings = normalized_embeddings[sorted_indices]
-sorted_sample_ids = [sample_ids[i] for i in sorted_indices]  # Map sorted indices to sample IDs
-
-clusters = []  # Each cluster will contain sample IDs
-representatives = []  # List of representative embeddings for each cluster
-
-for idx, embedding in enumerate(sorted_embeddings):
-    found_cluster = False
-    for rep_idx, representative in enumerate(representatives):
-        similarity = np.dot(embedding, representative)  # Dot product since vectors are normalized
-        if similarity >= 0.88:  # Adjusted similarity threshold
-            clusters[rep_idx].append(sorted_sample_ids[idx])  # Use sample ID instead of index
-            found_cluster = True
-            break
-    if not found_cluster:
-        representatives.append(embedding)
-        clusters.append([sorted_sample_ids[idx]])  # Start a new cluster with the sample ID
-
-# Convert the list of clusters into a dictionary with named groups
-groups_method2 = {f'group_{i + 1}': cluster for i, cluster in enumerate(clusters)}
-
-end = time.time()
-print(end-start)
-
-
-
-
-
-
-
-
-
-import numpy as np
-from sklearn.cluster import MiniBatchKMeans
-import time
-
-def cluster_kmeans(embeddings, n_clusters=100):
-    start_time = time.time()
-    kmeans = MiniBatchKMeans(n_clusters=n_clusters, random_state=0, batch_size=100)
-    kmeans.fit(embeddings)
-    duration = time.time() - start_time
-    return kmeans.labels_, duration
-
-
-import numpy as np
-from sklearn.cluster import MiniBatchKMeans
-from sklearn.preprocessing import StandardScaler
-from scipy.spatial.distance import cdist
-import time
-
-def cluster_kmeans_with_threshold(embeddings, n_clusters, threshold_percentile):
-    start_time = time.time()
-
-    # Optional: Scale embeddings - Uncomment if scaling is desired
-    # scaler = StandardScaler()
-    # embeddings_scaled = scaler.fit_transform(embeddings)
-
-    kmeans = MiniBatchKMeans(n_clusters=n_clusters, init='k-means++', random_state=0, batch_size=100)
-    kmeans.fit(embeddings)  # Change to embeddings_scaled if scaling is applied
-
-    # Calculate distances from each point to its cluster center
-    distances = cdist(embeddings, kmeans.cluster_centers_, 'euclidean')
-    min_distances = np.min(distances, axis=1)
-
-    # Determine the 99th percentile of distances
-    threshold_distance = np.percentile(min_distances, threshold_percentile)
-
-    # Identify valid clusters
-    valid_clusters = []
-    for i in range(n_clusters):
-        cluster_indices = np.where(kmeans.labels_ == i)[0]
-        if len(cluster_indices) < 2:
-            # Skip clusters with fewer than 2 embeddings
-            continue
-
-        cluster_distances = min_distances[cluster_indices]
-        if np.all(cluster_distances < threshold_distance):
-            valid_clusters.append(i)
-
-    duration = time.time() - start_time
-
-    # Filter labels to include only valid clusters, set others to -1 for 'noise' or standalone
-    valid_labels = np.array([-1 if label not in valid_clusters else label for label in kmeans.labels_])
-
-    return valid_labels, valid_clusters, duration
-
-
-def cluster_kmeans_with_threshold_and_ids(embeddings, sample_ids, n_clusters, threshold_percentile):
-    start_time = time.time()
-
-    # Optional: Scale embeddings - Uncomment if scaling is desired
-    # scaler = StandardScaler()
-    # embeddings_scaled = scaler.fit_transform(embeddings)
-
-    kmeans = MiniBatchKMeans(n_clusters=n_clusters, init='k-means++', random_state=0, batch_size=100)
-    kmeans.fit(embeddings)  # Change to embeddings_scaled if scaling is applied
-
-    # Calculate distances from each point to its cluster center
-    distances = cdist(embeddings, kmeans.cluster_centers_, 'euclidean')
-    min_distances = np.min(distances, axis=1)
-
-    # Determine the 99th percentile of distances
-    threshold_distance = np.percentile(min_distances, threshold_percentile)
-
-    # Identify valid clusters and their sample IDs
-    valid_clusters = {}
-    for i in range(n_clusters):
-        cluster_indices = np.where(kmeans.labels_ == i)[0]
-        if len(cluster_indices) < 2:
-            # Skip clusters with fewer than 2 embeddings
-            continue
-
-        cluster_distances = min_distances[cluster_indices]
-        if np.all(cluster_distances < threshold_distance):
-            # Only include clusters where all points are within the threshold distance
-            valid_clusters[i] = [sample_ids[idx] for idx in cluster_indices]
-
-    duration = time.time() - start_time
-
-    return valid_clusters, duration
-
-
-
-
-
-# Assuming your embeddings are loaded into `all_embeddings`
-
-labels_kmeans, duration_kmeans = cluster_kmeans(all_embeddings)
-print(f"K-means clustering took {duration_kmeans} seconds.")
-
-
-valid_labels, valid_clusters, duration = cluster_kmeans_with_threshold(all_embeddings, 10, 90)
-
-valid_clusters, duration = cluster_kmeans_with_threshold_and_ids(all_embeddings, sample_ids, 100, 90)
-
-
-
-
-
-
-
-
-
-
-
+print(f"Duration: {end - start} seconds")
 
 
 
@@ -271,37 +202,51 @@ valid_clusters, duration = cluster_kmeans_with_threshold_and_ids(all_embeddings,
 
 
 # =============================================================================
-# # compare groups: 
+# # 1. Cosine Similarity with Graphs
 # 
-# print(groups)
-# print(len(groups))
+# start = time.time()
 # 
-# print(groups_method2)
-# print(len(groups_method2))
+# # Calculate cosine similarity matrix for the subset
+# similarity_matrix = cosine_similarity(all_embeddings)
 # 
+# # Set a threshold for considering embeddings as 'nearly identical'
+# similarity_threshold = 0.99
 # 
-# def get_identical_clusters(clusters1, clusters2):
-#     # Convert clusters to frozensets for efficient, immutable, and hashable set operations
-#     sets1 = [frozenset(cluster) for cluster in clusters1.values()]
-#     sets2 = [frozenset(cluster) for cluster in clusters2.values()]
+# # Find pairs of similar embeddings based on the threshold
+# similar_pairs = []
+# for i in range(len(similarity_matrix)):
+#     for j in range(i+1, len(similarity_matrix)):  # Compare each pair only once
+#         if similarity_matrix[i, j] >= similarity_threshold:
+#             similar_pairs.append((sample_ids[i], sample_ids[j], similarity_matrix[i, j]))
 # 
-#     # Use a set to avoid counting duplicates
-#     matched_clusters = set()
+# # Create a graph
+# G = nx.Graph()
 # 
-#     for set1 in sets1:
-#         for set2 in sets2:
-#             if set1 == set2:  # Check if two clusters are exactly the same
-#                 matched_clusters.add(tuple(set1))  # Add to the set of matched clusters
+# # Add edges for pairs with high similarity
+# for sample1, sample2, score in similar_pairs:
+#     if score >= 0.99:  # similarity threshold
+#         G.add_edge(sample1, sample2)
 # 
-#     # The number of matched clusters
-#     return matched_clusters
+# # Find connected components, which represent groups of similar samples
+# connected_components = list(nx.connected_components(G))
 # 
-# # Assuming `groups` from Method 1 and `groups_method2` from Method 2 contain the actual clusters
-# identical_clusters_count = get_identical_clusters(groups, groups_method2)
-# idc=len(identical_clusters_count)
+# # Create a dictionary to hold groups of similar samples
+# groups = {}
+# for i, component in enumerate(connected_components):
+#     group_name = f'group_{i + 1}'
+#     groups[group_name] = list(component)
 # 
-# print(f"Identical Clusters: {identical_clusters_count}, {idc}")
+# # Print the groups
+# for group_name, samples in groups.items():
+#     pass
+#     #print(f"{group_name}: {samples}")
+# 
+# len(groups)
+# 
+# end = time.time()
+# print(end-start)
 # =============================================================================
+
 
 
 # =============================================================================
@@ -424,5 +369,13 @@ valid_clusters, duration = cluster_kmeans_with_threshold_and_ids(all_embeddings,
 #     print(differences)
 #     print("--------------------------------------------------\n")
 # =============================================================================
+
+
+
+
+
+
+
+
 
 
