@@ -113,10 +113,38 @@ duration = time.time() - start_time
 duration
 
 
-len(final_sub_clusters[1])
 
-
-
+# =============================================================================
+# # Visualization: 
+# n_embeddings_per_cluster=[]
+# for i in final_sub_clusters:
+#     print(len(i))
+#     n_embeddings_per_cluster.append(len(i))
+# 
+# set(list(n_embeddings_per_cluster))
+# 
+# 
+# # Assuming n_embeddings_per_cluster contains the number of embeddings in each sub-cluster
+# n_embeddings_per_cluster = [len(i) for i in final_sub_clusters]
+# 
+# # Histogram
+# plt.figure(figsize=(10, 6))
+# plt.hist(n_embeddings_per_cluster, bins=20, color='skyblue', edgecolor='black')
+# plt.title('Distribution of Embeddings per Cluster')
+# plt.xlabel('Number of Embeddings')
+# plt.ylabel('Frequency')
+# plt.grid(axis='y', alpha=0.75)
+# plt.show()
+# 
+# # Box Plot
+# plt.figure(figsize=(6, 8))
+# plt.boxplot(n_embeddings_per_cluster, vert=True, patch_artist=True)
+# plt.title('Box Plot of Embeddings per Cluster')
+# plt.ylabel('Number of Embeddings')
+# plt.xticks([1], ['Clusters'])  # Only one category
+# plt.grid(axis='y', linestyle='--', alpha=0.7)
+# plt.show()
+# =============================================================================
 
 
 
@@ -175,6 +203,41 @@ print(f"Duration: {end - start} seconds")
 
 
 
+def compute_similarity_for_cluster(sub_cluster_sample_ids, data, sub_cluster_index, similarity_threshold=0.99):
+    start_time = time.time()  # Start timing
+
+    # Extract the embeddings for the provided sample IDs
+    sub_cluster_embeddings = np.array([data[id] for id in sub_cluster_sample_ids])
+
+    # Calculate cosine similarity matrix for the subset
+    similarity_matrix = cosine_similarity(sub_cluster_embeddings)
+
+    # Initialize a graph
+    G = nx.Graph()
+
+    # Find pairs of similar embeddings based on the threshold and add edges to the graph
+    for i in range(len(similarity_matrix)):
+        for j in range(i + 1, len(similarity_matrix)):
+            if similarity_matrix[i, j] >= similarity_threshold:
+                G.add_edge(sub_cluster_sample_ids[i], sub_cluster_sample_ids[j])
+
+    # Find connected components, which represent groups of similar samples
+    connected_components = list(nx.connected_components(G))
+
+    # Create a dictionary to hold groups of similar samples
+    groups = {f'sub_cluster_{sub_cluster_index}_group_{i + 1}': list(component) for i, component in enumerate(connected_components)}
+
+    end_time = time.time()  # End timing
+    print(f"Similarity computation for sub-cluster {sub_cluster_index} took {end_time - start_time:.2f} seconds.")
+
+    return groups
+
+# Apply the function to each sub-cluster
+all_groups = []
+for i, sub_cluster_sample_ids in enumerate(final_sub_clusters[0:10], start=1):
+    print(f"Computing similarity for sub-cluster {i}...")
+    groups = compute_similarity_for_cluster(sub_cluster_sample_ids, data, i)  # Pass the index 'i' as the sub-cluster identifier
+    all_groups.append(groups)
 
 
 
@@ -183,10 +246,30 @@ print(f"Duration: {end - start} seconds")
 
 
 
+total_number_of_groups = 0
+
+for group_dict in all_groups:
+    total_number_of_groups += len(group_dict)
+
+# total number of embeddings incl in groups
+total_embeddings_in_groups = sum(len(group) for group_dict in all_groups for group in group_dict.values())
+
+# reduction of amples
+reduction_in_samples = len(all_embeddings) - total_embeddings_in_groups + total_number_of_groups
+
+# saved by clustering
+embeddings_saved = len(all_embeddings) - reduction_in_samples
 
 
-
-
+print("Clustering Summary:")
+print("-" * 50)  
+print(f"Initial number of samples: {len(all_embeddings)}")
+print(f"Number of groups formed: {total_number_of_groups}")
+print(f"Total embeddings included in groups: {total_embeddings_in_groups}")
+print(f"Effective number of samples after grouping: {reduction_in_samples}")
+print(f"Number of sample embeddings saved by clustering: {embeddings_saved}")
+print("-" * 50) 
+print("This reduction accounts for consolidating similar embeddings into groups, effectively reducing the number of distinct samples to consider.")
 
 
 
