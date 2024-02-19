@@ -21,6 +21,9 @@ from annoy import AnnoyIndex
 from sklearn.cluster import MiniBatchKMeans
 from sklearn.preprocessing import StandardScaler
 from scipy.spatial.distance import cdist
+from sklearn.metrics.pairwise import euclidean_distances
+
+
 
 
 # Path to the embeddings file
@@ -39,38 +42,44 @@ all_embeddings = np.array(list(data.values()))[:250000]  # Slicing to match samp
 
 
 
-# part 1. split into minimum 100 clusters
-
+# part 1. split into minimum n clusters
 
 def cluster_kmeans_exclude_singles(embeddings, sample_ids, n_clusters):
     start_time = time.time()
 
     # Apply k-means clustering
-    kmeans = MiniBatchKMeans(n_clusters=n_clusters, init='k-means++', random_state=0, batch_size=100)
+    kmeans = MiniBatchKMeans(n_clusters=n_clusters, init='k-means++', random_state=0, batch_size=1000)
     kmeans.fit(embeddings)
 
     # Initialize a dictionary to hold clusters
     clusters = {}
 
-    # Group sample IDs based on cluster labels, excluding clusters with only one sample
+    # Group sample IDs based on cluster labels
     for idx, label in enumerate(kmeans.labels_):
         # Add sample ID to the corresponding cluster
         clusters.setdefault(label, []).append(sample_ids[idx])
+
+    # Count the number of singletons before removing them
+    singletons_count = sum(1 for members in clusters.values() if len(members) == 1)
 
     # Remove clusters that contain only one sample
     clusters = {label: members for label, members in clusters.items() if len(members) > 1}
 
     duration = time.time() - start_time
 
-    return clusters, duration
+    # Return clusters, the number of singletons excluded, and the duration
+    return clusters, singletons_count, duration
 
 
+clusters, singletons_count, duration = cluster_kmeans_exclude_singles(all_embeddings, sample_ids, 100)
+print(f"Number of singletons excluded: {singletons_count}")
+print(f"Clustering duration: {duration}s")
 
-clusters, duration = cluster_kmeans_exclude_singles(all_embeddings, sample_ids, 100)
+# You can still list the clusters and get their count as before
+list_of_clusters = list(clusters.values())
+print(f"Number of clusters after excluding singletons: {len(list_of_clusters)}")
+
 duration
-
-list(clusters.values())
-len(list(clusters.values()))
 
 
 
@@ -114,93 +123,10 @@ duration
 
 
 
-# =============================================================================
-# # Visualization: 
-# n_embeddings_per_cluster=[]
-# for i in final_sub_clusters:
-#     print(len(i))
-#     n_embeddings_per_cluster.append(len(i))
-# 
-# set(list(n_embeddings_per_cluster))
-# 
-# 
-# # Assuming n_embeddings_per_cluster contains the number of embeddings in each sub-cluster
-# n_embeddings_per_cluster = [len(i) for i in final_sub_clusters]
-# 
-# # Histogram
-# plt.figure(figsize=(10, 6))
-# plt.hist(n_embeddings_per_cluster, bins=20, color='skyblue', edgecolor='black')
-# plt.title('Distribution of Embeddings per Cluster')
-# plt.xlabel('Number of Embeddings')
-# plt.ylabel('Frequency')
-# plt.grid(axis='y', alpha=0.75)
-# plt.show()
-# 
-# # Box Plot
-# plt.figure(figsize=(6, 8))
-# plt.boxplot(n_embeddings_per_cluster, vert=True, patch_artist=True)
-# plt.title('Box Plot of Embeddings per Cluster')
-# plt.ylabel('Number of Embeddings')
-# plt.xticks([1], ['Clusters'])  # Only one category
-# plt.grid(axis='y', linestyle='--', alpha=0.7)
-# plt.show()
-# =============================================================================
 
 
 
 # part 3. for each final sub-cluster, compute similarity matrix: 
-
-# Assuming final_sub_clusters[0] contains the sample IDs for the first sub-cluster
-sub_cluster_sample_ids = final_sub_clusters[1]  # Sample IDs in the first sub-cluster
-
-# Extract the embeddings for these sample IDs
-sub_cluster_embeddings = np.array([data[id] for id in sub_cluster_sample_ids])
-
-# 1. Method 1: Cosine Similarity with Graphs
-
-start = time.time()
-
-# Calculate cosine similarity matrix for the subset
-similarity_matrix = cosine_similarity(sub_cluster_embeddings)  # Use sub-cluster embeddings
-
-# Set a threshold for considering embeddings as 'nearly identical'
-similarity_threshold = 0.99
-
-# Find pairs of similar embeddings based on the threshold
-similar_pairs = []
-for i in range(len(similarity_matrix)):
-    for j in range(i+1, len(similarity_matrix)):  # Compare each pair only once
-        if similarity_matrix[i, j] >= similarity_threshold:
-            similar_pairs.append((sub_cluster_sample_ids[i], sub_cluster_sample_ids[j], similarity_matrix[i, j]))
-
-# Create a graph
-G = nx.Graph()
-
-# Add edges for pairs with high similarity
-for sample1, sample2, score in similar_pairs:
-    if score >= similarity_threshold:  # Use the threshold variable
-        G.add_edge(sample1, sample2)
-
-# Find connected components, which represent groups of similar samples
-connected_components = list(nx.connected_components(G))
-
-# Create a dictionary to hold groups of similar samples
-groups = {}
-for i, component in enumerate(connected_components):
-    group_name = f'group_{i + 1}'
-    groups[group_name] = list(component)
-
-# Print the groups
-for group_name, samples in groups.items():
-    pass  # Replace 'pass' with 'print(f"{group_name}: {samples}")' to print the groups
-
-len(groups)
-
-end = time.time()
-print(f"Duration: {end - start} seconds")
-
-
-
 
 
 def compute_similarity_for_cluster(sub_cluster_sample_ids, data, sub_cluster_index, similarity_threshold=0.99):
@@ -232,15 +158,17 @@ def compute_similarity_for_cluster(sub_cluster_sample_ids, data, sub_cluster_ind
 
     return groups
 
+len(final_sub_clusters)
+
 # Apply the function to each sub-cluster
 all_groups = []
-for i, sub_cluster_sample_ids in enumerate(final_sub_clusters[0:10], start=1):
+for i, sub_cluster_sample_ids in enumerate(final_sub_clusters[0:100], start=1):
     print(f"Computing similarity for sub-cluster {i}...")
     groups = compute_similarity_for_cluster(sub_cluster_sample_ids, data, i)  # Pass the index 'i' as the sub-cluster identifier
     all_groups.append(groups)
 
 
-
+len(all_groups)
 
 
 
