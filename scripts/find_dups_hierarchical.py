@@ -12,7 +12,6 @@ import pickle
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import csv
-import matplotlib.pyplot as plt
 import difflib
 import time
 import networkx as nx
@@ -22,8 +21,10 @@ from sklearn.cluster import MiniBatchKMeans
 from sklearn.preprocessing import StandardScaler
 from scipy.spatial.distance import cdist
 from sklearn.metrics.pairwise import euclidean_distances
-
-
+import matplotlib.pyplot as plt
+from scipy.spatial.distance import pdist, squareform
+from sklearn.manifold import MDS
+import matplotlib.pyplot as plt
 
 
 # Path to the embeddings file
@@ -36,50 +37,98 @@ with open(embeddings_file_path, 'rb') as file:
     
     
 # Convert data to list and slice
-sample_ids = list(data.keys())[:250000]  # Adjust the slice size as needed
-all_embeddings = np.array(list(data.values()))[:250000]  # Slicing to match sample IDs
-
+sample_ids = list(data.keys())[:100000]  # Adjust the slice size as needed
+all_embeddings = np.array(list(data.values()))[:100000]  # Slicing to match sample IDs
 
 
 
 # part 1. split into minimum n clusters
 
+
 def cluster_kmeans_exclude_singles(embeddings, sample_ids, n_clusters):
     start_time = time.time()
 
     # Apply k-means clustering
-    kmeans = MiniBatchKMeans(n_clusters=n_clusters, init='k-means++', random_state=0, batch_size=1000)
+    kmeans = MiniBatchKMeans(n_clusters=n_clusters, init='k-means++', random_state=0, batch_size=100)
     kmeans.fit(embeddings)
 
     # Initialize a dictionary to hold clusters
     clusters = {}
 
-    # Group sample IDs based on cluster labels
+    # Group sample IDs based on cluster labels, excluding clusters with only one sample
     for idx, label in enumerate(kmeans.labels_):
         # Add sample ID to the corresponding cluster
         clusters.setdefault(label, []).append(sample_ids[idx])
-
-    # Count the number of singletons before removing them
-    singletons_count = sum(1 for members in clusters.values() if len(members) == 1)
 
     # Remove clusters that contain only one sample
     clusters = {label: members for label, members in clusters.items() if len(members) > 1}
 
     duration = time.time() - start_time
 
-    # Return clusters, the number of singletons excluded, and the duration
-    return clusters, singletons_count, duration
+    return clusters, duration
 
 
-clusters, singletons_count, duration = cluster_kmeans_exclude_singles(all_embeddings, sample_ids, 100)
-print(f"Number of singletons excluded: {singletons_count}")
-print(f"Clustering duration: {duration}s")
 
-# You can still list the clusters and get their count as before
-list_of_clusters = list(clusters.values())
-print(f"Number of clusters after excluding singletons: {len(list_of_clusters)}")
-
+clusters, duration = cluster_kmeans_exclude_singles(all_embeddings, sample_ids, 100)
 duration
+
+list(clusters.values())
+len(list(clusters.values()))
+
+
+# =============================================================================
+# def compute_centroids(clusters, data):
+#     centroids = []
+#     for cluster_id, member_ids in clusters.items():
+#         # Retrieve embeddings for the current cluster's members
+#         member_embeddings = np.array([data[id] for id in member_ids])
+#         # Calculate the centroid as the mean of the embeddings
+#         centroid = np.mean(member_embeddings, axis=0)
+#         centroids.append(centroid)
+#     return np.array(centroids)
+# 
+# centroids = compute_centroids(clusters, data)
+# 
+# # Calculate the pairwise distances between centroids
+# distance_matrix = squareform(pdist(centroids, 'euclidean'))
+# 
+# mds = MDS(n_components=2, dissimilarity="precomputed", random_state=42)
+# 
+# # Apply MDS to the distance matrix
+# mds_coords = mds.fit_transform(distance_matrix)
+# 
+# 
+# # Step 1: Calculate the number of embeddings in each cluster
+# cluster_sizes = [len(clusters[cluster_id]) for cluster_id in clusters]
+# 
+# # Step 2: Determine thresholds using quantiles
+# small_threshold = np.percentile(cluster_sizes, 33)  # 33rd percentile
+# medium_threshold = np.percentile(cluster_sizes, 66)  # 66th percentile
+# 
+# # Step 3: Define a function to assign dot sizes based on thresholds
+# def determine_dot_size(num_embeddings):
+#     if num_embeddings <= small_threshold:
+#         return 50  # Size for clusters with embeddings <= 33rd percentile
+#     elif num_embeddings <= medium_threshold:
+#         return 100  # Size for clusters with embeddings > 33rd percentile and <= 66th percentile
+#     else:
+#         return 150  # Size for clusters with embeddings > 66th percentile
+# 
+# # Create a list of dot sizes for each cluster based on the thresholds
+# dot_sizes = [determine_dot_size(size) for size in cluster_sizes]
+# 
+# # Plotting
+# plt.figure(figsize=(10, 8))
+# plt.scatter(mds_coords[:, 0], mds_coords[:, 1], marker='o', c='blue', alpha=0.5, s=dot_sizes)  # Use dot_sizes for dot sizes
+# for i, txt in enumerate(clusters.keys()):
+#     plt.annotate(txt, (mds_coords[i, 0], mds_coords[i, 1]))
+# plt.title('Cluster Centroid Relationships via MDS')
+# plt.xlabel('MDS Dimension 1')
+# plt.ylabel('MDS Dimension 2')
+# plt.grid(True)
+# plt.show()
+# =============================================================================
+
 
 
 
@@ -89,41 +138,84 @@ duration
 # part 2. within each of the 100 clusters, split into further 10 clusters 
 
 
-# Assume 'clusters' is a dictionary from the initial clustering, where each key is a cluster label
-# and each value is a list of sample IDs in that cluster.
+def cluster_kmeans_dynamic(embeddings, sample_ids, max_clusters):
+    # Start time measurement inside the function is removed
 
-start_time = time.time()
+    # Determine the number of clusters based on the number of samples
+    n_clusters = min(len(embeddings), max_clusters)
 
-# Initialize a list to store all final sub-clusters
-final_sub_clusters = []
+    # Apply k-means clustering with the dynamically determined number of clusters
+    kmeans = MiniBatchKMeans(n_clusters=n_clusters, init='k-means++', random_state=0, batch_size=100)
+    kmeans.fit(embeddings)
+
+    # Initialize a dictionary to hold clusters
+    clusters = {}
+
+    # Group sample IDs based on cluster labels, excluding clusters with only one sample
+    for idx, label in enumerate(kmeans.labels_):
+        # Add sample ID to the corresponding cluster
+        clusters.setdefault(label, []).append(sample_ids[idx])
+
+    # Remove clusters that contain only one sample
+    clusters = {label: members for label, members in clusters.items() if len(members) > 1}
+
+    # Duration measurement is removed from this function as it will be measured externally
+
+    return clusters  # No longer returning duration from this function
+
+# Start measuring time for the entire clustering process
+total_start_time = time.time()
+
+# Assume 'clusters' is a dictionary from the initial clustering
+final_sub_clusters = []  # Initialize a list to store all final sub-clusters
 
 # Iterate over each initial cluster to further cluster its embeddings
 for initial_cluster_label, member_ids in clusters.items():
     # Retrieve the embeddings for the current cluster's members
     member_embeddings = np.array([data[id] for id in member_ids])
 
-    # Check if the current cluster has more than one member to avoid re-clustering single-member clusters
-    if len(member_embeddings) > 1:
-        # Apply sub-clustering to this subset
-        sub_clusters, _ = cluster_kmeans_exclude_singles(member_embeddings, member_ids, 10)
+    # Dynamically determine the number of clusters based on the size of embeddings
+    max_sub_clusters = 10  # Maximum number of sub-clusters within each cluster
+    sub_clusters = cluster_kmeans_dynamic(member_embeddings, member_ids, max_sub_clusters)
 
-        # Extend the list of final sub-clusters with the newly formed sub-clusters
-        final_sub_clusters.extend(sub_clusters.values())
-
-# The final_sub_clusters list now contains the sub-clusters formed within each of the initial clusters.
-# Note that the total number of sub-clusters might be less than 1000 due to the exclusion of single-member clusters.
+    # Extend the list of final sub-clusters with the newly formed sub-clusters
+    final_sub_clusters.extend(sub_clusters.values())
 
 # Display the total number of sub-clusters obtained
 total_sub_clusters = len(final_sub_clusters)
 print(f"Total number of sub-clusters obtained: {total_sub_clusters}")
 
-
-duration = time.time() - start_time
-duration
-
-
+# Stop measuring time for the entire clustering process and calculate duration
+total_duration = time.time() - total_start_time
+print(f"Total duration for the entire clustering process: {total_duration} seconds")
 
 
+
+# =============================================================================
+# # Visualization: 
+# n_embeddings_per_cluster=[]
+# for i in final_sub_clusters:
+#     print(len(i))
+#     n_embeddings_per_cluster.append(len(i))
+# 
+# set(list(n_embeddings_per_cluster))
+# 
+# # Sort n_embeddings_per_cluster in descending order and keep track of the original indices
+# sorted_embeddings = sorted(enumerate(n_embeddings_per_cluster), key=lambda x: x[1], reverse=True)
+# 
+# # Unzip the sorted list into indices and sorted number of embeddings
+# sorted_indices, sorted_n_embeddings = zip(*sorted_embeddings)
+# 
+# plt.figure(figsize=(10, 6))
+# # Create a bar chart with sorted number of embeddings
+# # The x-coordinates of the bars will be sequential to represent the sorted order, not the original cluster indices
+# plt.bar(range(len(sorted_n_embeddings)), sorted_n_embeddings, color='skyblue', edgecolor='black')
+# plt.title('Number of Embeddings per Cluster')
+# plt.xlabel('Clusters (sorted)')
+# plt.ylabel('Number of Embeddings')
+# plt.grid(axis='y', alpha=0.75)
+# plt.show()
+# =============================================================================
 
 
 # part 3. for each final sub-cluster, compute similarity matrix: 
@@ -380,8 +472,6 @@ print("This reduction accounts for consolidating similar embeddings into groups,
 #     print(differences)
 #     print("--------------------------------------------------\n")
 # =============================================================================
-
-
 
 
 
