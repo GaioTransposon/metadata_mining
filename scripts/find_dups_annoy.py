@@ -20,15 +20,15 @@ import plotly.graph_objects as go
 from sklearn.metrics.pairwise import cosine_similarity
 
 # --- Loading data ---
-embeddings_file_path = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/combined_data.pkl"
+embeddings_file_path = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/temp/combined_data.pkl"
 
 # Load embeddings and sample IDs from the file
 with open(embeddings_file_path, 'rb') as file:
     data = pickle.load(file)
     
 # Convert data to list and slice
-sample_ids = list(data.keys())[:1000000]  # Adjust the slice size as needed
-all_embeddings = np.array(list(data.values()))[:1000000]  # Slicing to match sample IDs
+sample_ids = list(data.keys())[:1500000]  # Adjust the slice size as needed
+all_embeddings = np.array(list(data.values()))[:1500000]  # Slicing to match sample IDs
 
 
 # =============================================================================
@@ -63,7 +63,7 @@ print(f"Building Annoy index took {end_time - start_time:.2f} seconds.")
 # --- Nearest Neighbors Search ---
 start_time = time.time()
 n_neighbors = 11 # Number of nearest neighbors to find (including the query embedding itself)
-identical_threshold = 0.1 # Threshold for considering embeddings as nearly identical
+identical_threshold = 0.7 # Threshold for considering embeddings as nearly identical
 
 def query_batch(start_idx, end_idx):
     local_pairs = []
@@ -143,7 +143,6 @@ total_embeddings_in_clusters = sum(len(cluster) for cluster in cluster_list)
 total_clusters = len(cluster_list)
 samples_saved = total_embeddings - total_embeddings_in_clusters + total_clusters
 print(samples_saved)
-
 
 
 # --- Inspecting Results ---
