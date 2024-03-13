@@ -164,7 +164,7 @@ if __name__ == "__main__":
 
 # 20240313
 # 200 nspb, "openai_system_prompt.txt"
-# seed 42 vs 22 vs 
+# seed 42 vs 22 vs 11
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
