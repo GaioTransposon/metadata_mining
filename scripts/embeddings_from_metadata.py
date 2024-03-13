@@ -217,7 +217,7 @@ if __name__ == "__main__":
 #     --batch_size 100 \
 #     --api_key_path "/mnt/mnemo5/dgaio/my_api_key" \
 #     --processed_samples_file "processed_samples_file.txt" \
-#     --max_samples 1000000 \
+#     --max_samples 100000 \
 #     --verbose "no"
 
 
