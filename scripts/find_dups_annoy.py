@@ -39,7 +39,7 @@ all_embeddings = np.array(list(data.values()))[:1500000]  # Slicing to match sam
 
 # --- PCA for Dimensionality Reduction ---
 start_time = time.time()
-n_components = 500
+n_components = 1000
 pca = PCA(n_components=n_components)
 all_embeddings = pca.fit_transform(all_embeddings)
 end_time = time.time()
@@ -63,7 +63,7 @@ print(f"Building Annoy index took {end_time - start_time:.2f} seconds.")
 # --- Nearest Neighbors Search ---
 start_time = time.time()
 n_neighbors = 11 # Number of nearest neighbors to find (including the query embedding itself)
-identical_threshold = 0.7 # Threshold for considering embeddings as nearly identical
+identical_threshold = 0.1 # Threshold for considering embeddings as nearly identical
 
 def query_batch(start_idx, end_idx):
     local_pairs = []
@@ -137,12 +137,12 @@ print(f"Clustering took {end_time - start_time:.2f} seconds.")
 
 
 # --- Summarizing Results ---
-print(len(cluster_list))
+print("How many clusters have been created:", len(cluster_list))
 total_embeddings = len(all_embeddings)
 total_embeddings_in_clusters = sum(len(cluster) for cluster in cluster_list)
 total_clusters = len(cluster_list)
 samples_saved = total_embeddings - total_embeddings_in_clusters + total_clusters
-print(samples_saved)
+print("Number of saved samples:", samples_saved)
 
 
 # --- Inspecting Results ---
