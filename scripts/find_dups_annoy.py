@@ -27,8 +27,8 @@ with open(embeddings_file_path, 'rb') as file:
     data = pickle.load(file)
     
 # Convert data to list and slice
-sample_ids = list(data.keys())[:1500000]  # Adjust the slice size as needed
-all_embeddings = np.array(list(data.values()))[:1500000]  # Slicing to match sample IDs
+sample_ids = list(data.keys())[:3800000]  # Adjust the slice size as needed
+all_embeddings = np.array(list(data.values()))[:3800000]  # Slicing to match sample IDs
 
 
 # =============================================================================
@@ -39,7 +39,7 @@ all_embeddings = np.array(list(data.values()))[:1500000]  # Slicing to match sam
 
 # --- PCA for Dimensionality Reduction ---
 start_time = time.time()
-n_components = 1000
+n_components = 500
 pca = PCA(n_components=n_components)
 all_embeddings = pca.fit_transform(all_embeddings)
 end_time = time.time()
@@ -246,7 +246,7 @@ def process_clusters(path_to_dirs, cluster_list, all_embeddings, sample_ids, num
 
     # Show figure
     fig.show()
-    fig.write_html('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/largest_distance_cluster.html')
+    fig.write_html('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/largest_distance_cluster_0.1thresh_all_embeddings.html')
 
     # Show metadata differences in console
     # Find indices of the maximum 'distance' in the distance matrix

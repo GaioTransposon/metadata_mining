@@ -166,14 +166,19 @@ if __name__ == "__main__":
 # 200 nspb, "openai_system_prompt.txt"
 # seed 42 vs 22 vs 11
 
+# 20240314
+# 200 nspb
+# testing prompts: with 1,2, and 4 examples for format (openai_system_prompt.txt vs openai_system_prompt_2examples.txt vs openai_system_prompt_4examples.txt)
+
+
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
 #     --n_samples_per_biome 200 \
 #     --chunk_size 1500 \
-#     --seed 22 \
+#     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "openai_system_prompt.txt" \
+#     --system_prompt_file "openai_system_prompt_4examples.txt" \
 #     --encoding_name "cl100k_base" \
 #     --api_key_path "/Users/dgaio/my_api_key" \
 #     --model "gpt-3.5-turbo-1106" \

@@ -105,31 +105,44 @@ def extract_labels_from_filename(filename, distinguishing_tokens):
 
 
 
+# =============================================================================
+# def load_and_process_file(file_name, gold_standard_df):
+#     # Load the file without headers, since the number of columns can vary
+#     dfr = pd.read_csv(file_name, header=None)
+# 
+#     # Select only the first and second columns for processing
+#     # Assuming the first column is 'sample' and the second is 'gpt_generated_output_clean'
+#     dfr = dfr.iloc[:, [0, 1]]
+#     dfr.columns = ['sample', 'gpt_generated_output_clean']  # Assign column names after selection
+# 
+#     # Handle missing values in 'gpt_generated_output_clean'
+#     dfr['gpt_generated_output_clean'] = dfr['gpt_generated_output_clean'].fillna('unknown').astype(str)
+# 
+#     # Merge with the gold standard DataFrame
+#     merged_df = pd.merge(dfr, gold_standard_df, on='sample', how='inner')
+# 
+#     # Check for 'unknown' in the merged DataFrame
+#     num_unknown_merged = merged_df['gpt_generated_output_clean'].value_counts().get('unknown', 0)
+#     print(f"Number of 'unknown' after merging '{os.path.basename(file_name)}':", num_unknown_merged)
+# 
+#     return merged_df
+# =============================================================================
 
+def load_and_process_file(file_name, gold_standard_df, label):
+    # Load the file without headers, as the number of columns can vary
+    dfr = pd.read_csv(file_name, header=None)
 
+    # Select only the first and second columns for processing
+    dfr = dfr.iloc[:, [0, 1]]
+    dfr.columns = ['sample', 'gpt_biome']  # Rename columns for clarity
 
-def load_and_process_file(file_name, gold_standard_df):
-    dfr = pd.read_csv(file_name)
-    #dfr.dropna(subset=['gpt_generated_output_clean'], inplace=True)
-    dfr['gpt_generated_output_clean'] = dfr['gpt_generated_output_clean'].fillna('unknown').astype(str)
+    # Add the label column
+    dfr['label'] = label
+
+    # Merge with the gold standard DataFrame
     merged_df = pd.merge(dfr, gold_standard_df, on='sample', how='inner')
 
-    # Check for 'unknown' in merged DataFrame
-    num_unknown_merged = merged_df['gpt_generated_output_clean'].value_counts().get('unknown', 0)
-    print(f"Number of 'unknown' after merging '{os.path.basename(file_name)}':", num_unknown_merged)
-
     return merged_df
-
-
-
-
-
-def calculate_agreement(merged_df):
-    total_samples = len(merged_df)
-    agree_samples = len(merged_df[merged_df['gpt_generated_output_clean'] == merged_df['biome']])
-    agreement = (agree_samples / total_samples) * 100
-    return agreement, total_samples
-
 
 
 def custom_sort(label):
@@ -184,6 +197,145 @@ print('Distinguishing features of GPT files are: ', labels)
 
 
 
+
+##########
+
+# plotting agreement 
+
+# Concatenate all DataFrames
+all_dfs = []
+for file, label in zip(selected_files, labels):
+    processed_df = load_and_process_file(file, gold_dict_df, label)
+    all_dfs.append(processed_df)
+
+concatenated_df = pd.concat(all_dfs, ignore_index=True)
+
+
+concatenated_df['agreement'] = concatenated_df['gpt_biome'] == concatenated_df['biome']
+
+
+
+# Prepare data for plotting
+plot_data = concatenated_df.groupby(['label', 'agreement']).size().unstack(fill_value=0).reset_index()
+
+# Plot
+plt.figure(figsize=(10, 6))
+plot_data.set_index('label').plot(kind='bar', stacked=True, color=['red', 'green'], figsize=(10, 6))
+plt.title('agreement GPT output with ground truth')
+plt.ylabel('# samples')
+plt.xticks(rotation=45)
+plt.legend(['incorrect', 'correct'], loc='upper right')
+plt.tight_layout()
+plt.show()
+
+
+
+
+# Calculate agreement for each biome within each label
+agreement_by_biome = concatenated_df.groupby(['label', 'biome', 'agreement']).size().unstack(fill_value=0).reset_index()
+
+# If necessary, you can rename the columns for clarity
+agreement_by_biome.columns = ['Label', 'Biome', 'Disagreement', 'Agreement']
+
+##########
+
+
+##########
+
+# big plot - separated by biome 
+
+# Unique labels and biomes for plotting
+unique_labels = agreement_by_biome['Label'].unique()
+
+# Convert the 'Biome' column to a list of unique biomes if it's not already
+unique_biomes = agreement_by_biome['Biome'].unique().tolist()
+
+# Create a dictionary to map each label to a numerical index
+label_positions = {label: idx for idx, label in enumerate(agreement_by_biome['Label'].unique())}
+
+# Set up the figure
+plt.figure(figsize=(12, 8))
+
+# Define a small font size for the annotations
+annotation_font_size = 6
+
+# Plot each bar with annotations
+for idx, row in agreement_by_biome.iterrows():
+    label_pos = label_positions[row['Label']]
+    biome_offset = unique_biomes.index(row['Biome'])
+
+    # Compute the base position for the current bar
+    base_position = label_pos * (len(unique_biomes) + 1) + biome_offset
+
+    # Plot the 'Agreement' part of the bar
+    agreement_bar = plt.bar(base_position, row['Agreement'], color='green', edgecolor='white', width=0.8, label='Agreement' if idx == 0 else "")
+    
+    # Plot the 'Disagreement' part of the bar, stacked on the 'Agreement' part
+    disagreement_bar = plt.bar(base_position, row['Disagreement'], bottom=row['Agreement'], color='red', edgecolor='white', width=0.8, label='Disagreement' if idx == 0 else "")
+
+    # Annotate the bar with the biome name
+    plt.text(base_position, 0, row['Biome'], rotation=90, va='bottom', ha='center', fontsize=annotation_font_size)
+
+# Finalize the plot
+plt.xlabel('')
+plt.ylabel('# samples')
+plt.title('agreement GPT output with ground truth')
+plt.xticks(ticks=np.arange(len(label_positions)) * (len(unique_biomes) + 1) + len(unique_biomes)/2, labels=list(label_positions.keys()), rotation=45)
+plt.legend(loc='upper left', bbox_to_anchor=(1,1), ncol=1)
+
+plt.tight_layout()
+plt.show()
+
+##########
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# older code: 
+
+def calculate_agreement(merged_df):
+    total_samples = len(merged_df)
+    agree_samples = len(merged_df[merged_df['gpt_generated_output_clean'] == merged_df['biome']])
+    agreement = (agree_samples / total_samples) * 100
+    return agreement, total_samples
+
+
+
+
 # -----------------------------
 # 6. Dataframe Processing & Agreement Calculation for Overall Plot (All Samples)
 # -----------------------------
@@ -213,12 +365,22 @@ for file, label in file_label_mapping:
 # 6. Dataframe Processing & Agreement Calculation for Overall Plot (common samples)
 # -----------------------------
 
+
+
 all_samples = []
 for file in selected_files:
-    temp_df = pd.read_csv(file)
-    all_samples.append(set(temp_df['sample']))
+    # Load the CSV file without headers
+    temp_df = pd.read_csv(file, header=None)
+
+    # Use .iloc to select the first column (assuming 'sample' is always the first column)
+    sample_column = temp_df.iloc[:, 0]
+
+    # Append the set of samples to the list
+    all_samples.append(set(sample_column))
+
 
 common_samples = set.intersection(*all_samples)
+
 
 
 # Initialize the dataframe for overall agreement (common samples only)
@@ -310,6 +472,21 @@ plt.legend(title='Sample Type', bbox_to_anchor=(1.01, 1), loc='upper left')
 
 plt.tight_layout()
 plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
