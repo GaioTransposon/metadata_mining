@@ -229,6 +229,10 @@ if __name__ == "__main__":
 # 200 nspb
 # testing prompts: with 1,2, and 4 examples for format (openai_system_prompt.txt vs openai_system_prompt_2examples.txt vs openai_system_prompt_4examples.txt)
 
+# 20240318
+# 200 nspb
+# just a test now that we are re-sending missing_samples. 
+# random seed: 42 vs 24
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \

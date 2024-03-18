@@ -120,8 +120,7 @@ class MetadataProcessor:
             
             processed_samples_count += 1
             processed_samples_list.append(row['sample'])
-            print(f"Processed samples count: {processed_samples_count}")   
-            
+
             # to store processed sample ids
             self.processed_sample_ids.append(row['sample']) 
 
