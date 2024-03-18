@@ -13,6 +13,7 @@ from openai_02_metadata_processing import MetadataProcessor
 from openai_03_gpt_interaction import GPTInteractor
 from openai_04_gpt_parsing import GPTOutputParsing
 import time  
+import pandas as pd
 
 
 # =======================================================
@@ -63,20 +64,78 @@ def main():
     
     # Phase 3: Parsing GPT Output
     start_time = time.time()
-    gpt_parser = GPTOutputParsing(gpt_interactor, args.encoding_name)
-    parsed_df = gpt_parser.run()
+    gpt_parser = GPTOutputParsing(gpt_interactor, args.encoding_name, metadata_processor.processed_sample_ids)
+    parsed_df, missing_sample_ids = gpt_parser.run()
     end_time = time.time() 
     print(f"Parsing GPT Output time: {end_time - start_time} seconds")
-    
     print(parsed_df)
+    
+
+
+    if missing_sample_ids:
+        # Call the new method in MetadataProcessor to refetch metadata for missing samples
+        refetched_metadata = metadata_processor.refetch_metadata_for_samples(list(missing_sample_ids))
+        print("refetched metadata is:")
+        print(refetched_metadata)
+        # Decide how to handle the refetched metadata: reprocess, log, save, etc.
+
+
+        # Convert list of missing sample IDs to a DataFrame
+        missing_samples_df = pd.DataFrame(missing_sample_ids, columns=['sample'])
+
+        # Process the specific samples through the pipeline using the process_metadata method
+        specific_metadata_dict = metadata_processor.process_metadata(missing_samples_df)
+        print('specific_metadata_dict')
+        print(specific_metadata_dict)
+
+        # Now, you might need to manually create chunks, interact with GPT, and parse the output for these specific samples.
+        # Depending on how your methods are structured, you can call those here. For example:
+        specific_chunks = metadata_processor.create_and_save_chunks(specific_metadata_dict, metadata_processor.encoding_name)
+        print('specific_chunks')
+        print(specific_chunks)
+        
+        # Interact with GPT for the specific chunks (assuming 'interact_with_gpt' can accept a list of chunks)
+        gpt_responses = gpt_interactor.interact_with_gpt(specific_chunks)
+        print('gpt_responses')
+        print(gpt_responses)
+        
+        parsed_df_for_specific_samples = gpt_parser.parse_direct_responses(gpt_responses)
+        print('parsed_df_for_specific_samples')
+        print(parsed_df_for_specific_samples)
+        
+        # Concatenate the DataFrames
+        combined_parsed_df = pd.concat([parsed_df, parsed_df_for_specific_samples]).reset_index(drop=True)
+        print('Combined Parsed DataFrame:')
+        print(combined_parsed_df)
+    
+
+        gpt_parser.parsed_data = combined_parsed_df  # Update the parsed_data attribute of the gpt_parser instance
+        gpt_parser.save_cleaned_to_file()  # Save the combined DataFrame using the existing method
+    
+
+
+
 
 
 if __name__ == "__main__":
     main()
     
+
+# eventually...
+# =============================================================================
+# try:
+#     metadata_processor.run()
+# except Exception as e:
+#     logging.error(f"Error during metadata processing: {e}")
+# 
+# try:
+#     gpt_interactor.run()
+# except Exception as e:
+#     logging.error(f"Error during GPT interaction: {e}")
+# =============================================================================
     
     
-    
+
 # 20231206 (14:20)
 # gpt-3.5-turbo-1106
 # 4 samples per biome 

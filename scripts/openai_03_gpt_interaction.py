@@ -108,23 +108,25 @@ class GPTInteractor:
         )
     
         
+   
+
+    def interact_with_gpt(self, specific_chunks=None):
+        """Iterate over content strings and make requests to GPT. Accepts an optional list of specific chunks."""
+        # Use the provided specific_chunks if any, otherwise load the latest chunks file
         
-    def interact_with_gpt(self):
-        """Iterate over content strings and make requests to GPT."""
-        content_strings = self.load_latest_chunks_file()
+        content_strings = specific_chunks if specific_chunks is not None else self.load_latest_chunks_file()
         if not content_strings:
             return []
     
         gpt_responses = []
     
         for content_string in content_strings:
-            
             if not content_string.strip():  # skip empty content strings
                 continue
-                
-            # send request to API
+    
+            # Send request to API
             try:
-                #print(content_string)
+                # print(content_string)
                 response = self.gpt_request(content_string=content_string)
                 #print(response)
                 gpt_responses.append(response)
@@ -137,7 +139,8 @@ class GPTInteractor:
     
         return gpt_responses
 
-
+    
+ 
     def save_gpt_responses_to_file(self, gpt_responses):
         """
         Save the content of GPT responses to a file.
@@ -196,7 +199,3 @@ class GPTInteractor:
 
 
     
-
-
-
-

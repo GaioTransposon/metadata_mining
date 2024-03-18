@@ -20,7 +20,7 @@ import tiktoken
 
 class GPTOutputParsing:
         
-    def __init__(self, interactor_instance, encoding_name):
+    def __init__(self, interactor_instance, encoding_name, processed_sample_ids):
         self.filepath = interactor_instance.get_saved_filename()
         self.raw_content, self.raw_lines = self.load_from_file()
         self.parsed_data = None
@@ -28,6 +28,7 @@ class GPTOutputParsing:
         self.clean_filename = None  
         self.unparsed_filename = None  # Filename for unparsed lines
         self.encoding_name = encoding_name
+        self.processed_sample_ids = processed_sample_ids 
         
     def load_from_file(self):
         if self.filepath:
@@ -92,17 +93,51 @@ class GPTOutputParsing:
         logging.info(f"Saved clean GPT output to: {self.clean_filename}")
 
 
+    def parse_direct_responses(self, gpt_responses):
+        contents = []
+        for response in gpt_responses:
+            try:
+                content = response.choices[0].message['content']
+                contents.append(content)
+            except KeyError:
+                logging.error("Malformed GPT response")
+    
+        # Convert the list of contents to a '\n' separated string, mimicking the file content
+        self.raw_content = '\n'.join(contents)
+        self.raw_lines = self.raw_content.splitlines()
+    
+        # Now you can reuse the existing parsing logic
+        parsed_samples = self.parse_samples()
+        self.parsed_data = self.prepare_dataframe(parsed_samples)
+        self.save_unparsed_to_file()
+        self.save_cleaned_to_file()
+    
+        return self.parsed_data
+    
+
     def run(self):
-        self.count_total_tokens(self.raw_content)  
+        # Existing logic to count tokens, parse samples, prepare DataFrame, and save files
+        self.count_total_tokens(self.raw_content)
         parsed_samples = self.parse_samples()
         self.parsed_data = self.prepare_dataframe(parsed_samples)
         self.save_cleaned_to_file()
         self.save_unparsed_to_file()  # Save the unparsed lines
-        return self.parsed_data
-
-
-
-
+    
+        # New logic to find and log missing sample IDs
+        # Assuming 'col_0' is where your sample IDs are stored after parsing. Adjust if necessary.
+        parsed_sample_ids = set(self.parsed_data['col_0'].unique())
+        missing_sample_ids = set(self.processed_sample_ids) - parsed_sample_ids
+    
+        if missing_sample_ids:
+            missing_samples_str = ', '.join(missing_sample_ids)
+            logging.warning(f"Missing sample IDs not present in parsed DataFrame: {missing_samples_str}")
+            print(f"Missing sample IDs: {missing_samples_str}")
+        else:
+            logging.info("No missing sample IDs. All processed samples are present in parsed DataFrame.")
+            print("No missing sample IDs.")
+    
+        # Return the parsed DataFrame as before
+        return self.parsed_data, missing_sample_ids
 
 
 
@@ -155,15 +190,3 @@ class GPTOutputParsing:
 # len(processed_records)
 # 
 # =============================================================================
-
-
-
-
-
-
-
-
-
-
-
-

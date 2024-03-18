@@ -34,6 +34,7 @@ class MetadataProcessor:
         self.encoding_name = encoding_name
         self.directory_with_split_metadata = os.path.join(work_dir, directory_with_split_metadata)
         self.chunk_size = chunk_size  
+        self.processed_sample_ids = []
 
 
     def load_gold_dict(self):
@@ -58,7 +59,6 @@ class MetadataProcessor:
     def get_random_samples(self, gold_dict_df): 
         # filter out 'unknown' biomes before sampling - at the moment we don't want to test/validate gpt for the classification of "unknown"
         #filtered_df = gold_dict_df[gold_dict_df['curated_biome'] != 'unknown']
-        
         filtered_df = gold_dict_df
         
         random_samples = filtered_df.groupby('curated_biome').apply(lambda x: x.sample(n=self.n_samples_per_biome, random_state=self.seed)).reset_index(drop=True)
@@ -71,10 +71,22 @@ class MetadataProcessor:
         metadata_file_path = os.path.join(folder_path, f"{sample}_clean.txt")
         with open(metadata_file_path, 'r') as f:
             return f.read()
+        
+    
+    def refetch_metadata_for_samples(self, sample_ids):
+        refetched_metadata = {}
+        for sample_id in sample_ids:
+            try:
+                metadata = self.fetch_metadata_from_sample(sample_id)
+                refetched_metadata[sample_id] = metadata
+            except Exception as e:
+                logging.error(f"Failed to refetch metadata for sample {sample_id}: {e}")
+    
+        return refetched_metadata
+
     
 
     def filter_lines_for_coordinates(self, lines):
-        # Your existing regular expression
         coord_pattern = re.compile(r'(\d+(\.\d+)?\s*[NS]\s*\d+(\.\d+)?\s*[EW])|(\bcoord\w*\b)|(\blat(itude)?\b)|(\blon(gitude)?\b)', re.IGNORECASE)
     
         filtered_lines = []
@@ -88,12 +100,6 @@ class MetadataProcessor:
         return filtered_lines
 
 
-
-
-    
-
-    
-
     def process_metadata(self, samples):
         
         # Check if 'coordinates' is in the system prompt
@@ -103,7 +109,7 @@ class MetadataProcessor:
         shuffled_samples = samples.sample(frac=1, random_state=self.seed).reset_index(drop=True)
         
         processed_samples_count = 0
-        processed_samples_list = []  # to keep track of which samples have been processed
+        processed_samples_list = []  
         
         metadata_dict = {}
         
@@ -115,6 +121,9 @@ class MetadataProcessor:
             processed_samples_count += 1
             processed_samples_list.append(row['sample'])
             print(f"Processed samples count: {processed_samples_count}")   
+            
+            # to store processed sample ids
+            self.processed_sample_ids.append(row['sample']) 
 
             
             if filter_for_coordinates:
@@ -301,6 +310,3 @@ class MetadataProcessor:
 # 
 # num_tokens_from_string(my_tokens_to_text, "cl100k_base")
 # =============================================================================
-
-
-
