@@ -57,7 +57,7 @@ def main():
     
     # Phase 2: GPT Interaction
     start_time = time.time()
-    gpt_interactor = GPTInteractor(args.work_dir, args.n_samples_per_biome, args.chunk_size, args.system_prompt_file, args.api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty)
+    gpt_interactor = GPTInteractor(args.work_dir, args.n_samples_per_biome, args.chunk_size, args.system_prompt_file, args.api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.seed)
     gpt_interactor.run()
     end_time = time.time() 
     print(f"GPT Interaction time: {end_time - start_time} seconds")
@@ -75,33 +75,28 @@ def main():
     if missing_sample_ids:
         # Call the new method in MetadataProcessor to refetch metadata for missing samples
         refetched_metadata = metadata_processor.refetch_metadata_for_samples(list(missing_sample_ids))
-        print("refetched metadata is:")
-        print(refetched_metadata)
-        # Decide how to handle the refetched metadata: reprocess, log, save, etc.
-
+        #print("refetched metadata is:")
+        #print(refetched_metadata)
 
         # Convert list of missing sample IDs to a DataFrame
         missing_samples_df = pd.DataFrame(missing_sample_ids, columns=['sample'])
 
         # Process the specific samples through the pipeline using the process_metadata method
         specific_metadata_dict = metadata_processor.process_metadata(missing_samples_df)
-        print('specific_metadata_dict')
-        print(specific_metadata_dict)
+        #print('specific_metadata_dict')
+        #print(specific_metadata_dict)
 
-        # Now, you might need to manually create chunks, interact with GPT, and parse the output for these specific samples.
-        # Depending on how your methods are structured, you can call those here. For example:
         specific_chunks = metadata_processor.create_and_save_chunks(specific_metadata_dict, metadata_processor.encoding_name)
-        print('specific_chunks')
-        print(specific_chunks)
+        #print('specific_chunks')
+        #print(specific_chunks)
         
-        # Interact with GPT for the specific chunks (assuming 'interact_with_gpt' can accept a list of chunks)
         gpt_responses = gpt_interactor.interact_with_gpt(specific_chunks)
-        print('gpt_responses')
-        print(gpt_responses)
+        #print('gpt_responses')
+        #print(gpt_responses)
         
         parsed_df_for_specific_samples = gpt_parser.parse_direct_responses(gpt_responses)
-        print('parsed_df_for_specific_samples')
-        print(parsed_df_for_specific_samples)
+        #print('parsed_df_for_specific_samples')
+        #print(parsed_df_for_specific_samples)
         
         # Concatenate the DataFrames
         combined_parsed_df = pd.concat([parsed_df, parsed_df_for_specific_samples]).reset_index(drop=True)
@@ -113,12 +108,16 @@ def main():
         gpt_parser.save_cleaned_to_file()  # Save the combined DataFrame using the existing method
     
 
+    # After all processing and reprocessing
+    print(f"Total API requests made: {gpt_interactor.get_api_request_count()}")
 
 
 
 
 if __name__ == "__main__":
     main()
+    
+    
     
 
 # eventually...
@@ -230,9 +229,14 @@ if __name__ == "__main__":
 # testing prompts: with 1,2, and 4 examples for format (openai_system_prompt.txt vs openai_system_prompt_2examples.txt vs openai_system_prompt_4examples.txt)
 
 # 20240318
-# 200 nspb
-# just a test now that we are re-sending missing_samples. 
+# 100 nspb; chunk_size 2000
 # random seed: 42 vs 24
+
+# 20240319
+# 200 nspb
+# chunk_size 1500 vs 2000 vs 4000 vs 6000 
+# 1500: 17 samples too large to fit in chunk 
+
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
@@ -241,7 +245,7 @@ if __name__ == "__main__":
 #     --chunk_size 1500 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "openai_system_prompt_4examples.txt" \
+#     --system_prompt_file "openai_system_prompt.txt" \
 #     --encoding_name "cl100k_base" \
 #     --api_key_path "/Users/dgaio/my_api_key" \
 #     --model "gpt-3.5-turbo-1106" \

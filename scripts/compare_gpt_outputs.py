@@ -6,6 +6,7 @@ Created on Mon Oct  9 13:05:41 2023
 @author: dgaio
 """
 
+
 # -----------------------------
 # 1. Imports
 # -----------------------------
@@ -209,24 +210,46 @@ for file, label in zip(selected_files, labels):
     all_dfs.append(processed_df)
 
 concatenated_df = pd.concat(all_dfs, ignore_index=True)
-
-
 concatenated_df['agreement'] = concatenated_df['gpt_biome'] == concatenated_df['biome']
 
+# Assuming concatenated_df is your DataFrame
 
+# Prepare data for plotting - only selecting 'True' (correct) agreements
+correct_data = concatenated_df[concatenated_df['agreement'] == True].groupby(['label']).size()
 
-# Prepare data for plotting
-plot_data = concatenated_df.groupby(['label', 'agreement']).size().unstack(fill_value=0).reset_index()
+# Calculate total counts for each label to use for percentage calculation
+total_counts = concatenated_df.groupby(['label']).size()
+
+# Convert counts to percentages
+correct_percentages = (correct_data / total_counts) * 100
 
 # Plot
 plt.figure(figsize=(10, 6))
-plot_data.set_index('label').plot(kind='bar', stacked=True, color=['red', 'green'], figsize=(10, 6))
-plt.title('agreement GPT output with ground truth')
-plt.ylabel('# samples')
+ax = correct_percentages.plot(kind='bar', color='green', figsize=(10, 6))
+plt.title('Percentage of correct gpt output')
+plt.ylabel('agreement (%)')
+plt.xlabel('distinguishing feature(s)')
 plt.xticks(rotation=45)
-plt.legend(['incorrect', 'correct'], loc='upper right')
 plt.tight_layout()
+
+# Annotate bars with percentages and counts
+for idx, p in enumerate(ax.patches):
+    width, height = p.get_width(), p.get_height()
+    x, y = p.get_xy()
+    label = correct_percentages.index[idx]  # Use the index label directly
+    count = correct_data[label]  # Get the count for the "correct" bar using the label
+    
+    if height > 0:  # Avoid annotating zero-height bars
+        ax.text(x + width/2, y + height + 1, f'{height:.1f}%\n(n={count})', ha='center', va='center')
+
 plt.show()
+
+
+
+
+
+
+
 
 
 

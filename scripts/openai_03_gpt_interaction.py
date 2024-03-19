@@ -22,7 +22,7 @@ import json
 
 class GPTInteractor:
 
-    def __init__(self, work_dir, n_samples_per_biome, chunk_size, system_prompt_file, api_key_path, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty):
+    def __init__(self, work_dir, n_samples_per_biome, chunk_size, system_prompt_file, api_key_path, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty, seed):
         self.work_dir = work_dir
         self.n_samples_per_biome = n_samples_per_biome
         self.chunk_size = chunk_size 
@@ -35,7 +35,9 @@ class GPTInteractor:
         self.top_p = top_p
         self.frequency_penalty = frequency_penalty
         self.presence_penalty = presence_penalty
+        self.seed = seed
         self.saved_filename = None
+        self.api_request_count = 0
     
 
     def load_latest_chunks_file(self):
@@ -80,15 +82,26 @@ class GPTInteractor:
             return None
         
     
+    def get_api_request_count(self):
+        """Returns the total number of API requests made."""
+        return self.api_request_count
+
+
+    
+    
+    
     def gpt_request(self, content_string):
+        # Set the API key only once, preferably in the __init__ method or right before making a request, but not with every request
         openai.api_key = self.api_key
-        system_prompt = self.load_system_prompt()  # load the system prompt
-        
+    
+        # Load the system prompt first to ensure it's available before making the request
+        system_prompt = self.load_system_prompt()
         if not system_prompt:
             logging.error("System prompt is not available. Aborting request.")
             return None
-
-        return openai.ChatCompletion.create(
+    
+        # Make the API request
+        response = openai.ChatCompletion.create(
             model=self.model,
             messages=[
                 {
@@ -106,6 +119,11 @@ class GPTInteractor:
             frequency_penalty=self.frequency_penalty,
             presence_penalty=self.presence_penalty
         )
+    
+        # Increment the API request counter after a successful request
+        self.api_request_count += 1
+    
+        return response
     
         
    
@@ -163,8 +181,10 @@ class GPTInteractor:
         final_content = "\n\n".join(contents)
         
         # construct the filename
+        api_count = self.get_api_request_count()
         current_datetime = datetime.now().strftime('%Y%m%d_%H%M')
-        self.saved_filename = f"gpt_raw_output_nspb{self.n_samples_per_biome}_chunksize{self.chunk_size}_model{self.model}_temp{self.temperature}_maxtokens{self.max_tokens}_topp{self.top_p}_freqp{self.frequency_penalty}_presp{self.presence_penalty}_dt{current_datetime}.txt"
+        self.saved_filename = f"gpt_raw_output_nspb{self.n_samples_per_biome}_chunksize{self.chunk_size}_model{self.model}_temp{self.temperature}_maxtokens{self.max_tokens}_topp{self.top_p}_freqp{self.frequency_penalty}_presp{self.presence_penalty}_rs{self.seed}_API{api_count}_dt{current_datetime}.txt"
+        #self.saved_filename = f"gpt_raw_output_nspb{self.n_samples_per_biome}_chunksize{self.chunk_size}_model{self.model}_temp{self.temperature}_maxtokens{self.max_tokens}_topp{self.top_p}_freqp{self.frequency_penalty}_presp{self.presence_penalty}_dt{current_datetime}.txt"
         self.saved_filename = os.path.join(self.work_dir, self.saved_filename)
     
         # write to file
@@ -172,6 +192,11 @@ class GPTInteractor:
             file.write(final_content)
     
         logging.info(f"Saved GPT responses to: {self.saved_filename}")
+
+
+
+
+
 
     def get_saved_filename(self):
         """ 
