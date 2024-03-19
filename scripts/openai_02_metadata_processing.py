@@ -215,9 +215,11 @@ class MetadataProcessor:
     
 
     def create_and_save_chunks(self, metadata_dict, encoding_name):
+        
+        print(f"My chunk size is: {self.chunk_size}")
 
         system_prompt_size = self.token_count(self.load_system_prompt(), encoding_name)
-        #print('system_prompt_size:', system_prompt_size)
+        print('system_prompt_size:', system_prompt_size)
         
         effective_max_tokens = self.chunk_size - system_prompt_size
         #print('self.chunk_size:', self.chunk_size)
@@ -229,10 +231,11 @@ class MetadataProcessor:
         # print messages into log, if sample metadata exceeds effective_max_tokens
         for sample_id, token_count in samples_with_tokens:
             if token_count > effective_max_tokens:
+                print(sample_id, 'is too large to fit into a chunk of effective chunk size')               
                 logging.info(f"'sample_ID={sample_id}' is too large to fit into a chunk of effective chunk size {effective_max_tokens}")
         
         binned_samples = self.first_fit_decreasing_bin(samples_with_tokens, effective_max_tokens)
-
+        
         # print token sizes of bins
         #print("Bins with token sizes and their sums:")
         total_sum_of_all_bins = 0

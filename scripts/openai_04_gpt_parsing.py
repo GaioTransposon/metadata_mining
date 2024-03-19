@@ -29,6 +29,7 @@ class GPTOutputParsing:
         self.unparsed_filename = None  # Filename for unparsed lines
         self.encoding_name = encoding_name
         self.processed_sample_ids = processed_sample_ids 
+        self.interactor_instance = interactor_instance
         
     def load_from_file(self):
         if self.filepath:
@@ -91,6 +92,7 @@ class GPTOutputParsing:
         self.clean_filename = self.filepath.replace('gpt_raw_output', 'gpt_clean_output')
         self.parsed_data.to_csv(self.clean_filename, index=False)
         logging.info(f"Saved clean GPT output to: {self.clean_filename}")
+
 
 
     def parse_direct_responses(self, gpt_responses):
