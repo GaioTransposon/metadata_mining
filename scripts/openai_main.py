@@ -234,8 +234,9 @@ if __name__ == "__main__":
 
 # 20240319
 # 200 nspb
-# chunk_size 1500 vs 2000 vs 4000 vs 6000 
-# 1500: 17 samples too large to fit in chunk 
+# chunk_size 1500 vs 2000 vs 3000 vs 5000 vs 6000 vs 8000
+# 1500: 17 samples too large to fit in chunk --> test_chunking_bias.py not working -  too few samples...? 
+# 2000: 1 samples too large to fit in chunk 
 
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
