@@ -232,17 +232,34 @@ plt.xlabel('distinguishing feature(s)')
 plt.xticks(rotation=45)
 plt.tight_layout()
 
-# Annotate bars with percentages and counts
+
+# Annotate bars with percentages and total counts
 for idx, p in enumerate(ax.patches):
     width, height = p.get_width(), p.get_height()
     x, y = p.get_xy()
     label = correct_percentages.index[idx]  # Use the index label directly
-    count = correct_data[label]  # Get the count for the "correct" bar using the label
+    total_count = total_counts[label]  # Get the total count for the bar using the label
     
     if height > 0:  # Avoid annotating zero-height bars
-        ax.text(x + width/2, y + height + 1, f'{height:.1f}%\n(n={count})', ha='center', va='center')
+        ax.text(x + width/2, y + height + 1, f'{height:.1f}%\n(n={total_count})', ha='center', va='center')
+
 
 plt.show()
+
+
+
+
+
+# quick check if count opf True per label matches the plot:
+
+df = concatenated_df
+
+df['agreement'] = df['agreement'].astype(int)
+
+true_counts = df.groupby('label')['agreement'].sum()
+
+print(true_counts)
+
 
 
 
