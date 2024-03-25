@@ -94,7 +94,7 @@ class MetadataProcessor:
             # First check for the coordinate pattern
             if coord_pattern.search(line):
                 word_count = len(line.split())
-                # Then check if the word count is <= 20
+                # Then check if the word count is <= 20; these are likely "only coordinates" lines
                 if word_count <= 20:
                     filtered_lines.append(line)
         return filtered_lines
@@ -123,7 +123,7 @@ class MetadataProcessor:
 
             # to store processed sample ids
             self.processed_sample_ids.append(row['sample']) 
-
+        
             
             if filter_for_coordinates:
                 # Use the filter_lines_for_coordinates function to filter lines
@@ -138,13 +138,14 @@ class MetadataProcessor:
                 metadata_dict[row['sample']] = cleaned_metadata
             else:
                 continue
-    
-            print(f"Processed samples count: {processed_samples_count}")
-            print("Cleaned metadata:")
-            print(metadata_dict[row['sample']])
-            print("===================================")
             
+            print("Processed samples count: ", processed_samples_count)
+    
 # =============================================================================
+#             print("Cleaned metadata:")
+#             print(metadata_dict[row['sample']])
+#             print("===================================")
+#             
 #             cleaned_metadata = "\n".join(cleaned_metadata_lines)
 #             metadata_dict[row['sample']] = cleaned_metadata
 #     
@@ -153,8 +154,8 @@ class MetadataProcessor:
 #             print("===================================")
 # =============================================================================
             
-        logging.info(f"All processed samples: {processed_samples_list}")
-        
+        logging.info(f"Processed samples: {self.processed_sample_ids}")
+
         return metadata_dict
 
                         
@@ -228,11 +229,17 @@ class MetadataProcessor:
         samples_with_tokens = [(sample_id, self.token_count(f"'sample_ID={sample_id}': '{metadata}'", encoding_name)) for sample_id, metadata in metadata_dict.items()]
         #print('samples_with_tokens:', samples_with_tokens)
         
+        
+        oversized_sample_ids = []  
         # print messages into log, if sample metadata exceeds effective_max_tokens
         for sample_id, token_count in samples_with_tokens:
             if token_count > effective_max_tokens:
                 print(sample_id, 'is too large to fit into a chunk of effective chunk size')               
                 logging.info(f"'sample_ID={sample_id}' is too large to fit into a chunk of effective chunk size {effective_max_tokens}")
+                oversized_sample_ids.append(sample_id)
+                
+        self.processed_sample_ids = [id for id in self.processed_sample_ids if id not in oversized_sample_ids]
+        print('processed_sample_ids in create_and_save_chunks() step:', len(self.processed_sample_ids))
         
         binned_samples = self.first_fit_decreasing_bin(samples_with_tokens, effective_max_tokens)
         

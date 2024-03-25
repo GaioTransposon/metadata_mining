@@ -120,6 +120,8 @@ class GPTInteractor:
             presence_penalty=self.presence_penalty
         )
     
+        
+        #print(response)
         # Increment the API request counter after a successful request
         self.api_request_count += 1
     

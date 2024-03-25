@@ -68,54 +68,59 @@ def main():
     parsed_df, missing_sample_ids = gpt_parser.run()
     end_time = time.time() 
     print(f"Parsing GPT Output time: {end_time - start_time} seconds")
-    print(parsed_df)
     
+    print('parsed_df before adding missing samples:', parsed_df)
+    
+    print('missing_sample_ids: ', missing_sample_ids)
+    
+    
+    # Maximum number of retries
+    max_retries = 3
+    # Initialize the retry counter
+    retry_count = 0
 
-
-    if missing_sample_ids:
-        # Call the new method in MetadataProcessor to refetch metadata for missing samples
-        refetched_metadata = metadata_processor.refetch_metadata_for_samples(list(missing_sample_ids))
-        #print("refetched metadata is:")
-        #print(refetched_metadata)
-
-        # Convert list of missing sample IDs to a DataFrame
-        missing_samples_df = pd.DataFrame(missing_sample_ids, columns=['sample'])
-
-        # Process the specific samples through the pipeline using the process_metadata method
+    while missing_sample_ids and retry_count < max_retries:
+        # Increment the retry counter
+        retry_count += 1
+        print(f"Retry attempt {retry_count}")
+    
+        missing_samples_df = pd.DataFrame(list(missing_sample_ids), columns=['sample'])
+        
+        ###
         specific_metadata_dict = metadata_processor.process_metadata(missing_samples_df)
-        #print('specific_metadata_dict')
-        #print(specific_metadata_dict)
-
         specific_chunks = metadata_processor.create_and_save_chunks(specific_metadata_dict, metadata_processor.encoding_name)
-        #print('specific_chunks')
-        #print(specific_chunks)
-        
         gpt_responses = gpt_interactor.interact_with_gpt(specific_chunks)
-        #print('gpt_responses')
-        #print(gpt_responses)
-        
         parsed_df_for_specific_samples = gpt_parser.parse_direct_responses(gpt_responses)
-        #print('parsed_df_for_specific_samples')
-        #print(parsed_df_for_specific_samples)
-        
-        # Concatenate the DataFrames
         combined_parsed_df = pd.concat([parsed_df, parsed_df_for_specific_samples]).reset_index(drop=True)
-        print('Combined Parsed DataFrame:')
-        print(combined_parsed_df)
-    
-
         gpt_parser.parsed_data = combined_parsed_df  # Update the parsed_data attribute of the gpt_parser instance
         gpt_parser.save_cleaned_to_file()  # Save the combined DataFrame using the existing method
     
+        combined_parsed_df_ids = set(combined_parsed_df['col_0'].unique())
+        print('combined_parsed_df_ids: ', len(combined_parsed_df_ids))
+        missing_sample_ids =  missing_sample_ids - combined_parsed_df_ids
+        print('missing_sample_ids: ', missing_sample_ids)
 
+
+    ###
+    
+    
+    
+    print('combined_parsed_df after : ', combined_parsed_df)
+    
+    print('missing_sample_ids after all retries : ', missing_sample_ids)
+    
     # After all processing and reprocessing
     print(f"Total API requests made: {gpt_interactor.get_api_request_count()}")
 
 
 
 
+
+
+
 if __name__ == "__main__":
     main()
+    
     
     
     
