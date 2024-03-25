@@ -108,7 +108,6 @@ class GPTOutputParsing:
         self.raw_content = '\n'.join(contents)
         self.raw_lines = self.raw_content.splitlines()
     
-        # Now you can reuse the existing parsing logic
         parsed_samples = self.parse_samples()
         self.parsed_data = self.prepare_dataframe(parsed_samples)
         self.save_unparsed_to_file()
@@ -129,6 +128,10 @@ class GPTOutputParsing:
         # Assuming 'col_0' is where your sample IDs are stored after parsing. Adjust if necessary.
         parsed_sample_ids = set(self.parsed_data['col_0'].unique())
         missing_sample_ids = set(self.processed_sample_ids) - parsed_sample_ids
+        
+        
+        
+        
     
         if missing_sample_ids:
             missing_samples_str = ', '.join(missing_sample_ids)
@@ -142,8 +145,6 @@ class GPTOutputParsing:
         return self.parsed_data, missing_sample_ids
 
 
-
-    
 
 
 # =============================================================================
