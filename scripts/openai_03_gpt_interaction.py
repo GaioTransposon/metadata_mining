@@ -22,10 +22,11 @@ import json
 
 class GPTInteractor:
 
-    def __init__(self, work_dir, n_samples_per_biome, chunk_size, system_prompt_file, api_key_path, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty, seed):
+    def __init__(self, work_dir, n_samples_per_biome, chunk_size, seed, system_prompt_file, api_key_path, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty, opt_text):
         self.work_dir = work_dir
         self.n_samples_per_biome = n_samples_per_biome
         self.chunk_size = chunk_size 
+        self.seed = seed
         self.system_prompt_file = system_prompt_file
         self.api_key_path = api_key_path
         self.api_key = self.load_api_key()
@@ -35,9 +36,10 @@ class GPTInteractor:
         self.top_p = top_p
         self.frequency_penalty = frequency_penalty
         self.presence_penalty = presence_penalty
-        self.seed = seed
+        self.opt_text = opt_text
         self.saved_filename = None
         self.api_request_count = 0
+
     
 
     def load_latest_chunks_file(self):
@@ -185,7 +187,7 @@ class GPTInteractor:
         # construct the filename
         api_count = self.get_api_request_count()
         current_datetime = datetime.now().strftime('%Y%m%d_%H%M')
-        self.saved_filename = f"gpt_raw_output_nspb{self.n_samples_per_biome}_chunksize{self.chunk_size}_model{self.model}_temp{self.temperature}_maxtokens{self.max_tokens}_topp{self.top_p}_freqp{self.frequency_penalty}_presp{self.presence_penalty}_rs{self.seed}_API{api_count}_dt{current_datetime}.txt"
+        self.saved_filename = f"gpt_raw_output_nspb{self.n_samples_per_biome}_chunksize{self.chunk_size}_model{self.model}_temp{self.temperature}_maxtokens{self.max_tokens}_topp{self.top_p}_freqp{self.frequency_penalty}_presp{self.presence_penalty}_rs{self.seed}_API{api_count}_{self.opt_text}_dt{current_datetime}.txt"
         #self.saved_filename = f"gpt_raw_output_nspb{self.n_samples_per_biome}_chunksize{self.chunk_size}_model{self.model}_temp{self.temperature}_maxtokens{self.max_tokens}_topp{self.top_p}_freqp{self.frequency_penalty}_presp{self.presence_penalty}_dt{current_datetime}.txt"
         self.saved_filename = os.path.join(self.work_dir, self.saved_filename)
     
