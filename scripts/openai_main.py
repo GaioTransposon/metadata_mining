@@ -38,6 +38,7 @@ def parse_arguments():
     parser.add_argument('--top_p', type=float, required=True, help='Top-p setting for the GPT model')
     parser.add_argument('--frequency_penalty', type=float, required=True, help='Frequency penalty setting for the GPT model')
     parser.add_argument('--presence_penalty', type=float, required=True, help='Presence penalty setting for the GPT model')
+    parser.add_argument('--opt_text', type=str, required=False, help='extra text to indicate special run deets')    
     
     return parser.parse_args()
 
@@ -57,7 +58,7 @@ def main():
     
     # Phase 2: GPT Interaction
     start_time = time.time()
-    gpt_interactor = GPTInteractor(args.work_dir, args.n_samples_per_biome, args.chunk_size, args.system_prompt_file, args.api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.seed)
+    gpt_interactor = GPTInteractor(args.work_dir, args.n_samples_per_biome, args.chunk_size, args.seed, args.system_prompt_file, args.api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.opt_text)
     gpt_interactor.run()
     end_time = time.time() 
     print(f"GPT Interaction time: {end_time - start_time} seconds")
@@ -95,6 +96,8 @@ def main():
         gpt_parser.parsed_data = combined_parsed_df  # Update the parsed_data attribute of the gpt_parser instance
         gpt_parser.save_cleaned_to_file()  # Save the combined DataFrame using the existing method
     
+        print('combined_parsed_df after : ', combined_parsed_df)
+        
         combined_parsed_df_ids = set(combined_parsed_df['col_0'].unique())
         print('combined_parsed_df_ids: ', len(combined_parsed_df_ids))
         missing_sample_ids =  missing_sample_ids - combined_parsed_df_ids
@@ -104,17 +107,10 @@ def main():
     ###
     
     
-    
-    print('combined_parsed_df after : ', combined_parsed_df)
-    
     print('missing_sample_ids after all retries : ', missing_sample_ids)
     
     # After all processing and reprocessing
     print(f"Total API requests made: {gpt_interactor.get_api_request_count()}")
-
-
-
-
 
 
 
@@ -243,12 +239,14 @@ if __name__ == "__main__":
 # 1500: 17 samples too large to fit in chunk --> test_chunking_bias.py not working -  too few samples...? 
 # 2000: 1 samples too large to fit in chunk 
 
+# 20240326
+# opt_text: "normal" vs "please" 
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
-#     --chunk_size 1500 \
+#     --n_samples_per_biome 100 \
+#     --chunk_size 2000 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
 #     --system_prompt_file "openai_system_prompt.txt" \
@@ -259,7 +257,8 @@ if __name__ == "__main__":
 #     --max_tokens 4096 \
 #     --top_p 0.75 \
 #     --frequency_penalty 0.25 \
-#     --presence_penalty 1.5
+#     --presence_penalty 1.5 \
+#     --opt_text "normal"
 
 
 
