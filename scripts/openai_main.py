@@ -78,13 +78,10 @@ def main():
     print('missing_sample_ids: ', missing_sample_ids)
     
     
-    # Maximum number of retries
     max_retries = 3
-    # Initialize the retry counter
     retry_count = 0
 
     while missing_sample_ids and retry_count < max_retries:
-        # Increment the retry counter
         retry_count += 1
         print(f"Retry attempt {retry_count}")
     
@@ -96,8 +93,8 @@ def main():
         gpt_responses = gpt_interactor.interact_with_gpt(specific_chunks)
         parsed_df_for_specific_samples = gpt_parser.parse_direct_responses(gpt_responses)
         combined_parsed_df = pd.concat([parsed_df, parsed_df_for_specific_samples]).reset_index(drop=True)
-        gpt_parser.parsed_data = combined_parsed_df  # Update the parsed_data attribute of the gpt_parser instance
-        gpt_parser.save_cleaned_to_file()  # Save the combined DataFrame using the existing method
+        gpt_parser.parsed_data = combined_parsed_df 
+        gpt_parser.save_cleaned_to_file()  
     
         print('combined_parsed_df after : ', combined_parsed_df)
         
@@ -105,14 +102,10 @@ def main():
         print('combined_parsed_df_ids: ', len(combined_parsed_df_ids))
         missing_sample_ids =  missing_sample_ids - combined_parsed_df_ids
         print('missing_sample_ids: ', missing_sample_ids)
-
-
-    ###
     
     
     print('missing_sample_ids after all retries : ', missing_sample_ids)
     
-    # After all processing and reprocessing
     print(f"Total API requests made: {gpt_interactor.get_api_request_count()}")
 
 
@@ -261,7 +254,7 @@ if __name__ == "__main__":
 #     --top_p 0.75 \
 #     --frequency_penalty 0.25 \
 #     --presence_penalty 1.5 \
-#     --max_requests_per_minute 5 \
+#     --max_requests_per_minute 10000 \
 #     --opt_text "normal"
 
 

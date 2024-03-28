@@ -54,7 +54,7 @@ class GPTInteractor:
         if not list_of_files:
             #print("No chunk files found.")
             return None
-        latest_file = max(list_of_files, key=os.path.getctime)  # get the latest file
+        latest_file = max(list_of_files, key=os.path.getctime)  
         with open(latest_file, 'r') as file:
             content_strings = file.read().split("\n\n-----\n\n")
         
@@ -124,7 +124,7 @@ class GPTInteractor:
             messages=[
                 {
                     "role": "system",
-                    "content": system_prompt  # use the loaded system prompt
+                    "content": system_prompt  
                 },
                 {
                     "role": "user",
@@ -165,10 +165,10 @@ class GPTInteractor:
         gpt_responses = []
     
         for content_string in content_strings:
-            if not content_string.strip():  # skip empty content strings
+            if not content_string.strip():  
                 continue
     
-            # Send request to API
+            # send API request
             try:
                 #print(content_string)
                 response = self.gpt_request(content_string=content_string)
@@ -196,7 +196,7 @@ class GPTInteractor:
         Returns:
         - None
         """
-        # extract the "content" from each response with error handling
+
         contents = []
         for response in gpt_responses:
             try:
@@ -213,7 +213,6 @@ class GPTInteractor:
         self.saved_filename = f"gpt_raw_output_nspb{self.n_samples_per_biome}_chunking{self.chunking_enabled}_chunksize{self.chunk_size}_model{self.model}_temp{self.temperature}_maxtokens{self.max_tokens}_topp{self.top_p}_freqp{self.frequency_penalty}_presp{self.presence_penalty}_rs{self.seed}_API{api_count}_{self.opt_text}_dt{current_datetime}.txt"
         self.saved_filename = os.path.join(self.work_dir, self.saved_filename)
     
-        # write to file
         with open(self.saved_filename, 'w') as file:
             file.write(final_content)
     
