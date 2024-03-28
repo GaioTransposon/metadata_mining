@@ -130,7 +130,6 @@ class GPTInteractor:
         return response
     
         
-   
 
     def interact_with_gpt(self, specific_chunks=None):
         """Iterate over content strings and make requests to GPT. Accepts an optional list of specific chunks."""
@@ -196,9 +195,6 @@ class GPTInteractor:
             file.write(final_content)
     
         logging.info(f"Saved GPT responses to: {self.saved_filename}")
-
-
-
 
 
 

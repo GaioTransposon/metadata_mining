@@ -140,19 +140,15 @@ class MetadataProcessor:
                 continue
             
             print("Processed samples count: ", processed_samples_count)
-    
-# =============================================================================
-#             print("Cleaned metadata:")
-#             print(metadata_dict[row['sample']])
-#             print("===================================")
-#             
-#             cleaned_metadata = "\n".join(cleaned_metadata_lines)
-#             metadata_dict[row['sample']] = cleaned_metadata
-#     
-#             print("Cleaned metadata:")
-#             print(cleaned_metadata)
-#             print("===================================")
-# =============================================================================
+
+            cleaned_metadata = "\n".join(cleaned_metadata_lines)
+            metadata_dict[row['sample']] = cleaned_metadata
+            
+            # print("===================================")
+            # print(metadata_dict[row['sample']])
+            # print("Cleaned metadata:")
+            # print(cleaned_metadata)
+            # print("===================================")
             
         logging.info(f"Processed samples: {self.processed_sample_ids}")
 

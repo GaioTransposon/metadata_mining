@@ -8,7 +8,7 @@ Created on Tue Oct 31 21:48:55 2023
 
 
 # # run as: 
-# python ~/github/metadata_mining/scripts/game2.py 
+# python ~/github/metadata_mining/scripts/confirm_subbiome_game.py 
    
 
 import os
@@ -43,7 +43,7 @@ def fetch_metadata_from_sample(sample):
     return metadata
 
 def display_biome_stats(gold_dict):
-    biome_counts = {biome: 0 for biome in ['animal', 'plant', 'water', 'soil', 'unknown']}
+    biome_counts = {biome: 0 for biome in ['animal', 'plant', 'water', 'soil', 'other']}
     for details in gold_dict.values():
         if len(details) > 2:
             biome_counts[details[1]] += 1
@@ -60,11 +60,12 @@ def play_game(gold_data):
         'a': 'animal',
         'w': 'water',
         'p': 'plant',
-        's': 'soil'
+        's': 'soil',
+        'o': 'other'
     }
 
     while True:
-        biome_input = input("\nWhich biome do you want to focus on? (a for animal, w for water, p for plant, s for soil, q to quit): ").lower()
+        biome_input = input("\nWhich biome do you want to focus on? (a for animal, w for water, p for plant, s for soil, o for other, q to quit): ").lower()
 
         if biome_input == 'q':
             display_biome_stats(gold_dict)

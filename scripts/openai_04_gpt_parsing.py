@@ -129,10 +129,6 @@ class GPTOutputParsing:
         parsed_sample_ids = set(self.parsed_data['col_0'].unique())
         missing_sample_ids = set(self.processed_sample_ids) - parsed_sample_ids
         
-        
-        
-        
-    
         if missing_sample_ids:
             missing_samples_str = ', '.join(missing_sample_ids)
             logging.warning(f"Missing sample IDs not present in parsed DataFrame: {missing_samples_str}")
