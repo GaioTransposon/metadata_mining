@@ -20,12 +20,16 @@ import pandas as pd
 # Main Execution
 # =======================================================
 
+
+
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Run the pipeline.')
 
     parser.add_argument('--work_dir', type=str, required=True, help='Working directory path')
     parser.add_argument('--input_gold_dict', type=str, required=True, help='Input gold dictionary filename')
     parser.add_argument('--n_samples_per_biome', type=int, required=True, help='how many samples per biome you want to pick?')
+    parser.add_argument('--chunking', type=str, choices=['yes', 'no'], required=True, help='Enable or disable chunking of metadata for GPT requests.')
     parser.add_argument('--chunk_size', type=int, required=True, help='Number of tokens per chunk.')
     parser.add_argument('--seed', type=int, required=True, help='choose a seed for the random shuffling of the samples e.g.: 42')
     parser.add_argument('--directory_with_split_metadata', type=str, required=True, help='Directory with split metadata')
@@ -38,6 +42,7 @@ def parse_arguments():
     parser.add_argument('--top_p', type=float, required=True, help='Top-p setting for the GPT model')
     parser.add_argument('--frequency_penalty', type=float, required=True, help='Frequency penalty setting for the GPT model')
     parser.add_argument('--presence_penalty', type=float, required=True, help='Presence penalty setting for the GPT model')
+    parser.add_argument('--max_requests_per_minute', type=float, required=True, help='set the max RPM')
     parser.add_argument('--opt_text', type=str, required=False, help='extra text to indicate special run deets')    
     
     return parser.parse_args()
@@ -58,7 +63,7 @@ def main():
     
     # Phase 2: GPT Interaction
     start_time = time.time()
-    gpt_interactor = GPTInteractor(args.work_dir, args.n_samples_per_biome, args.chunk_size, args.seed, args.system_prompt_file, args.api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.opt_text)
+    gpt_interactor = GPTInteractor(args.work_dir, args.n_samples_per_biome, args.chunking, args.chunk_size, args.seed, args.system_prompt_file, args.api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.max_requests_per_minute, args.opt_text, metadata_processor)
     gpt_interactor.run()
     end_time = time.time() 
     print(f"GPT Interaction time: {end_time - start_time} seconds")
@@ -69,9 +74,7 @@ def main():
     parsed_df, missing_sample_ids = gpt_parser.run()
     end_time = time.time() 
     print(f"Parsing GPT Output time: {end_time - start_time} seconds")
-    
     print('parsed_df before adding missing samples:', parsed_df)
-    
     print('missing_sample_ids: ', missing_sample_ids)
     
     
@@ -220,7 +223,6 @@ if __name__ == "__main__":
 # 20240117
 # 200 nspb, "openai_system_prompt_coordinates.txt" 
 
-
 # 20240313
 # 200 nspb, "openai_system_prompt.txt"
 # seed 42 vs 22 vs 11
@@ -245,8 +247,9 @@ if __name__ == "__main__":
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 100 \
+#     --n_samples_per_biome 2 \
 #     --chunk_size 2000 \
+#     --chunking "yes" \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
 #     --system_prompt_file "openai_system_prompt.txt" \
@@ -258,6 +261,7 @@ if __name__ == "__main__":
 #     --top_p 0.75 \
 #     --frequency_penalty 0.25 \
 #     --presence_penalty 1.5 \
+#     --max_requests_per_minute 5 \
 #     --opt_text "normal"
 
 
