@@ -6,7 +6,6 @@ Created on Tue Apr  9 16:54:13 2024
 @author: dgaio
 """
 
-
 import os
 import pandas as pd
 import numpy as np
@@ -20,21 +19,45 @@ import re
 # PHASE 1: Metadata Processing 
 # =======================================================
 
-class MetadataProcessing:
+class MetadataProcessor:
     
-    def __init__(self, work_dir, directory_with_split_metadata, chunk_size, system_prompt_file, encoding_name):
+    
+    def __init__(self, work_dir, chunk_size, system_prompt_file, encoding_name):
         self.work_dir = work_dir
-        self.directory_with_split_metadata = os.path.join(work_dir, directory_with_split_metadata)
         self.chunk_size = chunk_size
         self.system_prompt_file = system_prompt_file
         self.encoding_name = encoding_name
         self.processed_sample_ids = []
-
-
-    def process_metadata(self, metadata_dict):
         
-        # Assumes metadata_dict is a dictionary where the key is the sample ID and the value is its metadata
+    def load_metadata(self):
+        """
+        Loads the metadata dictionary from a pickle file named 'metadata_prov.pkl'
+        located in the work directory.
+        """
+        metadata_path = os.path.join(self.work_dir, 'metadata_prov.pkl')
+        try:
+            with open(metadata_path, 'rb') as file:
+                metadata_dict = pickle.load(file)
+            return metadata_dict
+        except FileNotFoundError:
+            logging.error(f"Metadata file '{metadata_path}' not found.")
+            return None
+        except IOError:
+            logging.error(f"Error reading metadata file '{metadata_path}'.")
+            return None
+
+
+    def process_metadata(self, missing_samples=None):
+        metadata_dict = self.load_metadata()  
+        if metadata_dict is None:
+            logging.error("Failed to load metadata for processing.")
+            return {}
+        
         processed_metadata = {}
+        
+        # If missing_samples is provided, filter the metadata_dict to include only those samples
+        if missing_samples is not None:
+            metadata_dict = {sample_id: metadata for sample_id, metadata in metadata_dict.items() if sample_id in missing_samples}
         
         for sample_id, metadata in metadata_dict.items():
             self.processed_sample_ids.append(sample_id)
@@ -47,10 +70,12 @@ class MetadataProcessing:
         return processed_metadata
 
 
+
     def token_count(self, text):
         encoding = tiktoken.get_encoding(self.encoding_name)
         tokens = encoding.encode(text)
         return len(tokens)
+    
 
     def load_system_prompt(self):
         prompt_file = os.path.join(self.work_dir, self.system_prompt_file)
@@ -63,6 +88,7 @@ class MetadataProcessing:
         except IOError:
             logging.error(f"Error reading system prompt file '{prompt_file}'.")
             return None
+        
 
     def save_chunks_to_file(self, chunks):
         current_time = datetime.now()
@@ -73,6 +99,7 @@ class MetadataProcessing:
                 file.write(chunk)
                 file.write("\n\n-----\n\n")
         logging.info(f"Saved metadata chunks to: {filename}")
+
 
     def first_fit_decreasing_bin(self, samples_with_tokens, effective_max_tokens):
         bins = []
@@ -85,7 +112,9 @@ class MetadataProcessing:
                     break
             if not placed and token_count <= effective_max_tokens:
                 bins.append([(sample_id, token_count)])
+        print(bins)
         return bins
+
 
     def create_and_save_chunks(self, metadata_dict):
         system_prompt_size = self.token_count(self.load_system_prompt())
@@ -106,10 +135,28 @@ class MetadataProcessing:
         self.save_chunks_to_file(consolidated_chunks)
         return consolidated_chunks
 
-    def run(self, samples):
-        metadata_dict = self.process_metadata(samples)
-        chunks = self.create_and_save_chunks(metadata_dict)
-        return chunks
+
+
+
+
+# =============================================================================
+# test = MetadataProcessor("/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/", 
+#                           2000, 
+#                           "openai_system_prompt.txt", 
+#                           "cl100k_base")
+# 
+# # option 1. test normal situation (without missing_samples)                      
+# processed_metadata = test.process_metadata()
+# print(processed_metadata)
+# 
+# # option 2. test situation in which missing_samples are present
+# missing_samples=["SRS6212978"] 
+# processed_metadata = test.process_metadata(missing_samples)
+# print(processed_metadata)
+# 
+# consolidated_chunks = test.create_and_save_chunks(processed_metadata)
+# print(consolidated_chunks)
+# =============================================================================
 
 
 

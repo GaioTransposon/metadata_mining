@@ -9,6 +9,7 @@ Created on Wed Dec  6 13:58:00 2023
 
 import argparse
 from openai_01_setup_and_args import setup_logging
+from openai_02_metadata_fetching import MetadataFetching
 from openai_02_metadata_processing import MetadataProcessor
 from openai_03_gpt_interaction import GPTInteractor
 from openai_04_gpt_parsing import GPTOutputParsing
@@ -56,10 +57,29 @@ def main():
 
     # Phase 1: Metadata Processing
     start_time = time.time()
-    metadata_processor = MetadataProcessor(args.work_dir, args.input_gold_dict, args.n_samples_per_biome, args.chunk_size, args.system_prompt_file, args.encoding_name, args.seed, args.directory_with_split_metadata)
+    metadata_fetcher = MetadataFetching(args.work_dir, args.directory_with_split_metadata, args.input_gold_dict, args.n_samples_per_biome, args.seed)
+    metadata_fetcher.run()
+    end_time = time.time() 
+    print(f"Metadata fetching time: {end_time - start_time} seconds")
+    
+    start_time = time.time()
+    metadata_processor = MetadataProcessor(args.work_dir, args.chunk_size, args.system_prompt_file, args.encoding_name)
     metadata_processor.run()
     end_time = time.time() 
     print(f"Metadata Processing time: {end_time - start_time} seconds")
+    
+    # # when running only for missing samples run as: 
+    #metadata_processor.run(missing_samples)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     # Phase 2: GPT Interaction
     start_time = time.time()

@@ -71,6 +71,17 @@ class MetadataFetching:
             except Exception as e:
                 logging.error(f"Failed to fetch metadata for sample {sample_id}: {e}")
         return metadata_dict
+    
+    
+    def save_metadata(self, metadata_dict):
+        """
+        Saves the metadata dictionary as a pickle file in the work directory.
+        This will overwrite the file if it already exists.
+        """
+        output_path = os.path.join(self.work_dir, 'metadata_prov.pkl')
+        with open(output_path, 'wb') as file:
+            pickle.dump(metadata_dict, file)
+        print(f"Metadata dictionary saved to {output_path}")
 
 
 
@@ -90,10 +101,15 @@ class MetadataFetching:
 # print(random_samples)
 # # Fetch metadata for the random samples
 # metadata_dict = test.fetch_metadata_for_samples(random_samples)
-# # Now, you can print or inspect the metadata_dict to see the fetched metadata
-# print("\nMetadata Dictionary:")
 # print(metadata_dict)
+# # save 
+# test.save_metadata(metadata_dict)
 # =============================================================================
+
+
+
+
+
 
 
 
