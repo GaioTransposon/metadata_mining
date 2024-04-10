@@ -22,8 +22,9 @@ import re
 class MetadataProcessor:
     
     
-    def __init__(self, work_dir, chunk_size, system_prompt_file, encoding_name):
+    def __init__(self, work_dir, chunking, chunk_size, system_prompt_file, encoding_name):
         self.work_dir = work_dir
+        self.chunking = chunking
         self.chunk_size = chunk_size
         self.system_prompt_file = system_prompt_file
         self.encoding_name = encoding_name
@@ -117,23 +118,41 @@ class MetadataProcessor:
 
 
     def create_and_save_chunks(self, metadata_dict):
-        system_prompt_size = self.token_count(self.load_system_prompt())
-        effective_max_tokens = self.chunk_size - system_prompt_size
+        if self.chunking == "no":
+            # When chunking is disabled, process each metadata entry individually
+            chunks = []
+            for sample_id, metadata in metadata_dict.items():
+                metadata_token_count = self.token_count(f"'sample_ID={sample_id}': '{metadata}'")
+                if metadata_token_count <= self.chunk_size:
+                    chunks.append(f"'sample_ID={sample_id}': '{metadata}'")
+                    self.processed_sample_ids.append(sample_id)
+                else:
+                    logging.warning(f"Sample ID {sample_id} with token count {metadata_token_count} exceeds the chunk size of {self.chunk_size} and will be excluded.")
+        else:
+            # Existing chunking logic with slight modifications
+            system_prompt_size = self.token_count(self.load_system_prompt())
+            effective_max_tokens = self.chunk_size - system_prompt_size
+    
+            samples_with_tokens = [(sample_id, self.token_count(f"'sample_ID={sample_id}': '{metadata}'")) for sample_id, metadata in metadata_dict.items() if self.token_count(f"'sample_ID={sample_id}': '{metadata}'") <= self.chunk_size]
+    
+            oversized_sample_ids = [sample_id for sample_id, token_count in samples_with_tokens if token_count > effective_max_tokens]
+            for oversized_sample_id in oversized_sample_ids:
+                logging.warning(f"Sample ID {oversized_sample_id} exceeds the effective max tokens of {effective_max_tokens} and will be excluded.")
+    
+            self.processed_sample_ids = [sample_id for sample_id, _ in samples_with_tokens if sample_id not in oversized_sample_ids]
+    
+            binned_samples = self.first_fit_decreasing_bin(samples_with_tokens, effective_max_tokens)
+    
+            chunks = []
+            for bin in binned_samples:
+                chunk = '\n~~~\n'.join(f"'sample_ID={sample_id}': '{metadata_dict[sample_id]}'" for sample_id, _ in bin)
+                chunks.append(chunk)
+    
+        
+        # Save chunks to file using the existing method
+        self.save_chunks_to_file(chunks)
+        return(chunks)
 
-        samples_with_tokens = [(sample_id, self.token_count(f"'sample_ID={sample_id}': '{metadata}'")) for sample_id, metadata in metadata_dict.items()]
-
-        oversized_sample_ids = [sample_id for sample_id, token_count in samples_with_tokens if token_count > effective_max_tokens]
-        self.processed_sample_ids = [id for id in self.processed_sample_ids if id not in oversized_sample_ids]
-
-        binned_samples = self.first_fit_decreasing_bin(samples_with_tokens, effective_max_tokens)
-
-        consolidated_chunks = []
-        for bin in binned_samples:
-            chunk = '\n~~~\n'.join(f"'sample_ID={sample_id}': '{metadata_dict[sample_id]}'" for sample_id, _ in bin)
-            consolidated_chunks.append(chunk)
-
-        self.save_chunks_to_file(consolidated_chunks)
-        return consolidated_chunks
 
 
 
@@ -141,6 +160,7 @@ class MetadataProcessor:
 
 # =============================================================================
 # test = MetadataProcessor("/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/", 
+#                          "yes",
 #                           2000, 
 #                           "openai_system_prompt.txt", 
 #                           "cl100k_base")
@@ -154,9 +174,13 @@ class MetadataProcessor:
 # processed_metadata = test.process_metadata(missing_samples)
 # print(processed_metadata)
 # 
-# consolidated_chunks = test.create_and_save_chunks(processed_metadata)
-# print(consolidated_chunks)
+# chunks = test.create_and_save_chunks(processed_metadata)
+# for i in chunks: 
+#     print('#####')
+#     print(i)
+#     print('#####')
 # =============================================================================
+
 
 
 

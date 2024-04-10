@@ -13,7 +13,6 @@ from datetime import datetime
 import time
 import logging
 import glob 
-import json
 
 
 # =======================================================
@@ -234,6 +233,7 @@ class GPTInteractor:
             return None
     
     
+    # do I need this?  why? 
     def run(self):
         print("Starting interaction with GPT...")
         gpt_responses = self.interact_with_gpt()
