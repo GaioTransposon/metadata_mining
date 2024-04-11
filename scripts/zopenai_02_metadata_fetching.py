@@ -59,8 +59,7 @@ class MetadataFetching:
         """
         metadata_dict = {}
         for sample_id in random_samples:
-            
-            print(sample_id)
+            #print(sample_id)
             folder_name = f"dir_{sample_id[-3:]}"
             
             folder_path = os.path.join(self.directory_with_split_metadata, folder_name)
@@ -82,6 +81,14 @@ class MetadataFetching:
         with open(output_path, 'wb') as file:
             pickle.dump(metadata_dict, file)
         print(f"Metadata dictionary saved to {output_path}")
+        
+        
+    def run(self):
+        gold_dict = self.load_gold_dict()
+        gold_dict_df = self.transform_gold_dict_to_df(gold_dict)
+        random_samples = self.get_random_samples(gold_dict_df)
+        metadata_dict = self.fetch_metadata_for_samples(random_samples)
+        self.save_metadata(metadata_dict)
 
 
 

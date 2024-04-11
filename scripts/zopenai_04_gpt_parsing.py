@@ -10,135 +10,92 @@ Created on Wed Dec  6 14:14:56 2023
 import pandas as pd
 import re
 import logging
-import tiktoken
+import os
+import pickle
+from datetime import datetime
+import re
 
 
 # =======================================================
-# PHASE 3: GPT Output Parsing
+# PHASE 4: GPT Output Parsing
 # =======================================================
 
 
 class GPTOutputParsing:
         
-    def __init__(self, interactor_instance, encoding_name, processed_sample_ids):
-        self.filepath = interactor_instance.get_saved_filename()
-        self.raw_content, self.raw_lines = self.load_from_file()
-        self.parsed_data = None
-        self.unparsed_lines = []  # Attribute to store unparsed lines
-        self.clean_filename = None  
-        self.unparsed_filename = None  # Filename for unparsed lines
-        self.encoding_name = encoding_name
-        self.processed_sample_ids = processed_sample_ids 
-        self.interactor_instance = interactor_instance
+    def __init__(self, work_dir):
+        self.work_dir = work_dir
+        self.unparsed_lines = []  # Store lines that don't match the pattern
+        self.parsed_data = None  # Will hold the DataFrame of parsed data
         
-    def load_from_file(self):
-        if self.filepath:
-            try:
-                with open(self.filepath, 'r') as file:
-                    content = file.read()
-                    lines = content.splitlines()
-                    return content, lines
-            except FileNotFoundError:
-                logging.error(f"File '{self.filepath}' not found.")
-                return None, None
-            except IOError:
-                logging.error(f"Error reading file '{self.filepath}'.")
-                return None, None
-        else:
-            logging.error("No filepath provided.")
-            return None, None
-        
-    def count_total_tokens(self, content):
-        encoding = tiktoken.get_encoding(self.encoding_name)
-        tokens = encoding.encode(content)
-        logging.info(f"Total output tokens: {len(tokens)}")
 
     
-    def parse_samples(self):
-        result = []
-        pattern = re.compile(r'^(ERS|SRS|DRS)\d+__.*')
-        
-        for line in self.raw_lines:
-            # Check if the line is not empty and matches the pattern
-            if line.strip() and pattern.match(line.strip()):
-                parts = line.split('__')
-                sample_dict = {}
-                for i, part in enumerate(parts):
-                    sample_dict[f'col_{i}'] = part
-                result.append(sample_dict)
-            else:
-                if line.strip():  # Add non-empty lines that do not match the pattern to unparsed lines
-                    self.unparsed_lines.append(line)
-        
-        return result
-
-
-    def save_unparsed_to_file(self):
-        if self.unparsed_lines:
-            self.unparsed_filename = self.filepath.replace('gpt_raw_output', 'gpt_unparsed_output')
-            with open(self.unparsed_filename, 'w') as file:
-                for line in self.unparsed_lines:
-                    file.write(line + '\n')
-            logging.info(f"Saved unparsed lines to: {self.unparsed_filename}")
-        else:
-            logging.info("No unparsed lines to save.")
-            
-
-    def prepare_dataframe(self, parsed_data_list):
-        return pd.DataFrame(parsed_data_list)
-
-
-    def save_cleaned_to_file(self):
-        self.clean_filename = self.filepath.replace('gpt_raw_output', 'gpt_clean_output')
-        self.parsed_data.to_csv(self.clean_filename, index=False)
-        logging.info(f"Saved clean GPT output to: {self.clean_filename}")
-
-
-
-    def parse_direct_responses(self, gpt_responses):
+    def extract_contents_from_responses(self, gpt_responses):
         contents = []
         for response in gpt_responses:
             try:
+                # Accessing the content of the first choice in each response
                 content = response.choices[0].message['content']
-                contents.append(content)
-            except KeyError:
-                logging.error("Malformed GPT response")
-    
-        # Convert the list of contents to a '\n' separated string, mimicking the file content
-        self.raw_content = '\n'.join(contents)
-        self.raw_lines = self.raw_content.splitlines()
-    
-        parsed_samples = self.parse_samples()
-        self.parsed_data = self.prepare_dataframe(parsed_samples)
-        self.save_unparsed_to_file()
-        self.save_cleaned_to_file()
-    
-        return self.parsed_data
-    
+                contents.extend(content.split('\n'))  # Splitting by newline to get individual lines
+            except (KeyError, AttributeError, IndexError) as e:
+                logging.error(f"Error extracting content from response: {e}")
+                contents.append("ERROR: Malformed response")
 
-    def run(self):
-        # Existing logic to count tokens, parse samples, prepare DataFrame, and save files
-        self.count_total_tokens(self.raw_content)
-        parsed_samples = self.parse_samples()
-        self.parsed_data = self.prepare_dataframe(parsed_samples)
-        self.save_cleaned_to_file()
-        self.save_unparsed_to_file()  # Save the unparsed lines
+        return contents
+
+
+
+    def parse_responses(self, gpt_responses):
+        responses_content = self.extract_contents_from_responses(gpt_responses)
+        sample_pattern = re.compile(r'(ERS|SRS|DRS)\d+__.*')  
+
+        parsed_samples = []
+        for line in responses_content:
+            match = sample_pattern.search(line)
+            if match:
+                matched_sample = match.group()
+                parts = matched_sample.split('__')
+                sample_dict = {f'col_{i}': part for i, part in enumerate(parts)}
+                parsed_samples.append(sample_dict)
+            else:
+                if line.strip():
+                    self.unparsed_lines.append(line)
+
+        self.parsed_data = pd.DataFrame(parsed_samples)
+
+
+    def save_unparsed_to_file(self):
     
-        # New logic to find and log missing sample IDs
-        # Assuming 'col_0' is where your sample IDs are stored after parsing. Adjust if necessary.
-        parsed_sample_ids = set(self.parsed_data['col_0'].unique())
-        missing_sample_ids = set(self.processed_sample_ids) - parsed_sample_ids
-        
-        if missing_sample_ids:
-            missing_samples_str = ', '.join(missing_sample_ids)
-            logging.warning(f"Missing sample IDs not present in parsed DataFrame: {missing_samples_str}")
-            print(f"Missing sample IDs: {missing_samples_str}")
+        if self.unparsed_lines:
+            current_time = datetime.now()
+            formatted_time = current_time.strftime('%Y%m%d%H%M')
+            unparsed_file_path = os.path.join(self.work_dir, f"unparsed_{formatted_time}.txt")
+            
+            with open(unparsed_file_path, 'w') as file:
+                for line in self.unparsed_lines:
+                    file.write(line + '\n')
+                    
+            logging.info("Saved unparsed lines.")
         else:
-            logging.info("No missing sample IDs. All processed samples are present in parsed DataFrame.")
-            print("No missing sample IDs.")
+            logging.info("No unparsed lines to save.")
+
     
-        # Return the parsed DataFrame as before
-        return self.parsed_data, missing_sample_ids
+    
+    def run(self, gpt_responses):
+        self.parse_responses(gpt_responses)
+        self.save_unparsed_to_file()
+
+        return self.parsed_data
+
+
+
+# =============================================================================
+# parser = GPTOutputParsing("/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/")
+# parsed_data = parser.run(responses)
+# 
+# print(parsed_data)
+# =============================================================================
+
 
 
 

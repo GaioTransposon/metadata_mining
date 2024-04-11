@@ -16,7 +16,7 @@ import logging
 import re
 
 # =======================================================
-# PHASE 1: Metadata Processing 
+# PHASE 2: Metadata Processing 
 # =======================================================
 
 class MetadataProcessor:
@@ -113,9 +113,11 @@ class MetadataProcessor:
                     break
             if not placed and token_count <= effective_max_tokens:
                 bins.append([(sample_id, token_count)])
-        print(bins)
+        #print(bins)
         return bins
 
+
+    
 
     def create_and_save_chunks(self, metadata_dict):
         if self.chunking == "no":
@@ -129,33 +131,40 @@ class MetadataProcessor:
                 else:
                     logging.warning(f"Sample ID {sample_id} with token count {metadata_token_count} exceeds the chunk size of {self.chunk_size} and will be excluded.")
         else:
-            # Existing chunking logic with slight modifications
+            #print(f"My chunk size is: {self.chunk_size}")
+            
             system_prompt_size = self.token_count(self.load_system_prompt())
+            #print('System prompt size:', system_prompt_size)
+            
             effective_max_tokens = self.chunk_size - system_prompt_size
-    
-            samples_with_tokens = [(sample_id, self.token_count(f"'sample_ID={sample_id}': '{metadata}'")) for sample_id, metadata in metadata_dict.items() if self.token_count(f"'sample_ID={sample_id}': '{metadata}'") <= self.chunk_size]
+            samples_with_tokens = [(sample_id, self.token_count(f"'sample_ID={sample_id}': '{metadata}'")) for sample_id, metadata in metadata_dict.items()]
     
             oversized_sample_ids = [sample_id for sample_id, token_count in samples_with_tokens if token_count > effective_max_tokens]
             for oversized_sample_id in oversized_sample_ids:
-                logging.warning(f"Sample ID {oversized_sample_id} exceeds the effective max tokens of {effective_max_tokens} and will be excluded.")
-    
+                print(f"{oversized_sample_id} is too large to fit into a chunk of effective chunk size {effective_max_tokens}")
+                logging.info(f"'Sample_ID={oversized_sample_id}' exceeds the effective max tokens of {effective_max_tokens} and will be excluded.")
+            
             self.processed_sample_ids = [sample_id for sample_id, _ in samples_with_tokens if sample_id not in oversized_sample_ids]
+            print(f'Processed sample IDs in create_and_save_chunks() step: {len(self.processed_sample_ids)}')
     
             binned_samples = self.first_fit_decreasing_bin(samples_with_tokens, effective_max_tokens)
+    
+            # Log token sizes of bins
+            total_sum_of_all_bins = sum(sum(token_count for _, token_count in bin) for bin in binned_samples)
+            total_tokens = total_sum_of_all_bins + (system_prompt_size * len(binned_samples))
+            logging.info(f"Total input tokens (including system prompt(s)): {total_tokens}")
     
             chunks = []
             for bin in binned_samples:
                 chunk = '\n~~~\n'.join(f"'sample_ID={sample_id}': '{metadata_dict[sample_id]}'" for sample_id, _ in bin)
                 chunks.append(chunk)
     
-        
         # Save chunks to file using the existing method
         self.save_chunks_to_file(chunks)
-        return(chunks)
+    
+        return chunks  # returning only for testing purposes
 
-
-
-
+        
 
 
 # =============================================================================
@@ -165,20 +174,25 @@ class MetadataProcessor:
 #                           "openai_system_prompt.txt", 
 #                           "cl100k_base")
 # 
-# # option 1. test normal situation (without missing_samples)                      
-# processed_metadata = test.process_metadata()
-# print(processed_metadata)
-# 
 # # option 2. test situation in which missing_samples are present
 # missing_samples=["SRS6212978"] 
 # processed_metadata = test.process_metadata(missing_samples)
 # print(processed_metadata)
+# 
+# # option 1. test normal situation (without missing_samples)                      
+# processed_metadata = test.process_metadata()
+# print(processed_metadata)
+# 
+# 
 # 
 # chunks = test.create_and_save_chunks(processed_metadata)
 # for i in chunks: 
 #     print('#####')
 #     print(i)
 #     print('#####')
+#     
+#     
+# test.save_chunks_to_file(chunks) 
 # =============================================================================
 
 
