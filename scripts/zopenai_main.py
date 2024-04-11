@@ -82,9 +82,7 @@ def main():
     # PHASE 3: GPT Interaction
     start_time = time.time()
     gpt_interactor = GPTInteractor(args.work_dir, args.system_prompt_file, args.api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.max_requests_per_minute)
-    tot_api_count = 0
-    responses, api_count = gpt_interactor.get_gpt_responses()
-    tot_api_count += api_count
+    responses = gpt_interactor.get_gpt_responses()
     print(responses)
     end_time = time.time() 
     print(f"GPT Interaction time: {end_time - start_time} seconds")
@@ -100,7 +98,7 @@ def main():
     print(f"Parsing GPT Output time: {end_time - start_time} seconds")
     print('parsed_df before adding missing samples:', main_parsed_df)
 
-    
+
     retry_count = 0
     max_retries = 3
     
@@ -108,6 +106,9 @@ def main():
     print(f"missing samples after {retry_count}th retry: {missing_samples}")   
     
 
+    #missing_samples = ['SRS5495722', 'SRS1416741', 'SRS2920130', 'ERS4232978', 'SRS1761000', 'ERS2363505', 'SRS6079931', 'ERS3333693']
+    
+    
     while missing_samples and retry_count < max_retries:
         retry_count += 1
         print('##########')
@@ -119,33 +120,37 @@ def main():
         processed_metadata = metadata_processor.process_metadata(missing_samples)
         chunks = metadata_processor.create_and_save_chunks(processed_metadata)
         metadata_processor.save_chunks_to_file(chunks) 
-        responses, api_count = gpt_interactor.get_gpt_responses()
-        tot_api_count += api_count
-        
+
+        responses = gpt_interactor.get_gpt_responses()
         print(responses)
+
+
         parser = GPTOutputParsing(args.work_dir)
         new_parsed_df = parser.run(responses)
-        
         
         new_parsed_sample_ids = set(new_parsed_df['col_0'].unique())
         missing_samples_set -= new_parsed_sample_ids
         missing_samples = list(missing_samples_set)  
-    
-        
+
         # append parsed_df to main_parsed_df
         main_parsed_df = pd.concat([main_parsed_df, new_parsed_df], axis=0)
         
-        
+    
+    my_tot_api_count = gpt_interactor.get_api_request_count()
+    print('my_tot_api_count', my_tot_api_count)
+
     # save final df to file:
     current_datetime = datetime.now().strftime('%Y%m%d_%H%M')
-    filename = f"gpt_clean_output_nspb{args.n_samples_per_biome}_chunking{args.chunking}_chunksize{args.chunk_size}_model{args.model}_temp{args.temperature}_maxtokens{args.max_tokens}_topp{args.top_p}_freqp{args.frequency_penalty}_presp{args.presence_penalty}_rs{args.seed}_API{tot_api_count}_{args.opt_text}_dt{current_datetime}.txt"
+    filename = f"gpt_clean_output_nspb{args.n_samples_per_biome}_chunking{args.chunking}_chunksize{args.chunk_size}_model{args.model}_temp{args.temperature}_maxtokens{args.max_tokens}_topp{args.top_p}_freqp{args.frequency_penalty}_presp{args.presence_penalty}_rs{args.seed}_API{my_tot_api_count}_{args.opt_text}_dt{current_datetime}.txt"
     output_path = os.path.join(args.work_dir, filename)
     main_parsed_df.to_csv(output_path, index=False)
     logging.info(f"Saved clean GPT output to: {output_path}")
     
     print(f"missing samples after all retries: {missing_samples}")   
     print('parsed_df after adding all missing samples:', main_parsed_df)
-    print(f"Total API requests made: after {retry_count}th retry: {tot_api_count}")
+    
+    
+    
     
 
 if __name__ == "__main__":

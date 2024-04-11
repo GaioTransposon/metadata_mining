@@ -74,14 +74,13 @@ class GPTInteractor:
         # filter out any empty strings
         return [s for s in content_strings if s.strip()]
     
-        # # new suggested version: 
-        # with open(latest_file, 'r') as file:
-        #     return file.read().split("\n\n-----\n\n")
-
 
     def check_rate_limit(self):
         """Enforces the rate limit by sleeping if the request limit is reached."""
-        current_time = time.time()
+        current_time = time.time() 
+        #
+        # eventually…If problems with gpt errors → time.perf_counter() for more accurate timing, especially for short durations 
+        #
         
         # Keep only the timestamps of requests made in the last minute
         self.request_times = [t for t in self.request_times if current_time - t < 60]
@@ -95,27 +94,35 @@ class GPTInteractor:
             self.request_times = [t for t in self.request_times if time.time() - t < 60]
 
 
-    
+        
     def gpt_request(self, content_string):
         
         self.check_rate_limit()
-        
+    
         if not self.system_prompt:
             logging.error("System prompt is not available. Aborting request.")
             return None
-        
-        openai.api_key = self.api_key
-        
     
-        try: 
-            
+        # Count the number of samples in the content_string
+        sample_count = content_string.count('sample_ID=')
+    
+        # Customize the system prompt based on the number of samples
+        if sample_count == 1:
+            customized_prompt = self.system_prompt.replace('microbial metagenomic samples', 'microbial metagenomic sample').replace('from their metadata texts', 'from its metadata text')
+            #print('myprompt_1', customized_prompt)
+        else:
+            customized_prompt = self.system_prompt.replace('microbial metagenomic samples', f"{sample_count} microbial metagenomic samples")
+            #print('myprompt_>1', customized_prompt)
+    
+        openai.api_key = self.api_key
+    
+        try:
             #print(content_string)
-            
             # make the API request
             response = openai.ChatCompletion.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": self.system_prompt},
+                    {"role": "system", "content": customized_prompt},
                     {"role": "user", "content": content_string}
                 ],
                 temperature=self.temperature,
@@ -124,23 +131,23 @@ class GPTInteractor:
                 frequency_penalty=self.frequency_penalty,
                 presence_penalty=self.presence_penalty
             )
-            
+    
             # Record the timestamp of this successful request
             self.request_times.append(time.time())
             self.api_request_count += 1
             print("####################")
             print('Api request count: ', self.api_request_count)
             print("####################")
-            
-            return response, self.api_request_count
-            
-        
+    
+            return response
+    
         except openai.error.RateLimitError:
             logging.error("Rate limit exceeded.")
-            return "RATE_LIMIT_EXCEEDED"  
+            return "RATE_LIMIT_EXCEEDED"
         except Exception as e:
             logging.error(f"GPT request failed: {e}")
             return None
+
 
   
     def get_gpt_responses(self):
@@ -154,7 +161,8 @@ class GPTInteractor:
             if not content_string.strip():
                 continue
     
-            response, api_request_count = self.gpt_request(content_string)
+            response = self.gpt_request(content_string)
+            
             if response == "RATE_LIMIT_EXCEEDED":
                 logging.info("Rate limit exceeded. Waiting for 2 minutes...")
                 print("Rate limit exceeded. Waiting for 1.5 minutes...")
@@ -162,7 +170,19 @@ class GPTInteractor:
             elif response is not None:
                 gpt_responses.append(response)
     
-        return gpt_responses, api_request_count
+        return gpt_responses
+    
+    
+    def get_api_request_count(self):
+        """
+        Returns the current count of API requests made.
+    
+        Returns:
+            int: The current API request count.
+        """
+        print("Current API request count:", self.api_request_count)
+        return self.api_request_count
+
 
 
 
@@ -179,10 +199,11 @@ class GPTInteractor:
 #                      1.5, 
 #                      10000)
 # 
-# responses = test.get_gpt_responses()
+# responses,api_request_count = test.get_gpt_responses()
 # print(responses)
-# 
+# print(api_request_count)
 # =============================================================================
+
 
 
 

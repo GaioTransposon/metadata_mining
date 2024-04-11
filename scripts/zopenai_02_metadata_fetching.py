@@ -97,7 +97,7 @@ class MetadataFetching:
 # test = MetadataFetching("/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/", 
 #                  "sample.info_split_dirs", 
 #                  "gold_dict.pkl", 
-#                  2, 
+#                  5, 
 #                  32)
 # # Load the gold dictionary
 # gold_dict = test.load_gold_dict()
