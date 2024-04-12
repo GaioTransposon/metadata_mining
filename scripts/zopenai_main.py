@@ -280,13 +280,16 @@ if __name__ == "__main__":
 # 20240326
 # opt_text: "normal" vs "please" 
 
+# 20240412
+# chunking vs no chunking
+
 # python /Users/dgaio/github/metadata_mining/scripts/zopenai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 2 \
+#     --n_samples_per_biome 200 \
 #     --chunking "yes" \
 #     --chunk_size 2000 \
-#     --seed 42 \
+#     --seed 22 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
 #     --system_prompt_file "openai_system_prompt.txt" \
 #     --encoding_name "cl100k_base" \
@@ -299,6 +302,7 @@ if __name__ == "__main__":
 #     --presence_penalty 1.5 \
 #     --max_requests_per_minute 10000 \
 #     --opt_text "normal"
+
 
 
 

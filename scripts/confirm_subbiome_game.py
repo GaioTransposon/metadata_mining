@@ -77,13 +77,18 @@ def play_game(gold_data):
             print("Invalid option. Please choose a valid biome.")
             continue
 
-        biome_samples = [sample for sample, data in gold_dict.items() if data[1] == selected_biome]
         
-        if not biome_samples:
-            print("No samples found for this biome.")
-            continue
+        # Modified part to select only samples with less than 3 values for updating
+        biome_samples = [sample for sample, data in gold_dict.items() if data[1] == selected_biome and len(data) < 3]
 
+        # Check if there are any samples that meet the criteria
+        if not biome_samples:
+            print("No samples with incomplete data found for this biome.")
+            continue
+        
+        # Randomly pick one of the incomplete samples
         sample = random.choice(biome_samples)
+
         
         # Print the sample ID before fetching the metadata
         print(f"\n>{sample}")
