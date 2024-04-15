@@ -54,12 +54,21 @@ def main():
     
     args = parse_arguments()  
     
+    # PATHS
+    home_dir = os.getenv('HOME')
+    work_dir = os.path.join(home_dir, args.work_dir)
+    input_gold_dict = os.path.join(home_dir, args.input_gold_dict)
+    system_prompt_file = os.path.join(home_dir, args.system_prompt_file)
+    api_key_path = os.path.join(home_dir, args.api_key_path)
+    
+    
     # Phase 0: set up a logging system 
     setup_logging()
     
+    
     # Phase 1: Metadata Fetching
     start_time = time.time()
-    metadata_fetcher = MetadataFetching(args.work_dir, args.directory_with_split_metadata, args.input_gold_dict, args.n_samples_per_biome, args.seed)
+    metadata_fetcher = MetadataFetching(work_dir, args.directory_with_split_metadata, input_gold_dict, args.n_samples_per_biome, args.seed)
     metadata_fetcher.run()
     end_time = time.time() 
     print(f"Metadata fetching time: {end_time - start_time} seconds")
@@ -67,7 +76,7 @@ def main():
     
     # Phase 2: Metadata Processing 
     start_time = time.time()
-    metadata_processor = MetadataProcessor(args.work_dir, args.chunking, args.chunk_size, args.system_prompt_file, args.encoding_name)
+    metadata_processor = MetadataProcessor(work_dir, args.chunking, args.chunk_size, system_prompt_file, args.encoding_name)
     processed_metadata = metadata_processor.process_metadata()
     chunks, complete_sample_ids = metadata_processor.create_and_save_chunks(processed_metadata, return_ids=True)
     metadata_processor.save_chunks_to_file(chunks) 
@@ -81,7 +90,7 @@ def main():
     
     # PHASE 3: GPT Interaction
     start_time = time.time()
-    gpt_interactor = GPTInteractor(args.work_dir, args.system_prompt_file, args.api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.max_requests_per_minute)
+    gpt_interactor = GPTInteractor(work_dir, system_prompt_file, api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.max_requests_per_minute)
     responses = gpt_interactor.get_gpt_responses()
     #print(responses)
     end_time = time.time() 
@@ -90,7 +99,7 @@ def main():
 
     # Phase 4: Parsing GPT Output
     start_time = time.time()
-    parser = GPTOutputParsing(args.work_dir)
+    parser = GPTOutputParsing(work_dir)
     main_parsed_df = parser.run(responses)
     parsed_sample_ids = set(main_parsed_df['col_0'].unique())
     missing_samples = list(complete_sample_ids - parsed_sample_ids)
@@ -122,7 +131,7 @@ def main():
         responses = gpt_interactor.get_gpt_responses()
         #print(responses)
 
-        parser = GPTOutputParsing(args.work_dir)
+        parser = GPTOutputParsing(work_dir)
         new_parsed_df = parser.run(responses)
         
         new_parsed_sample_ids = set(new_parsed_df['col_0'].unique()) if 'col_0' in new_parsed_df.columns else set()
@@ -140,7 +149,7 @@ def main():
     # save final df to file:
     current_datetime = datetime.now().strftime('%Y%m%d_%H%M')
     filename = f"gpt_clean_output_nspb{args.n_samples_per_biome}_chunking{args.chunking}_chunksize{args.chunk_size}_model{args.model}_temp{args.temperature}_maxtokens{args.max_tokens}_topp{args.top_p}_freqp{args.frequency_penalty}_presp{args.presence_penalty}_rs{args.seed}_API{my_tot_api_count}_{args.opt_text}_dt{current_datetime}.txt"
-    output_path = os.path.join(args.work_dir, filename)
+    output_path = os.path.join(work_dir, filename)
     main_parsed_df.to_csv(output_path, index=False)
     logging.info(f"Saved clean GPT output to: {output_path}")
     
@@ -278,17 +287,21 @@ if __name__ == "__main__":
 
 # 20240412
 # chunking vs no chunking
+
+# 20240415
+# tests on Orion: 
+# /Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject
 # python /Users/dgaio/github/metadata_mining/scripts/zopenai_main.py \
-#     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
-#     --input_gold_dict "gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
+#     --work_dir "cloudstor/Gaio/MicrobeAtlasProject" \
+#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+#     --n_samples_per_biome 2 \
 #     --chunking "yes" \
 #     --chunk_size 2000 \
 #     --seed 22 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "openai_system_prompt.txt" \
+#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
 #     --encoding_name "cl100k_base" \
-#     --api_key_path "/Users/dgaio/my_api_key" \
+#     --api_key_path "my_api_key" \
 #     --model "gpt-3.5-turbo-1106" \
 #     --temperature 1.00 \
 #     --max_tokens 4096 \
