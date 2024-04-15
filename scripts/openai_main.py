@@ -293,7 +293,7 @@ if __name__ == "__main__":
 # MicrobeAtlasProject
 # "cloudstor/Gaio/MicrobeAtlasProject" 
 
-# python /Users/dgaio/github/metadata_mining/scripts/zopenai_main.py \
+# python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "MicrobeAtlasProject" \
 #     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
 #     --n_samples_per_biome 2 \
