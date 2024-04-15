@@ -290,9 +290,11 @@ if __name__ == "__main__":
 
 # 20240415
 # tests on Orion: 
-# /Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject
+# MicrobeAtlasProject
+# "cloudstor/Gaio/MicrobeAtlasProject" 
+
 # python /Users/dgaio/github/metadata_mining/scripts/zopenai_main.py \
-#     --work_dir "cloudstor/Gaio/MicrobeAtlasProject" \
+#     --work_dir "MicrobeAtlasProject" \
 #     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
 #     --n_samples_per_biome 2 \
 #     --chunking "yes" \
