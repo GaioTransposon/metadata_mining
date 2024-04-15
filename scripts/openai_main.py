@@ -8,11 +8,11 @@ Created on Wed Dec  6 13:58:00 2023
 
 
 import argparse
-from zopenai_01_setup_and_args import setup_logging
-from zopenai_02_metadata_fetching import MetadataFetching
-from zopenai_02_metadata_processing import MetadataProcessor
-from zopenai_03_gpt_interaction import GPTInteractor
-from zopenai_04_gpt_parsing import GPTOutputParsing
+from openai_01_setup_and_args import setup_logging
+from openai_02_metadata_fetching import MetadataFetching
+from openai_02_metadata_processing import MetadataProcessor
+from openai_03_gpt_interaction import GPTInteractor
+from openai_04_gpt_parsing import GPTOutputParsing
 import time  
 import pandas as pd
 from datetime import datetime
