@@ -149,7 +149,7 @@ class MetadataProcessor:
   
             self.processed_sample_ids = [sample_id for sample_id, _ in samples_with_tokens if sample_id not in oversized_sample_ids]
             print(f'Processed sample IDs in create_and_save_chunks() step: {len(self.processed_sample_ids)}')
-    
+   
             #binned_samples = self.first_fit_decreasing_bin(samples_with_tokens, effective_max_tokens)
             binned_samples = self.first_fit_decreasing_bin([(sample_id, token_count) for sample_id, token_count in samples_with_tokens if sample_id not in oversized_sample_ids], effective_max_tokens)
     

@@ -72,6 +72,7 @@ def main():
     metadata_fetcher.run()
     end_time = time.time() 
     print(f"Metadata fetching time: {end_time - start_time} seconds")
+    logging.info(f"Metadata fetching time: {end_time - start_time} seconds")
     
     
     # Phase 2: Metadata Processing 
@@ -82,6 +83,7 @@ def main():
     metadata_processor.save_chunks_to_file(chunks) 
     end_time = time.time() 
     print(f"Metadata Processing time: {end_time - start_time} seconds")
+    logging.info(f"Metadata Processing time: {end_time - start_time} seconds")
     
 
     print('complete_sample_ids', len(complete_sample_ids))
@@ -95,7 +97,7 @@ def main():
     #print(responses)
     end_time = time.time() 
     print(f"GPT Interaction time: {end_time - start_time} seconds")
-
+    logging.info(f"GPT Interaction time: {end_time - start_time} seconds")
 
     # Phase 4: Parsing GPT Output
     start_time = time.time()
@@ -105,6 +107,8 @@ def main():
     missing_samples = list(complete_sample_ids - parsed_sample_ids)
     end_time = time.time() 
     print(f"Parsing GPT Output time: {end_time - start_time} seconds")
+    logging.info(f"Parsing GPT Output time: {end_time - start_time} seconds")
+    
     print('parsed_df before adding missing samples:', main_parsed_df)
 
 
@@ -113,6 +117,7 @@ def main():
     
     print('##########')
     print(f"missing samples after {retry_count}th retry: {missing_samples}")   
+    logging.info(f"missing samples after {retry_count}th retry: {missing_samples}")
     
 
     #missing_samples = ['SRS5495722', 'SRS1416741', 'SRS2920130', 'ERS4232978', 'SRS1761000', 'ERS2363505', 'SRS6079931', 'ERS3333693']
@@ -145,6 +150,7 @@ def main():
               
     my_tot_api_count = gpt_interactor.get_api_request_count()
     print('my_tot_api_count', my_tot_api_count)
+    logging.info(f"my_tot_api_count: {my_tot_api_count}")
 
     # save final df to file:
     current_datetime = datetime.now().strftime('%Y%m%d_%H%M')
@@ -154,6 +160,7 @@ def main():
     logging.info(f"Saved clean GPT output to: {output_path}")
     
     print(f"missing samples after all retries: {missing_samples}")   
+    logging.info(f"missing samples after all retries: {missing_samples}")
     print('parsed_df after adding all missing samples:', main_parsed_df)
     
     
