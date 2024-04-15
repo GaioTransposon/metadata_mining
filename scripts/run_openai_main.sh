@@ -7,7 +7,7 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate spyder_env
 
 
-python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
+python ~/github/metadata_mining/scripts/openai_main.py \
     --work_dir "MicrobeAtlasProject" \
     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
     --n_samples_per_biome 200 \
