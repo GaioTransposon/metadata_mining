@@ -2,7 +2,7 @@
 
 
 
-conda activate spyder_env
+source activate spyder_env
 
 
 python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
