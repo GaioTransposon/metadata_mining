@@ -48,17 +48,18 @@ class MetadataProcessor:
             return None
 
 
+
     def process_metadata(self, missing_samples=None):
         metadata_dict = self.load_metadata()  
         if metadata_dict is None:
             logging.error("Failed to load metadata for processing.")
             return {}
         
-        processed_metadata = {}
-        
         # If missing_samples is provided, filter the metadata_dict to include only those samples
         if missing_samples is not None:
             metadata_dict = {sample_id: metadata for sample_id, metadata in metadata_dict.items() if sample_id in missing_samples}
+        
+        processed_metadata = {}
         
         for sample_id, metadata in metadata_dict.items():
             self.processed_sample_ids.append(sample_id)
@@ -71,11 +72,12 @@ class MetadataProcessor:
         return processed_metadata
 
 
-
     def token_count(self, text):
         encoding = tiktoken.get_encoding(self.encoding_name)
         tokens = encoding.encode(text)
         return len(tokens)
+    
+
     
 
     def load_system_prompt(self):
@@ -102,6 +104,7 @@ class MetadataProcessor:
         logging.info(f"Saved metadata chunks to: {filename}")
 
 
+
     def first_fit_decreasing_bin(self, samples_with_tokens, effective_max_tokens):
         bins = []
         for sample_id, token_count in sorted(samples_with_tokens, key=lambda x: x[1], reverse=True):
@@ -119,7 +122,7 @@ class MetadataProcessor:
 
     
 
-    def create_and_save_chunks(self, metadata_dict):
+    def create_and_save_chunks(self, metadata_dict, return_ids=False):
         if self.chunking == "no":
             # When chunking is disabled, process each metadata entry individually
             chunks = []
@@ -143,11 +146,12 @@ class MetadataProcessor:
             for oversized_sample_id in oversized_sample_ids:
                 print(f"{oversized_sample_id} is too large to fit into a chunk of effective chunk size {effective_max_tokens}")
                 logging.info(f"'Sample_ID={oversized_sample_id}' exceeds the effective max tokens of {effective_max_tokens} and will be excluded.")
-            
+  
             self.processed_sample_ids = [sample_id for sample_id, _ in samples_with_tokens if sample_id not in oversized_sample_ids]
             print(f'Processed sample IDs in create_and_save_chunks() step: {len(self.processed_sample_ids)}')
     
-            binned_samples = self.first_fit_decreasing_bin(samples_with_tokens, effective_max_tokens)
+            #binned_samples = self.first_fit_decreasing_bin(samples_with_tokens, effective_max_tokens)
+            binned_samples = self.first_fit_decreasing_bin([(sample_id, token_count) for sample_id, token_count in samples_with_tokens if sample_id not in oversized_sample_ids], effective_max_tokens)
     
             # Log token sizes of bins
             total_sum_of_all_bins = sum(sum(token_count for _, token_count in bin) for bin in binned_samples)
@@ -159,10 +163,17 @@ class MetadataProcessor:
                 chunk = '\n~~~\n'.join(f"'sample_ID={sample_id}': '{metadata_dict[sample_id]}'" for sample_id, _ in bin)
                 chunks.append(chunk)
     
-        # Save chunks to file using the existing method
-        self.save_chunks_to_file(chunks)
+
     
-        return chunks  # returning only for testing purposes
+        self.save_chunks_to_file(chunks)
+        if return_ids:
+            return chunks, self.processed_sample_ids
+        return chunks
+
+    
+    
+    
+        
 
         
 

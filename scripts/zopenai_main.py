@@ -69,21 +69,21 @@ def main():
     start_time = time.time()
     metadata_processor = MetadataProcessor(args.work_dir, args.chunking, args.chunk_size, args.system_prompt_file, args.encoding_name)
     processed_metadata = metadata_processor.process_metadata()
-    chunks = metadata_processor.create_and_save_chunks(processed_metadata)
+    chunks, complete_sample_ids = metadata_processor.create_and_save_chunks(processed_metadata, return_ids=True)
     metadata_processor.save_chunks_to_file(chunks) 
     end_time = time.time() 
     print(f"Metadata Processing time: {end_time - start_time} seconds")
     
-    # Determine initial missing samples
-    complete_sample_ids = set(processed_metadata.keys()) 
-    print(complete_sample_ids, len(complete_sample_ids))
+
+    print('complete_sample_ids', len(complete_sample_ids))
+    complete_sample_ids =set(complete_sample_ids)
     
     
     # PHASE 3: GPT Interaction
     start_time = time.time()
     gpt_interactor = GPTInteractor(args.work_dir, args.system_prompt_file, args.api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.max_requests_per_minute)
     responses = gpt_interactor.get_gpt_responses()
-    print(responses)
+    #print(responses)
     end_time = time.time() 
     print(f"GPT Interaction time: {end_time - start_time} seconds")
 
@@ -107,8 +107,6 @@ def main():
     
 
     #missing_samples = ['SRS5495722', 'SRS1416741', 'SRS2920130', 'ERS4232978', 'SRS1761000', 'ERS2363505', 'SRS6079931', 'ERS3333693']
-    
-    
     while missing_samples and retry_count < max_retries:
         retry_count += 1
         print('##########')
@@ -122,20 +120,20 @@ def main():
         metadata_processor.save_chunks_to_file(chunks) 
 
         responses = gpt_interactor.get_gpt_responses()
-        print(responses)
-
+        #print(responses)
 
         parser = GPTOutputParsing(args.work_dir)
         new_parsed_df = parser.run(responses)
         
-        new_parsed_sample_ids = set(new_parsed_df['col_0'].unique())
+        new_parsed_sample_ids = set(new_parsed_df['col_0'].unique()) if 'col_0' in new_parsed_df.columns else set()
         missing_samples_set -= new_parsed_sample_ids
         missing_samples = list(missing_samples_set)  
 
         # append parsed_df to main_parsed_df
-        main_parsed_df = pd.concat([main_parsed_df, new_parsed_df], axis=0)
+        if 'col_0' in new_parsed_df.columns:
+            main_parsed_df = pd.concat([main_parsed_df, new_parsed_df], axis=0)
         
-    
+              
     my_tot_api_count = gpt_interactor.get_api_request_count()
     print('my_tot_api_count', my_tot_api_count)
 
@@ -151,8 +149,6 @@ def main():
     
     
     
-    
-
 if __name__ == "__main__":
     main()
     
@@ -282,7 +278,6 @@ if __name__ == "__main__":
 
 # 20240412
 # chunking vs no chunking
-
 # python /Users/dgaio/github/metadata_mining/scripts/zopenai_main.py \
 #     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
 #     --input_gold_dict "gold_dict.pkl" \
