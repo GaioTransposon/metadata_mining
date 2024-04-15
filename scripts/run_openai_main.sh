@@ -10,7 +10,7 @@ conda activate spyder_env
 python ~/github/metadata_mining/scripts/openai_main.py \
     --work_dir "MicrobeAtlasProject" \
     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-    --n_samples_per_biome 200 \
+    --n_samples_per_biome 5 \
     --chunking "yes" \
     --chunk_size 2000 \
     --seed 22 \
