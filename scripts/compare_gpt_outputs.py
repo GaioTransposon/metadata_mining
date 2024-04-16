@@ -32,24 +32,35 @@ args = parser.parse_args()
 home_dir = os.getenv('HOME')
 work_dir = args.work_dir  
 work_dir = os.path.join(home_dir, work_dir)
+print(work_dir)
 
 # -----------------------------
 # 2. Function Definitions
 # -----------------------------
 
-def interactive_file_selection(initial_pattern):
+def interactive_file_selection(initial_pattern, work_dir):
     """
     Allow user to interactively refine and select files based on their filename patterns or indices.
     """
     
-    print("Current Working Directory:", os.getcwd())  # Debugging: print current directory
-    print("Initial Pattern:", initial_pattern)  # Debugging: print the initial search pattern
+    if not os.path.isabs(work_dir):
+        work_dir = os.path.abspath(work_dir)
+        
+    if not os.path.exists(work_dir):
+        print(f"The specified working directory does not exist: {work_dir}")
+        return []
     
+    full_pattern = os.path.join(work_dir, initial_pattern)
     
-    current_files = glob.glob(initial_pattern)
-    selected_files = []  # Initialize an empty list for selected files
-    
+        
+    print("Current Working Directory:", work_dir)  # Debugging: print current directory
+    print("Full Pattern:", full_pattern)  # Debugging: print the full search pattern
 
+    # Find files matching the initial pattern
+    current_files = glob.glob(full_pattern)
+    
+    
+    selected_files = []  # Initialize an empty list for selected files
     print("Files Found:", current_files)
     
     
@@ -175,7 +186,7 @@ gold_dict_df.drop(columns='tuple_data', inplace=True)
     
 # Interactive File Selection and File Analysis & Data Extraction
 initial_pattern = "gpt_clean*"
-selected_files = interactive_file_selection(initial_pattern)
+selected_files = interactive_file_selection(initial_pattern, work_dir)
 print("\nSelected files for analysis:")
 for f in selected_files:
     print(os.path.basename(f))
@@ -217,6 +228,17 @@ plt.xlabel('distinguishing feature(s)')
 plt.xticks(rotation=45)
 plt.tight_layout()
 
+# Annotate bars with percentages and total counts
+for idx, p in enumerate(ax.patches):
+    width, height = p.get_width(), p.get_height()
+    x, y = p.get_xy()
+    label = correct_percentages.index[idx]
+    total_count = total_counts[label]
+
+    if height > 0:  # Avoid annotating zero-height bars
+        ax.text(x + width/2, y + height + 1, f'{height:.1f}%\n(n={total_count})', ha='center', va='center')
+
+
 # Save plot with a name based on features compared
 plot_filename = os.path.join(work_dir, f'agreement_{feature_description}.png')
 plt.savefig(plot_filename)
@@ -256,36 +278,28 @@ unique_biomes = agreement_by_biome['Biome'].unique().tolist()
 # Create a dictionary to map each label to a numerical index
 label_positions = {label: idx for idx, label in enumerate(agreement_by_biome['Label'].unique())}
 
-# Set up the figure
 plt.figure(figsize=(12, 8))
-
-# Define a small font size for the annotations
-annotation_font_size = 6
 
 # Plot each bar with annotations
 for idx, row in agreement_by_biome.iterrows():
     label_pos = label_positions[row['Label']]
     biome_offset = unique_biomes.index(row['Biome'])
-
-    # Compute the base position for the current bar
     base_position = label_pos * (len(unique_biomes) + 1) + biome_offset
 
-    # Plot the 'Agreement' part of the bar
-    agreement_bar = plt.bar(base_position, row['Agreement'], color='green', edgecolor='white', width=0.8, label='Agreement' if idx == 0 else "")
+    agreement_height = row['Agreement']
+    disagreement_height = row['Disagreement']
+    total_height = agreement_height + disagreement_height
+
+    agreement_bar = plt.bar(base_position, agreement_height, color='green', edgecolor='white', width=0.8, label='Agreement' if idx == 0 else "")
+    disagreement_bar = plt.bar(base_position, disagreement_height, bottom=agreement_height, color='red', edgecolor='white', width=0.8, label='Disagreement' if idx == 0 else "")
     
-    # Plot the 'Disagreement' part of the bar, stacked on the 'Agreement' part
-    disagreement_bar = plt.bar(base_position, row['Disagreement'], bottom=row['Agreement'], color='red', edgecolor='white', width=0.8, label='Disagreement' if idx == 0 else "")
+    plt.text(base_position, total_height, f'{agreement_height}\n(n={total_height})', ha='center', va='bottom', fontsize=12)
 
-    # Annotate the bar with the biome name
-    plt.text(base_position, 0, row['Biome'], rotation=90, va='bottom', ha='center', fontsize=annotation_font_size)
-
-# Finalize the plot
 plt.xlabel('')
 plt.ylabel('# samples')
 plt.title('Agreement GPT output with ground truth')
 plt.xticks(ticks=np.arange(len(label_positions)) * (len(unique_biomes) + 1) + len(unique_biomes)/2, labels=list(label_positions.keys()), rotation=45)
 plt.legend(loc='upper left', bbox_to_anchor=(1,1), ncol=1)
-
 plt.tight_layout()
 
 # Generate filename based on distinguishing features
