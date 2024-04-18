@@ -13,8 +13,8 @@ echo -e "\033[0m"
 python ~/github/metadata_mining/scripts/openai_main.py \
     --work_dir "MicrobeAtlasProject" \
     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-    --n_samples_per_biome 200 \
-    --chunking "no" \
+    --n_samples_per_biome 100 \
+    --chunking "yes" \
     --chunk_size 2000 \
     --seed 22 \
     --directory_with_split_metadata "sample.info_split_dirs" \
