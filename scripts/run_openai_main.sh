@@ -7,28 +7,28 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate spyder_env
 
 
-echo -e "\033[32mStart 1st test - chunking yes/no"
-echo -e "\033[0m"
+# echo -e "\033[32mStart 1st test - chunking yes/no"
+# echo -e "\033[0m"
 
-python ~/github/metadata_mining/scripts/openai_main.py \
-    --work_dir "MicrobeAtlasProject" \
-    --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-    --n_samples_per_biome 100 \
-    --chunking "yes" \
-    --chunk_size 2000 \
-    --seed 22 \
-    --directory_with_split_metadata "sample.info_split_dirs" \
-    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-    --encoding_name "cl100k_base" \
-    --api_key_path "my_api_key" \
-    --model "gpt-3.5-turbo-1106" \
-    --temperature 1.00 \
-    --max_tokens 4096 \
-    --top_p 0.75 \
-    --frequency_penalty 0.25 \
-    --presence_penalty 1.5 \
-    --max_requests_per_minute 10000 \
-    --opt_text "repeat"
+# python ~/github/metadata_mining/scripts/openai_main.py \
+#     --work_dir "MicrobeAtlasProject" \
+#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+#     --n_samples_per_biome 100 \
+#     --chunking "yes" \
+#     --chunk_size 2000 \
+#     --seed 22 \
+#     --directory_with_split_metadata "sample.info_split_dirs" \
+#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+#     --encoding_name "cl100k_base" \
+#     --api_key_path "my_api_key" \
+#     --model "gpt-3.5-turbo-1106" \
+#     --temperature 1.00 \
+#     --max_tokens 4096 \
+#     --top_p 0.75 \
+#     --frequency_penalty 0.25 \
+#     --presence_penalty 1.5 \
+#     --max_requests_per_minute 10000 \
+#     --opt_text "repeat"
 
 
 # sleep 1m
@@ -128,305 +128,233 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 #     --opt_text "normal"
     
     
-# sleep 1m
-# echo -e "\033[32mStart 6th test - temperatures"
-# echo -e "\033[0m"
-
-# python ~/github/metadata_mining/scripts/openai_main.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
-#     --chunking "no" \
-#     --chunk_size 2000 \
-#     --seed 22 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-#     --encoding_name "cl100k_base" \
-#     --api_key_path "my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
-#     --temperature 0.5 \
-#     --max_tokens 4096 \
-#     --top_p 0.75 \
-#     --frequency_penalty 0.25 \
-#     --presence_penalty 1.5 \
-#     --max_requests_per_minute 10000 \
-#     --opt_text "normal"
-    
-# sleep 1m
-# echo -e "\033[32mStart 7th test - temperatures"
-# echo -e "\033[0m"
-
-# python ~/github/metadata_mining/scripts/openai_main.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
-#     --chunking "no" \
-#     --chunk_size 2000 \
-#     --seed 22 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-#     --encoding_name "cl100k_base" \
-#     --api_key_path "my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
-#     --temperature 1.50 \
-#     --max_tokens 4096 \
-#     --top_p 0.75 \
-#     --frequency_penalty 0.25 \
-#     --presence_penalty 1.5 \
-#     --max_requests_per_minute 10000 \
-#     --opt_text "normal"
-    
-# sleep 1m
-# echo -e "\033[32mStart 8th test - temperatures"
-# echo -e "\033[0m"
-
-# python ~/github/metadata_mining/scripts/openai_main.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
-#     --chunking "no" \
-#     --chunk_size 2000 \
-#     --seed 22 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-#     --encoding_name "cl100k_base" \
-#     --api_key_path "my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
-#     --temperature 2.00 \
-#     --max_tokens 4096 \
-#     --top_p 0.75 \
-#     --frequency_penalty 0.25 \
-#     --presence_penalty 1.5 \
-#     --max_requests_per_minute 10000 \
-#     --opt_text "normal"
-    
-# sleep 1m
-# echo -e "\033[32mStart 9th test - topp"
-# echo -e "\033[0m"
-
-# python ~/github/metadata_mining/scripts/openai_main.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
-#     --chunking "no" \
-#     --chunk_size 2000 \
-#     --seed 22 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-#     --encoding_name "cl100k_base" \
-#     --api_key_path "my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
-#     --temperature 1.00 \
-#     --max_tokens 4096 \
-#     --top_p 0.00 \
-#     --frequency_penalty 0.25 \
-#     --presence_penalty 1.5 \
-#     --max_requests_per_minute 10000 \
-#     --opt_text "normal"
-    
-# sleep 1m
-# echo -e "\033[32mStart 10th test - topp"
-# echo -e "\033[0m"
-
-# python ~/github/metadata_mining/scripts/openai_main.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
-#     --chunking "no" \
-#     --chunk_size 2000 \
-#     --seed 22 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-#     --encoding_name "cl100k_base" \
-#     --api_key_path "my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
-#     --temperature 1.00 \
-#     --max_tokens 4096 \
-#     --top_p 0.50 \
-#     --frequency_penalty 0.25 \
-#     --presence_penalty 1.5 \
-#     --max_requests_per_minute 10000 \
-#     --opt_text "normal"
-    
-# sleep 1m
-# echo -e "\033[32mStart 11th test - topp"
-# echo -e "\033[0m"
-
-# python ~/github/metadata_mining/scripts/openai_main.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
-#     --chunking "no" \
-#     --chunk_size 2000 \
-#     --seed 22 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-#     --encoding_name "cl100k_base" \
-#     --api_key_path "my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
-#     --temperature 1.00 \
-#     --max_tokens 4096 \
-#     --top_p 1.00 \
-#     --frequency_penalty 0.25 \
-#     --presence_penalty 1.5 \
-#     --max_requests_per_minute 10000 \
-#     --opt_text "normal"
-    
-# sleep 1m
-# echo -e "\033[32mStart 12th test - freqp"
-# echo -e "\033[0m"
-
-# python ~/github/metadata_mining/scripts/openai_main.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
-#     --chunking "no" \
-#     --chunk_size 2000 \
-#     --seed 22 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-#     --encoding_name "cl100k_base" \
-#     --api_key_path "my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
-#     --temperature 1.00 \
-#     --max_tokens 4096 \
-#     --top_p 0.75 \
-#     --frequency_penalty 0.00 \
-#     --presence_penalty 1.5 \
-#     --max_requests_per_minute 10000 \
-#     --opt_text "normal"
-    
-# sleep 1m
-# echo -e "\033[32mStart 13th test - freqp"
-# echo -e "\033[0m"
-
-# python ~/github/metadata_mining/scripts/openai_main.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
-#     --chunking "no" \
-#     --chunk_size 2000 \
-#     --seed 22 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-#     --encoding_name "cl100k_base" \
-#     --api_key_path "my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
-#     --temperature 1.00 \
-#     --max_tokens 4096 \
-#     --top_p 0.75 \
-#     --frequency_penalty 1.00 \
-#     --presence_penalty 1.5 \
-#     --max_requests_per_minute 10000 \
-#     --opt_text "normal"
-
-# sleep 1m
-# echo -e "\033[32mStart 14th test - freqp"
-# echo -e "\033[0m"
-
-# python ~/github/metadata_mining/scripts/openai_main.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
-#     --chunking "no" \
-#     --chunk_size 2000 \
-#     --seed 22 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-#     --encoding_name "cl100k_base" \
-#     --api_key_path "my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
-#     --temperature 1.00 \
-#     --max_tokens 4096 \
-#     --top_p 0.75 \
-#     --frequency_penalty 2.00 \
-#     --presence_penalty 1.5 \
-#     --max_requests_per_minute 10000 \
-#     --opt_text "normal"
-    
-# sleep 1m
-# echo -e "\033[32mStart 15th test - presp"
-# echo -e "\033[0m"
-
-# python ~/github/metadata_mining/scripts/openai_main.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
-#     --chunking "no" \
-#     --chunk_size 2000 \
-#     --seed 22 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-#     --encoding_name "cl100k_base" \
-#     --api_key_path "my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
-#     --temperature 1.00 \
-#     --max_tokens 4096 \
-#     --top_p 0.75 \
-#     --frequency_penalty 0.25 \
-#     --presence_penalty 0.0 \
-#     --max_requests_per_minute 10000 \
-#     --opt_text "normal"
-    
-# sleep 1m
-# echo -e "\033[32mStart 16th test - presp"
-# echo -e "\033[0m"
-
-# python ~/github/metadata_mining/scripts/openai_main.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
-#     --chunking "no" \
-#     --chunk_size 2000 \
-#     --seed 22 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-#     --encoding_name "cl100k_base" \
-#     --api_key_path "my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
-#     --temperature 1.00 \
-#     --max_tokens 4096 \
-#     --top_p 0.75 \
-#     --frequency_penalty 0.25 \
-#     --presence_penalty 1.0 \
-#     --max_requests_per_minute 10000 \
-#     --opt_text "normal"
-    
-# sleep 1m
-# echo -e "\033[32mStart 17th test - presp"
-# echo -e "\033[0m"
-
-# python ~/github/metadata_mining/scripts/openai_main.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
-#     --chunking "no" \
-#     --chunk_size 2000 \
-#     --seed 22 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-#     --encoding_name "cl100k_base" \
-#     --api_key_path "my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
-#     --temperature 1.00 \
-#     --max_tokens 4096 \
-#     --top_p 0.75 \
-#     --frequency_penalty 0.25 \
-#     --presence_penalty 2.0 \
-#     --max_requests_per_minute 10000 \
-#     --opt_text "normal"
-    
 sleep 1m
-echo -e "\033[32mStart 18th test - random seed"
+echo -e "\033[32mStart 6th test - temperatures"
 echo -e "\033[0m"
 
 python ~/github/metadata_mining/scripts/openai_main.py \
     --work_dir "MicrobeAtlasProject" \
     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-    --n_samples_per_biome 100 \
-    --chunking "yes" \
+    --n_samples_per_biome 200 \
+    --chunking "no" \
     --chunk_size 2000 \
-    --seed 42 \
+    --seed 22 \
+    --directory_with_split_metadata "sample.info_split_dirs" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+    --encoding_name "cl100k_base" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 0.5 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 1.5 \
+    --max_requests_per_minute 10000 \
+    --opt_text "repeat"
+    
+sleep 1m
+echo -e "\033[32mStart 7th test - temperatures"
+echo -e "\033[0m"
+
+python ~/github/metadata_mining/scripts/openai_main.py \
+    --work_dir "MicrobeAtlasProject" \
+    --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+    --n_samples_per_biome 200 \
+    --chunking "no" \
+    --chunk_size 2000 \
+    --seed 22 \
+    --directory_with_split_metadata "sample.info_split_dirs" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+    --encoding_name "cl100k_base" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.50 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 1.5 \
+    --max_requests_per_minute 10000 \
+    --opt_text "repeat"
+    
+sleep 1m
+echo -e "\033[32mStart 8th test - temperatures"
+echo -e "\033[0m"
+
+python ~/github/metadata_mining/scripts/openai_main.py \
+    --work_dir "MicrobeAtlasProject" \
+    --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+    --n_samples_per_biome 200 \
+    --chunking "no" \
+    --chunk_size 2000 \
+    --seed 22 \
+    --directory_with_split_metadata "sample.info_split_dirs" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+    --encoding_name "cl100k_base" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 2.00 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 1.5 \
+    --max_requests_per_minute 10000 \
+    --opt_text "repeat"
+    
+sleep 1m
+echo -e "\033[32mStart 9th test - topp"
+echo -e "\033[0m"
+
+python ~/github/metadata_mining/scripts/openai_main.py \
+    --work_dir "MicrobeAtlasProject" \
+    --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+    --n_samples_per_biome 200 \
+    --chunking "no" \
+    --chunk_size 2000 \
+    --seed 22 \
+    --directory_with_split_metadata "sample.info_split_dirs" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+    --encoding_name "cl100k_base" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 0.00 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 1.5 \
+    --max_requests_per_minute 10000 \
+    --opt_text "repeat"
+    
+sleep 1m
+echo -e "\033[32mStart 10th test - topp"
+echo -e "\033[0m"
+
+python ~/github/metadata_mining/scripts/openai_main.py \
+    --work_dir "MicrobeAtlasProject" \
+    --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+    --n_samples_per_biome 200 \
+    --chunking "no" \
+    --chunk_size 2000 \
+    --seed 22 \
+    --directory_with_split_metadata "sample.info_split_dirs" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+    --encoding_name "cl100k_base" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 0.50 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 1.5 \
+    --max_requests_per_minute 10000 \
+    --opt_text "repeat"
+    
+sleep 1m
+echo -e "\033[32mStart 11th test - topp"
+echo -e "\033[0m"
+
+python ~/github/metadata_mining/scripts/openai_main.py \
+    --work_dir "MicrobeAtlasProject" \
+    --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+    --n_samples_per_biome 200 \
+    --chunking "no" \
+    --chunk_size 2000 \
+    --seed 22 \
+    --directory_with_split_metadata "sample.info_split_dirs" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+    --encoding_name "cl100k_base" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 1.00 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 1.5 \
+    --max_requests_per_minute 10000 \
+    --opt_text "repeat"
+    
+sleep 1m
+echo -e "\033[32mStart 12th test - freqp"
+echo -e "\033[0m"
+
+python ~/github/metadata_mining/scripts/openai_main.py \
+    --work_dir "MicrobeAtlasProject" \
+    --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+    --n_samples_per_biome 200 \
+    --chunking "no" \
+    --chunk_size 2000 \
+    --seed 22 \
+    --directory_with_split_metadata "sample.info_split_dirs" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+    --encoding_name "cl100k_base" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 0.00 \
+    --presence_penalty 1.5 \
+    --max_requests_per_minute 10000 \
+    --opt_text "repeat"
+    
+sleep 1m
+echo -e "\033[32mStart 13th test - freqp"
+echo -e "\033[0m"
+
+python ~/github/metadata_mining/scripts/openai_main.py \
+    --work_dir "MicrobeAtlasProject" \
+    --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+    --n_samples_per_biome 200 \
+    --chunking "no" \
+    --chunk_size 2000 \
+    --seed 22 \
+    --directory_with_split_metadata "sample.info_split_dirs" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+    --encoding_name "cl100k_base" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 1.00 \
+    --presence_penalty 1.5 \
+    --max_requests_per_minute 10000 \
+    --opt_text "repeat"
+
+sleep 1m
+echo -e "\033[32mStart 14th test - freqp"
+echo -e "\033[0m"
+
+python ~/github/metadata_mining/scripts/openai_main.py \
+    --work_dir "MicrobeAtlasProject" \
+    --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+    --n_samples_per_biome 200 \
+    --chunking "no" \
+    --chunk_size 2000 \
+    --seed 22 \
+    --directory_with_split_metadata "sample.info_split_dirs" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+    --encoding_name "cl100k_base" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 2.00 \
+    --presence_penalty 1.5 \
+    --max_requests_per_minute 10000 \
+    --opt_text "repeat"
+    
+sleep 1m
+echo -e "\033[32mStart 15th test - presp"
+echo -e "\033[0m"
+
+python ~/github/metadata_mining/scripts/openai_main.py \
+    --work_dir "MicrobeAtlasProject" \
+    --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+    --n_samples_per_biome 200 \
+    --chunking "no" \
+    --chunk_size 2000 \
+    --seed 22 \
     --directory_with_split_metadata "sample.info_split_dirs" \
     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
     --encoding_name "cl100k_base" \
@@ -436,21 +364,21 @@ python ~/github/metadata_mining/scripts/openai_main.py \
     --max_tokens 4096 \
     --top_p 0.75 \
     --frequency_penalty 0.25 \
-    --presence_penalty 1.5 \
+    --presence_penalty 0.0 \
     --max_requests_per_minute 10000 \
     --opt_text "repeat"
     
 sleep 1m
-echo -e "\033[32mStart 19th test - random seed"
+echo -e "\033[32mStart 16th test - presp"
 echo -e "\033[0m"
 
 python ~/github/metadata_mining/scripts/openai_main.py \
     --work_dir "MicrobeAtlasProject" \
     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-    --n_samples_per_biome 100 \
-    --chunking "yes" \
+    --n_samples_per_biome 200 \
+    --chunking "no" \
     --chunk_size 2000 \
-    --seed 32 \
+    --seed 22 \
     --directory_with_split_metadata "sample.info_split_dirs" \
     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
     --encoding_name "cl100k_base" \
@@ -460,7 +388,79 @@ python ~/github/metadata_mining/scripts/openai_main.py \
     --max_tokens 4096 \
     --top_p 0.75 \
     --frequency_penalty 0.25 \
-    --presence_penalty 1.5 \
+    --presence_penalty 1.0 \
     --max_requests_per_minute 10000 \
     --opt_text "repeat"
+    
+sleep 1m
+echo -e "\033[32mStart 17th test - presp"
+echo -e "\033[0m"
+
+python ~/github/metadata_mining/scripts/openai_main.py \
+    --work_dir "MicrobeAtlasProject" \
+    --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+    --n_samples_per_biome 200 \
+    --chunking "no" \
+    --chunk_size 2000 \
+    --seed 22 \
+    --directory_with_split_metadata "sample.info_split_dirs" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+    --encoding_name "cl100k_base" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 2.0 \
+    --max_requests_per_minute 10000 \
+    --opt_text "repeat"
+    
+# sleep 1m
+# echo -e "\033[32mStart 18th test - random seed"
+# echo -e "\033[0m"
+
+# python ~/github/metadata_mining/scripts/openai_main.py \
+#     --work_dir "MicrobeAtlasProject" \
+#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+#     --n_samples_per_biome 100 \
+#     --chunking "yes" \
+#     --chunk_size 2000 \
+#     --seed 42 \
+#     --directory_with_split_metadata "sample.info_split_dirs" \
+#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+#     --encoding_name "cl100k_base" \
+#     --api_key_path "my_api_key" \
+#     --model "gpt-3.5-turbo-1106" \
+#     --temperature 1.00 \
+#     --max_tokens 4096 \
+#     --top_p 0.75 \
+#     --frequency_penalty 0.25 \
+#     --presence_penalty 1.5 \
+#     --max_requests_per_minute 10000 \
+#     --opt_text "repeat"
+    
+# sleep 1m
+# echo -e "\033[32mStart 19th test - random seed"
+# echo -e "\033[0m"
+
+# python ~/github/metadata_mining/scripts/openai_main.py \
+#     --work_dir "MicrobeAtlasProject" \
+#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+#     --n_samples_per_biome 100 \
+#     --chunking "yes" \
+#     --chunk_size 2000 \
+#     --seed 32 \
+#     --directory_with_split_metadata "sample.info_split_dirs" \
+#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+#     --encoding_name "cl100k_base" \
+#     --api_key_path "my_api_key" \
+#     --model "gpt-3.5-turbo-1106" \
+#     --temperature 1.00 \
+#     --max_tokens 4096 \
+#     --top_p 0.75 \
+#     --frequency_penalty 0.25 \
+#     --presence_penalty 1.5 \
+#     --max_requests_per_minute 10000 \
+#     --opt_text "repeat"
     
