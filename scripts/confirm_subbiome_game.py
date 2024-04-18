@@ -16,7 +16,7 @@ import pickle
 import random
 
 path_to_dirs = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs"
-GOLD_DICT_PATH = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gold_dict.pkl"
+GOLD_DICT_PATH = "/Users/dgaio/github/metadata_mining/source_data/gold_dict.pkl"
 
 def save_gold_data(gold_data, filename=GOLD_DICT_PATH):
     with open(filename, "wb") as f:
@@ -48,7 +48,7 @@ def display_biome_stats(gold_dict):
         if len(details) > 3:
             biome_counts[details[1]] += 1
 
-    print("\nNumber of samples classified (more than two values) per biome:")
+    print("\nNumber of samples classified (more than three values) per biome:")
     print("------------------------------------------------------------")
     for biome, count in biome_counts.items():
         print(f"{biome.capitalize()}: {count}")

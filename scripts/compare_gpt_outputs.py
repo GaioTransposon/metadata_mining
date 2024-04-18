@@ -25,15 +25,17 @@ import argparse
 # 1. Paths
 # -----------------------------
 
-# Setup command line arguments
-parser = argparse.ArgumentParser(description="Compare GPT outputs")
-parser.add_argument('--work_dir', type=str, help="Working directory where the files are located and plots will be saved", required=True)
-args = parser.parse_args()
-home_dir = os.getenv('HOME')
-work_dir = args.work_dir  
-work_dir = os.path.join(home_dir, work_dir)
-print(work_dir)
+# # Setup command line arguments
+# parser = argparse.ArgumentParser(description="Compare GPT outputs")
+# parser.add_argument('--work_dir', type=str, help="Working directory where the files are located and plots will be saved", required=True)
+# args = parser.parse_args()
+# home_dir = os.getenv('HOME')
+# work_dir = args.work_dir  
+# work_dir = os.path.join(home_dir, work_dir)
+# print(work_dir)
 
+home_dir = os.getenv('HOME')
+work_dir = "MicrobeAtlasProject"
 # -----------------------------
 # 2. Function Definitions
 # -----------------------------
@@ -114,6 +116,7 @@ def find_distinguishing_features(files):
     return distinguishing_tokens
 
 
+
 def extract_labels_from_filename(filename, distinguishing_tokens):
     """
     Extract distinguishing labels from the filename.
@@ -135,6 +138,8 @@ def extract_labels_from_filename(filename, distinguishing_tokens):
         return ", ".join(labels)
 
     return "Unknown"
+
+
 
 
 
@@ -166,6 +171,8 @@ def custom_sort(label):
     return label, 0
 
 
+
+
 # -----------------------------
 # 3. Data Processing & Loading
 # -----------------------------    
@@ -191,10 +198,44 @@ print("\nSelected files for analysis:")
 for f in selected_files:
     print(os.path.basename(f))
     
+    
+    
+###
+    
+    
 distinguishing_features = find_distinguishing_features(selected_files)
+
 labels = [extract_labels_from_filename(file, distinguishing_features) for file in selected_files]
 labels = sorted(labels, key=custom_sort)
 print('Distinguishing features of GPT files are: ', labels)
+
+
+
+
+
+# Assuming distinguishing_features and labels are already correctly identified
+def match_files_to_features(files, labels):
+    file_feature_map = {}
+    for file in files:
+        file_base_name = os.path.basename(file)
+        # Check if any label fully matches sections of the filename
+        for label in labels:
+            label_parts = label.split(", ")
+            if all(part.strip() in file_base_name for part in label_parts):
+                file_feature_map[file] = label
+                break
+    return file_feature_map
+
+# Using the mapping to process files
+all_dfs = []
+file_feature_map = match_files_to_features(selected_files, labels)
+
+for file, label in file_feature_map.items():
+    processed_df = load_and_process_file(file, gold_dict_df, label)
+    all_dfs.append(processed_df)
+
+concatenated_df = pd.concat(all_dfs, ignore_index=True)
+concatenated_df['agreement'] = concatenated_df['gpt_biome'] == concatenated_df['biome']
 
 
 
@@ -202,114 +243,83 @@ print('Distinguishing features of GPT files are: ', labels)
 # 5. Plotting agreement and saving the plots
 # -----------------------------
 
-# Generate filename based on distinguishing features
-feature_description = "_".join(sorted(distinguishing_features)).replace(" ", "_")
+
+############
 
 
-all_dfs = []
-for file, label in zip(selected_files, labels):
-    processed_df = load_and_process_file(file, gold_dict_df, label)
-    all_dfs.append(processed_df)
+# check if count of True per label matches the plot:
+df = concatenated_df
+df['agreement'] = df['agreement'].astype(int)  # Make sure the agreement column is of integer type for accurate summation
+true_counts = df.groupby('label')['agreement'].sum()
+total_counts = df.groupby('label').size()
+true_percentage = (true_counts / total_counts * 100).round(2)  # Rounded for better readability
+result = pd.DataFrame({
+    'True Counts': true_counts,
+    'Total Counts': total_counts,
+    'Percentage True': true_percentage
+})
+print(result)
 
-concatenated_df = pd.concat(all_dfs, ignore_index=True)
-concatenated_df['agreement'] = concatenated_df['gpt_biome'] == concatenated_df['biome']
 
-# Prepare data for plotting
-correct_data = concatenated_df[concatenated_df['agreement'] == True].groupby(['label']).size()
-total_counts = concatenated_df.groupby(['label']).size()
-correct_percentages = (correct_data / total_counts) * 100
+############
+
+### only for plot name: 
+unique_parts = set()
+for label in labels:
+    parts = label.split(', ')
+    # Filter out any part containing 'API'
+    filtered_parts = [part for part in parts if 'API' not in part]
+    unique_parts.update(filtered_parts)
+
+# Join the unique parts sorted alphabetically and separated by '_'
+feature_description = "_".join(sorted(unique_parts))
+###
 
 
+# Create a bar plot for the 'Percentage True' column
 plt.figure(figsize=(10, 6))
-ax = correct_percentages.plot(kind='bar', color='green', figsize=(10, 6))
-plt.title('Percentage of correct gpt output')
+ax = result['Percentage True'].plot(kind='bar', color='green')
+plt.title('Percentage of correct GPT output')
 plt.ylabel('agreement (%)')
 plt.xlabel('distinguishing feature(s)')
-plt.xticks(rotation=45)
-plt.tight_layout()
+plt.xticks(rotation=45)  # Rotate labels to prevent overlap
 
-# Annotate bars with percentages and total counts
+# Annotate bars with the percentage and total counts
 for idx, p in enumerate(ax.patches):
-    width, height = p.get_width(), p.get_height()
+    height = p.get_height()
     x, y = p.get_xy()
-    label = correct_percentages.index[idx]
-    total_count = total_counts[label]
-
-    if height > 0:  # Avoid annotating zero-height bars
-        ax.text(x + width/2, y + height + 1, f'{height:.1f}%\n(n={total_count})', ha='center', va='center')
-
-
-# Save plot with a name based on features compared
-plot_filename = os.path.join(work_dir, f'agreement_{feature_description}.png')
-plt.savefig(plot_filename)
-# plt.show()
-plt.close()
-
-print(f"Plot saved as: {plot_filename}")
-
-############
-
-
-# quick check if count of True per label matches the plot:
-df = concatenated_df
-df['agreement'] = df['agreement'].astype(int)
-true_counts = df.groupby('label')['agreement'].sum()
-print('true counts:', true_counts)
-
-
-############
-
-
-
-# Calculate agreement for each biome within each label
-agreement_by_biome = concatenated_df.groupby(['label', 'biome', 'agreement']).size().unstack(fill_value=0).reset_index()
-
-# If necessary, you can rename the columns for clarity
-agreement_by_biome.columns = ['Label', 'Biome', 'Disagreement', 'Agreement']
-
-##########
-
-# Unique labels and biomes for plotting
-unique_labels = agreement_by_biome['Label'].unique()
-
-# Convert the 'Biome' column to a list of unique biomes if it's not already
-unique_biomes = agreement_by_biome['Biome'].unique().tolist()
-
-# Create a dictionary to map each label to a numerical index
-label_positions = {label: idx for idx, label in enumerate(agreement_by_biome['Label'].unique())}
-
-plt.figure(figsize=(12, 8))
-
-# Plot each bar with annotations
-for idx, row in agreement_by_biome.iterrows():
-    label_pos = label_positions[row['Label']]
-    biome_offset = unique_biomes.index(row['Biome'])
-    base_position = label_pos * (len(unique_biomes) + 1) + biome_offset
-
-    agreement_height = row['Agreement']
-    disagreement_height = row['Disagreement']
-    total_height = agreement_height + disagreement_height
-
-    agreement_bar = plt.bar(base_position, agreement_height, color='green', edgecolor='white', width=0.8, label='Agreement' if idx == 0 else "")
-    disagreement_bar = plt.bar(base_position, disagreement_height, bottom=agreement_height, color='red', edgecolor='white', width=0.8, label='Disagreement' if idx == 0 else "")
+    label = result.index[idx]
+    total_count = result.at[label, 'Total Counts']
+    percentage = result.at[label, 'Percentage True']
     
-    plt.text(base_position, total_height, f'{agreement_height}\n(n={total_height})', ha='center', va='bottom', fontsize=12)
+    if height > 0:  # Avoid annotating zero-height bars
+        ax.text(x + p.get_width() / 2, y + height + 1, f'{percentage}%\n(n={total_count})', ha='center', va='center')
 
-plt.xlabel('')
-plt.ylabel('# samples')
-plt.title('Agreement GPT output with ground truth')
-plt.xticks(ticks=np.arange(len(label_positions)) * (len(unique_biomes) + 1) + len(unique_biomes)/2, labels=list(label_positions.keys()), rotation=45)
-plt.legend(loc='upper left', bbox_to_anchor=(1,1), ncol=1)
 plt.tight_layout()
-
-# Generate filename based on distinguishing features
-feature_description = "_".join(sorted(distinguishing_features)).replace(" ", "_")
-plot_filename = os.path.join(work_dir, f'agreement_by_biome_{feature_description}.png')
-plt.savefig(plot_filename)
-# plt.show()
-plt.close()
+plot_filename = os.path.join(work_dir, f'agreement_{feature_description}.png')
+#plt.savefig(plot_filename)
+plt.show()
+#plt.close()
 
 print(f"Plot saved as: {plot_filename}")
+
+############
+
+filenames = [os.path.basename(file) for file in selected_files]
+for i in filenames: 
+    print(i)
+
+# =============================================================================
+# 
+# # Generate filename based on distinguishing features
+# feature_description = "_".join(sorted(distinguishing_features)).replace(" ", "_")
+# plot_filename = os.path.join(work_dir, f'agreement_by_biome_{feature_description}.png')
+# plt.savefig(plot_filename)
+# # plt.show()
+# plt.close()
+# 
+# print(f"Plot saved as: {plot_filename}")
+# =============================================================================
 
 
 ############
