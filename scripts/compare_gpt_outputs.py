@@ -67,7 +67,6 @@ def interactive_file_selection(initial_pattern, work_dir):
     
     
     while True:
-        # Display current files
         print("\nCurrent matching files:")
         for idx, file in enumerate(current_files, start=1):
             print(f"{idx}. {os.path.basename(file)}")
@@ -82,12 +81,12 @@ def interactive_file_selection(initial_pattern, work_dir):
         else:
             # Check if user entered indices
             indices = action.split()
-            if all(idx.isdigit() for idx in indices):  # Check if all are numbers
+            if all(idx.isdigit() for idx in indices):  
                 indices = [int(idx) - 1 for idx in indices]  # Convert to 0-based index
                 selected_files = [current_files[idx] for idx in indices if 0 <= idx < len(current_files)]  # Check if index is in range
                 return selected_files
             else:
-                # Refine the list of files based on user input
+                # refine the list of files based on user input
                 current_files = [f for f in current_files if action in f]
                 
                 if not current_files:
@@ -101,7 +100,7 @@ def find_distinguishing_features(files):
     For each segment in the filenames, identify the segments that differ between files.
     """
     # Split the filenames into tokens based on underscores
-    tokens = [os.path.basename(file).split('_')[:-2] for file in files]  # excluding the date and time segments
+    tokens = [os.path.basename(file).split('_')[:-2] for file in files]  # this excludes date and time parts
 
     # Transpose the tokens list for easy comparison
     tokens_transposed = list(zip(*tokens))
@@ -309,6 +308,7 @@ filenames = [os.path.basename(file) for file in selected_files]
 for i in filenames: 
     print(i)
 
+print(result)
 # =============================================================================
 # 
 # # Generate filename based on distinguishing features

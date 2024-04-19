@@ -12,6 +12,7 @@ import openai
 import time
 import logging
 import glob 
+from datetime import datetime
 
 # =======================================================
 # PHASE 3: GPT Interaction
@@ -171,6 +172,39 @@ class GPTInteractor:
                 gpt_responses.append(response)
     
         return gpt_responses
+    
+    
+    
+    def save_gpt_responses_to_file(self, gpt_responses):
+        """
+        Save the content of GPT responses to a file.
+    
+        Parameters:
+        - gpt_responses: List of GPT responses.
+    
+        Returns:
+        - None
+        """
+
+        contents = []
+        for response in gpt_responses:
+            try:
+                contents.append(response['choices'][0]['message']['content'])
+            except KeyError:
+                contents.append("ERROR: Malformed response")
+        
+        # join all contents with a separator (two newlines for readability)
+        final_content = "\n\n".join(contents)
+        
+        current_datetime = datetime.now().strftime('%Y%m%d_%H%M')
+        self.saved_filename = f"gpt_raw_dt{current_datetime}.txt"
+        self.saved_filename = os.path.join(self.work_dir, self.saved_filename)
+    
+        with open(self.saved_filename, 'w') as file:
+            file.write(final_content)
+    
+        logging.info(f"Saved GPT responses to: {self.saved_filename}")
+        
     
     
     def get_api_request_count(self):

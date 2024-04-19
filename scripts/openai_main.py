@@ -95,6 +95,7 @@ def main():
     gpt_interactor = GPTInteractor(work_dir, system_prompt_file, api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.max_requests_per_minute)
     responses = gpt_interactor.get_gpt_responses()
     #print(responses)
+    gpt_interactor.save_gpt_responses_to_file(responses)
     end_time = time.time() 
     print(f"GPT Interaction time: {end_time - start_time} seconds")
     logging.info(f"GPT Interaction time: {end_time - start_time} seconds")
@@ -135,6 +136,7 @@ def main():
 
         responses = gpt_interactor.get_gpt_responses()
         #print(responses)
+        gpt_interactor.save_gpt_responses_to_file(responses)
 
         parser = GPTOutputParsing(work_dir)
         new_parsed_df = parser.run(responses)
