@@ -63,6 +63,22 @@ else:
 
 
 
+
+
+
+# =============================================================================
+# def find_samples_with_biome(gold_dict, biome_name):
+#     print(f"Searching for samples with biome '{biome_name}'...")
+#     for sample_id, details in gold_dict.items():
+#         if len(details) > 1 and details[1] == biome_name:
+#             print(f"Sample ID: {sample_id} - Details: {details}")
+# 
+# # Usage: Call this function with 'gold_dict' and the biome name 'food'
+# # Example:
+# find_samples_with_biome(data, 'other')
+# =============================================================================
+
+
 ################################################################################
 ################################################################################
 
