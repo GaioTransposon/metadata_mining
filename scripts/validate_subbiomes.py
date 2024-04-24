@@ -16,6 +16,9 @@ import numpy as np
 from scipy.spatial import distance
 import plotly.graph_objects as go
 import umap
+from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
+import plotly.graph_objects as go
 
 
 def make_biome_subbiome_dict(source, source_type='csv'):
@@ -85,6 +88,8 @@ def get_embeddings(data_dict, verbose='no'):
     return embeddings_dict, failed_samples
 
 
+
+
 def plot_embeddings_1D_to_html(embeddings_dict1, embeddings_dict2, labels_dict1, labels_dict2):
     x, y, hover_texts, colors = [], [], [], []
 
@@ -102,9 +107,8 @@ def plot_embeddings_1D_to_html(embeddings_dict1, embeddings_dict2, labels_dict1,
             vec1 = embeddings_dict1[sample_id]
             vec2 = embeddings_dict2[sample_id]
             if vec1 is not None and vec2 is not None:
-                print(vec1[1])
-                x.append(vec1[1])  # Simplified projection to the first dimension
-                y.append(vec2[1])  # Simplified projection to the first dimension
+                x.append(vec1[0])  # Simplified projection to the first dimension
+                y.append(vec2[0])  # Simplified projection to the first dimension
                 biome = labels_dict1[sample_id].split(' - ')[0]  # Extract biome part
                 colors.append(color_map.get(biome, '#CCCCCC'))  # Use gray for unknown biomes
                 hover_text = f"'{sample_id}':<br>gold_dict: '{labels_dict1[sample_id]}'<br>gpt: '{labels_dict2[sample_id]}'"
@@ -116,6 +120,8 @@ def plot_embeddings_1D_to_html(embeddings_dict1, embeddings_dict2, labels_dict1,
                       yaxis_title='Gold Dict Embeddings',
                       hovermode='closest')
     fig.write_html("/Users/dgaio/MicrobeAtlasProject/20240423_biome_and_subbiomes.html")
+
+
 
 
 def plot_reduced_embeddings_to_html(embeddings_dict1, embeddings_dict2, labels_dict1, labels_dict2):
@@ -161,6 +167,89 @@ def plot_reduced_embeddings_to_html(embeddings_dict1, embeddings_dict2, labels_d
 
 
 
+def plot_tsne_embeddings_to_html(embeddings_dict1, embeddings_dict2, labels_dict1, labels_dict2):
+    embeddings1 = np.array([embeddings_dict1[sample] for sample in embeddings_dict1 if sample in embeddings_dict2])
+    embeddings2 = np.array([embeddings_dict2[sample] for sample in embeddings_dict2 if sample in embeddings_dict1])
+
+    # Initialize t-SNE
+    tsne = TSNE(n_components=2, perplexity=30, n_iter=1000, random_state=42)
+    embeddings1_tsne = tsne.fit_transform(embeddings1)
+    embeddings2_tsne = tsne.fit_transform(embeddings2)
+
+    x = embeddings1_tsne[:, 0]  # First component from t-SNE
+    y = embeddings2_tsne[:, 0]  # First component from t-SNE for the second set of embeddings
+
+    hover_texts = []
+    colors = []
+
+    # Define specific hex colors for each biome
+    color_map = {
+        'animal': '#C67D7B',  # Pinkish
+        'water': '#8CC8CF',   # Bluish
+        'plant': '#C0D184',   # Greenish
+        'soil': '#CBBF82',    # Brownish
+        'other': '#CCCCCC'    # Gray
+    }
+
+    for i, sample_id in enumerate(embeddings_dict1):
+        if sample_id in embeddings_dict2:
+            biome = labels_dict1[sample_id].split(' - ')[0]
+            colors.append(color_map.get(biome, '#CCCCCC'))
+            hover_text = f"'{sample_id}':<br>gold_dict: '{labels_dict1[sample_id]}'<br>gpt: '{labels_dict2[sample_id]}'"
+            hover_texts.append(hover_text)
+
+    # Create scatter plot
+    fig = go.Figure(data=go.Scatter(x=x, y=y, mode='markers', text=hover_texts, hoverinfo='text', marker=dict(color=colors)))
+    fig.update_layout(title='Comparison of Embeddings via t-SNE',
+                      xaxis_title='GPT Embeddings t-SNE',
+                      yaxis_title='Gold Dict Embeddings t-SNE',
+                      hovermode='closest')
+    fig.write_html("/Users/dgaio/MicrobeAtlasProject/20240423_biome_and_subbiomes_tsne.html")
+
+
+
+
+def plot_pca_embeddings_to_html(embeddings_dict1, embeddings_dict2, labels_dict1, labels_dict2):
+    # Collect embeddings and ensure they are arrays for PCA
+    embeddings1 = np.array([embeddings_dict1[sample] for sample in embeddings_dict1 if sample in embeddings_dict2])
+    embeddings2 = np.array([embeddings_dict2[sample] for sample in embeddings_dict2 if sample in embeddings_dict1])
+
+    # Initialize PCA and transform embeddings
+    pca = PCA(n_components=5)  # We use 2 components for a 2D visualization
+    embeddings1_pca = pca.fit_transform(embeddings1)
+    embeddings2_pca = pca.fit_transform(embeddings2)
+
+    # Plot settings
+    hover_texts = []
+    colors = []
+
+    # Define specific hex colors for each biome
+    color_map = {
+        'animal': '#C67D7B',  # Pinkish
+        'water': '#8CC8CF',   # Bluish
+        'plant': '#C0D184',   # Greenish
+        'soil': '#CBBF82',    # Brownish
+        'other': '#CCCCCC'    # Gray
+    }
+
+    for i, sample_id in enumerate(embeddings_dict1):
+        if sample_id in embeddings_dict2:
+            biome = labels_dict1[sample_id].split(' - ')[0]
+            colors.append(color_map.get(biome, '#CCCCCC'))
+            hover_text = f"'{sample_id}':<br>gold_dict: '{labels_dict1[sample_id]}'<br>gpt: '{labels_dict2[sample_id]}'"
+            hover_texts.append(hover_text)
+
+    # Create scatter plot using Plotly
+    fig = go.Figure(data=go.Scatter(x=embeddings1_pca[:, 0], y=embeddings2_pca[:, 0], mode='markers',
+                                    text=hover_texts, hoverinfo='text', marker=dict(color=colors)))
+    fig.update_layout(title='Comparison of Embeddings via PCA',
+                      xaxis_title='PCA Component 1',
+                      yaxis_title='PCA Component 2',
+                      hovermode='closest')
+    # Save plot to HTML file
+    fig.write_html("/Users/dgaio/MicrobeAtlasProject/20240423_biome_and_subbiomes_pca.html")
+
+
 
 # STEP 1. Extract biome and sub-biome from gold dict and/or from gpt output
 
@@ -201,16 +290,15 @@ len(gpt_clean_bsb_filtered)
 # STEP 3. get embeddings
 
 # Initialize API key
-with open('/Users/dgaio/my_api_key', "r") as file:
+with open('/Users/dgaio/my_api_key_embeddings', "r") as file:
     openai.api_key = file.read().strip()
     
 embeddings_gpt, failed_samples_gpt = get_embeddings(gpt_clean_bsb_filtered, verbose='yes')
-len(embeddings_gpt)
-len(failed_samples_gpt)
+print(len(embeddings_gpt))
+print(len(failed_samples_gpt))
 embeddings_gd, failed_samples_gd = get_embeddings(gold_dict_bsb_filtered, verbose='yes')
-len(embeddings_gd)
-len(failed_samples_gd)
-
+print(len(embeddings_gd))
+print(len(failed_samples_gd))
 print("Embeddings Dictionary:")
 for sample, embedding in embeddings_gpt.items():
     print(f"{sample}: {embedding[:5]}")  # Print first 5 elements for brevity
@@ -219,11 +307,21 @@ for sample, embedding in embeddings_gpt.items():
 
 # STEP 4. plot embeddings 
 
+
+
 plot_embeddings_1D_to_html(embeddings_gpt, embeddings_gd, gold_dict_bsb_filtered, gpt_clean_bsb_filtered)
+
+
 
 plot_reduced_embeddings_to_html(embeddings_gpt, embeddings_gd, gold_dict_bsb_filtered, gpt_clean_bsb_filtered)
 
 
+plot_tsne_embeddings_to_html(embeddings_gpt, embeddings_gd, gold_dict_bsb_filtered, gpt_clean_bsb_filtered)
+
+
+# Usage of the function
+# Assume embeddings_dict1, embeddings_dict2, labels_dict1, labels_dict2 are already defined and contain your data.
+plot_pca_embeddings_to_html(embeddings_gpt, embeddings_gd, gold_dict_bsb_filtered, gpt_clean_bsb_filtered)
 
 
 

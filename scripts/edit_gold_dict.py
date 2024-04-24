@@ -64,8 +64,6 @@ else:
 
 
 
-
-
 # =============================================================================
 # def find_samples_with_biome(gold_dict, biome_name):
 #     print(f"Searching for samples with biome '{biome_name}'...")
@@ -76,6 +74,47 @@ else:
 # # Usage: Call this function with 'gold_dict' and the biome name 'food'
 # # Example:
 # find_samples_with_biome(data, 'other')
+# =============================================================================
+
+
+# =============================================================================
+# # adding a value at nth position when missing: 
+# 
+# # Ask the user for the sample key
+# sample_key = input("What is the sample key you want to edit? ")
+# 
+# # Check if the key exists in the dictionary
+# if sample_key in data:
+#     # Retrieve and print the metadata
+#     metadata = fetch_metadata_from_sample(sample_key)
+#     print(f"Metadata for '{sample_key}':\n{metadata}")
+# 
+#     # Retrieve the current tuple for the key
+#     values = list(data[sample_key])  # Convert tuple to list to allow modifications
+#     print(f"Current values for '{sample_key}': {values}")
+# 
+#     # Ask the user which position to insert the new value
+#     insert_position = input("At which position do you want to insert the new value? Enter a number: ")
+#     if insert_position.isdigit() and 0 <= int(insert_position) <= len(values):
+#         insert_position = int(insert_position)
+#         
+#         # Ask for the new value
+#         new_value = input("Enter the new value to insert: ")
+#         
+#         # Insert the new value at the specified position
+#         values.insert(insert_position, new_value)
+#         data[sample_key] = tuple(values)  # Convert back to tuple and reassign to the key
+# 
+#         # Save the updated dictionary back to the .pkl file
+#         with open(GOLD_DICT_PATH, 'wb') as file:
+#             pickle.dump((data, processed_pmids), file)
+# 
+#         print(f"New value '{new_value}' has been inserted at position {insert_position} for '{sample_key}'.")
+#     else:
+#         print("Invalid position number.")
+# 
+# else:
+#     print(f"The key '{sample_key}' was not found in the dictionary.")
 # =============================================================================
 
 
