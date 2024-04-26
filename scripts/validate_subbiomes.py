@@ -294,12 +294,10 @@ def plot_distribution_metrics(compare_results):
     plt.show()
 
 
-
-
 compare_embeddings(embeddings_gd, embeddings_gpt)
 
 
-compare_results = compare_embeddings(embeddings_gd, embeddings_gpt)  # Make sure you have these dictionaries ready
+compare_results = compare_embeddings(embeddings_gd, embeddings_gpt)  
 plot_distribution_metrics(compare_results)
 
 
@@ -307,77 +305,16 @@ plot_distribution_metrics(compare_results)
 
 
 
-import numpy as np
-import plotly.graph_objects as go
-
-def plot_distribution_with_improved_details(compare_results, embeddings_dict1, embeddings_dict2, labels_dict1, labels_dict2):
-    # Extract metrics
-    euclidean_distances = [result['euclidean'] for result in compare_results.values()]
-    sample_ids = list(compare_results.keys())
-    
-    # Prepare color mapping and hover texts
-    color_map = {
-        'animal': '#C67D7B',  # Pinkish
-        'water': '#8CC8CF',   # Bluish
-        'plant': '#C0D184',   # Greenish
-        'soil': '#CBBF82',    # Brownish
-        'other': '#CCCCCC'    # Gray
-    }
-    colors = [color_map.get(labels_dict1[key].split(' - ')[0], '#CCCCCC') for key in sample_ids]
-    hover_texts = [f"{key}:<br>Gold: {labels_dict1[key]}<br>GPT: {labels_dict2[key]}" for key in sample_ids]
-
-    # Create histogram and get bin information
-    bin_size = np.ptp(euclidean_distances) / 30  # Define the bin size
-    fig = go.Figure()
-    hist = np.histogram(euclidean_distances, bins=np.arange(min(euclidean_distances), max(euclidean_distances) + bin_size, bin_size))
-    bin_edges = hist[1]
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-
-    # Create the histogram
-    fig.add_trace(go.Histogram(x=euclidean_distances, xbins=dict(start=min(euclidean_distances), end=max(euclidean_distances), size=bin_size), opacity=0.75, name='Euclidean Distance'))
-
-    # Calculate positions for scatter points
-    y_positions = {}
-    for dist in euclidean_distances:
-        bin_index = int((dist - min(euclidean_distances)) / bin_size)
-        if bin_index not in y_positions:
-            y_positions[bin_index] = 0
-        y_positions[bin_index] += 1
-    
-    scatter_x = []
-    scatter_y = []
-    for i, dist in enumerate(euclidean_distances):
-        bin_index = int((dist - min(euclidean_distances)) / bin_size)
-        scatter_x.append(dist)
-        scatter_y.append(y_positions[bin_index])
-
-    # Create scatter plot on top of the histogram
-    fig.add_trace(go.Scatter(x=scatter_x, y=scatter_y, mode='markers', text=hover_texts, hoverinfo='text', marker=dict(color=colors, size=7)))
-
-    # Update layout
-    fig.update_layout(title='Euclidean Distance Distribution with Sample Details',
-                      xaxis_title='Euclidean Distance',
-                      yaxis_title='Sample Spread',
-                      hovermode='closest',
-                      showlegend=False)
-    fig.show()
-    fig.write_html(f"/Users/dgaio/MicrobeAtlasProject/20240423_biome_and_subbiomes_similarity.html")
-
-# Example usage
-compare_results = compare_embeddings(embeddings_gd, embeddings_gpt)  # Make sure you have these dictionaries ready
-plot_distribution_with_improved_details(compare_results, embeddings_gd, embeddings_gpt, gold_dict_bsb_filtered, gpt_clean_bsb_filtered)
-
-
 
 
 
 import numpy as np
 import plotly.graph_objects as go
 
-def plot_distribution_with_spread_details(compare_results, embeddings_dict1, embeddings_dict2, labels_dict1, labels_dict2):
-    # Extract metrics
-    euclidean_distances = [result['euclidean'] for result in compare_results.values()]
-    sample_ids = list(compare_results.keys())
+def plot_distribution_with_spread_details_fixed(compare_results, embeddings_dict1, embeddings_dict2, labels_dict1, labels_dict2, distance_type):
+    # Extract metrics and prepare data structures
+    sample_distances = [(key, result[distance_type]) for key, result in compare_results.items()]
+    sample_ids = [key for key, _ in sample_distances]
 
     # Prepare color mapping and hover texts
     color_map = {
@@ -391,47 +328,143 @@ def plot_distribution_with_spread_details(compare_results, embeddings_dict1, emb
     hover_texts = [f"{key}:<br>Gold: {labels_dict1[key]}<br>GPT: {labels_dict2[key]}" for key in sample_ids]
 
     # Create histogram and get bin information
-    bin_size = np.ptp(euclidean_distances) / 30  # Define the bin size
-    fig = go.Figure()
-    hist = np.histogram(euclidean_distances, bins=np.arange(min(euclidean_distances), max(euclidean_distances) + bin_size, bin_size))
+    distances = [dist for _, dist in sample_distances]
+    bin_size = np.ptp(distances) / 30  # Define the bin size
+    bins = np.arange(min(distances), max(distances) + bin_size, bin_size)
+    hist = np.histogram(distances, bins=bins)
     bin_edges = hist[1]
     bin_counts = hist[0]
 
     # Calculate positions for scatter points
-    y_positions = {}
+    bin_assignment = [np.digitize(dist, bin_edges) - 1 for _, dist in sample_distances]
+    y_positions = {bin_idx: [] for bin_idx in range(len(bin_counts))}
+
+    for idx, bin_idx in enumerate(bin_assignment):
+        if bin_idx == len(bin_counts):  # Handle edge case where value falls on the last bin edge
+            bin_idx -= 1
+        y_positions[bin_idx].append(sample_distances[idx][0])  # Store sample ID
+
     scatter_x = []
     scatter_y = []
+    scatter_colors = []
+    scatter_texts = []
 
-    for dist in euclidean_distances:
-        bin_index = int((dist - min(euclidean_distances)) / bin_size)
-        if bin_index not in y_positions:
-            y_positions[bin_index] = []
-        y_positions[bin_index].append(dist)
+    for bin_idx, ids in y_positions.items():
+        heights = np.linspace(1, bin_counts[bin_idx], num=len(ids))  # Evenly spread out within the bin
+        for i, id in enumerate(ids):
+            scatter_x.append(compare_results[id][distance_type])
+            scatter_y.append(heights[i])
+            scatter_colors.append(colors[sample_ids.index(id)])
+            scatter_texts.append(hover_texts[sample_ids.index(id)])
 
-    for bin_index, dists in y_positions.items():
-        heights = np.linspace(1, bin_counts[bin_index], num=len(dists))  # Evenly spread out within the bin
-        scatter_x.extend(dists)
-        scatter_y.extend(heights)
-
-    # Create the histogram
-    fig.add_trace(go.Histogram(x=euclidean_distances, xbins=dict(start=min(euclidean_distances), end=max(euclidean_distances), size=bin_size), opacity=0.75, name='Euclidean Distance'))
+    # Initialize the figure and add the histogram
+    fig = go.Figure()
+    fig.add_trace(go.Histogram(x=distances, xbins=dict(start=bins[0], end=bins[-1], size=bin_size), opacity=0.75, name=f'{distance_type.capitalize()} Distance'))
 
     # Create scatter plot on top of the histogram
-    fig.add_trace(go.Scatter(x=scatter_x, y=scatter_y, mode='markers', text=hover_texts, hoverinfo='text', marker=dict(color=colors, size=5)))
+    fig.add_trace(go.Scatter(x=scatter_x, y=scatter_y, mode='markers', text=scatter_texts, hoverinfo='text', marker=dict(color=scatter_colors, size=5)))
 
     # Update layout
-    fig.update_layout(title='Euclidean Distance Distribution with Detailed Sample Spread',
-                      xaxis_title='Euclidean Distance',
-                      yaxis_title='Sample Position within Bin',
+    fig.update_layout(title=f"{distance_type.capitalize()} Distance Distribution with Sample Details",
+                      xaxis_title=f"{distance_type.capitalize()} Distance",
+                      yaxis_title='Sample Spread within Bin',
                       hovermode='closest',
                       showlegend=False)
     fig.show()
-    fig.write_html(f"/Users/dgaio/MicrobeAtlasProject/20240423_biome_and_subbiomes_similarity.html")
+    fig.write_html(f"/Users/dgaio/MicrobeAtlasProject/20240423_biome_and_subbiomes_similarity_{distance_type}.html")
 
 # Example usage
-compare_results = compare_embeddings(embeddings_gd, embeddings_gpt)  # Make sure you have these dictionaries ready
-plot_distribution_with_spread_details(compare_results, embeddings_gd, embeddings_gpt, gold_dict_bsb_filtered, gpt_clean_bsb_filtered)
+compare_results = compare_embeddings(embeddings_gd, embeddings_gpt) 
+plot_distribution_with_spread_details_fixed(compare_results, embeddings_gd, embeddings_gpt, gold_dict_bsb_filtered, gpt_clean_bsb_filtered, 'cosine')
 
+
+for i in compare_results:
+    if i=='SRS5180282':
+        print(compare_results[i])
+        
+        
+        
+
+
+
+
+
+
+import numpy as np
+import random
+from scipy.spatial import distance
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def create_background_distribution(embeddings_gd, embeddings_gpt, num_iterations=100):
+    random_cosine_similarities = []
+
+    # List of all keys from GPT embeddings to pick from
+    gpt_keys = list(embeddings_gpt.keys())
+
+    # Repeat the process for num_iterations
+    for _ in range(num_iterations):
+        for gd_key in embeddings_gd:
+            gd_embedding = embeddings_gd[gd_key]
+            # Randomly select a GPT embedding
+            random_gpt_key = random.choice(gpt_keys)
+            gpt_embedding = embeddings_gpt[random_gpt_key]
+            # Compute cosine similarity
+            cosine_sim = 1 - distance.cosine(gd_embedding, gpt_embedding)
+            random_cosine_similarities.append(cosine_sim)
+
+    return random_cosine_similarities
+
+def plot_comparison_distribution(actual_similarities, background_similarities):
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    # Plotting the actual distribution
+    sns.histplot(actual_similarities, bins=30, kde=True, color='green', label='Actual Cosine Similarities', ax=ax)
+    
+    # Plotting the background distribution
+    sns.histplot(background_similarities, bins=30, kde=True, color='blue', label='Background Cosine Similarities', ax=ax, alpha=0.5)
+    
+    ax.set_title('Comparison of Actual and Background Cosine Similarities')
+    ax.set_xlabel('Cosine Similarity')
+    ax.set_ylabel('Frequency')
+    ax.legend()
+    
+    plt.tight_layout()
+    plt.show()
+
+# Generate background distribution
+background_similarities = create_background_distribution(embeddings_gd, embeddings_gpt)
+
+# Assuming 'compare_results' contains actual cosine similarities calculated previously
+actual_similarities = [result['cosine'] for result in compare_results.values()]
+
+# Plot both distributions for comparison
+plot_comparison_distribution(actual_similarities, background_similarities)
+
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def plot_normalized_comparison_distribution(actual_similarities, background_similarities):
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    # Plotting the normalized actual distribution
+    sns.histplot(actual_similarities, bins=30, kde=True, color='green', label='Actual Cosine Similarities', ax=ax, stat='density')
+    
+    # Plotting the normalized background distribution
+    sns.histplot(background_similarities, bins=30, kde=True, color='blue', label='Background Cosine Similarities', ax=ax, alpha=0.5, stat='density')
+    
+    ax.set_title('Normalized Comparison of Actual and Background Cosine Similarities')
+    ax.set_xlabel('Cosine Similarity')
+    ax.set_ylabel('Probability Density')
+    ax.legend()
+    
+    plt.tight_layout()
+    plt.show()
+
+# Example usage assuming you have 'actual_similarities' and 'background_similarities' available
+plot_normalized_comparison_distribution(actual_similarities, background_similarities)
 
 
 

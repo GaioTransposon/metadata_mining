@@ -15,7 +15,6 @@ import textwrap
 
 
 
-
 GOLD_DICT_PATH = "/Users/dgaio/github/metadata_mining/source_data/gold_dict.pkl"
 
 
@@ -29,7 +28,7 @@ def load_gold_dict(path):
 def analyze_gold_dict(gold_dict):
     biome_counter = Counter()
     sub_biome_counter = {}
-    # Count biomes and sub-biomes
+    # count biomes and sub-biomes
     for entry in gold_dict.values():        
         if len(entry)>2: 
             biome = entry[1]
@@ -45,61 +44,6 @@ def analyze_gold_dict(gold_dict):
 
 
 
-import matplotlib.pyplot as plt
-from collections import Counter
-
-def create_bar_plots(sub_biome_counter):
-    for biome, counter in sub_biome_counter.items():
-        plt.figure(figsize=(10, 5))
-        keys = counter.keys()
-        values = counter.values()
-        
-        plt.bar(keys, values)
-        plt.title(f'Sub-biome Frequency in {biome}')
-        plt.ylabel('Frequency')
-        
-        plt.xticks(rotation=90)  # Rotate labels to 90 degrees to prevent overlap
-        plt.margins(x=0.01)  # Add some extra space on the x-axis
-        plt.subplots_adjust(bottom=0.3)  # Adjust subplot to fit the x-axis labels
-        
-        # Automatic adjustment 
-        if len(keys) > 10:
-            plt.tick_params(axis='x', labelsize=8)
-        elif len(keys) > 5:
-            plt.tick_params(axis='x', labelsize=10)
-        
-        # tight layout
-        plt.tight_layout()
-        plt.show()
-        
-
-def create_bar_plots(sub_biome_counter):
-    for biome, counter in sub_biome_counter.items():
-        sorted_sub_biomes = dict(sorted(counter.items(), key=lambda item: item[1], reverse=True))
-
-        num_sub_biomes = len(sorted_sub_biomes)
-        fig_width = 14
-        fig_height = 6 * num_sub_biomes  # 0.5 inch per sub-biome
-
-        plt.figure(figsize=(fig_width, fig_height))
-        keys = list(sorted_sub_biomes.keys())
-        values = list(sorted_sub_biomes.values())
-
-        plt.barh(keys, values)
-        plt.xlabel('Frequency')
-        plt.title(f'Sub-biome Frequency in {biome}')
-
-        label_size = 12
-        if num_sub_biomes > 20:
-            label_size = 6
-        elif num_sub_biomes > 10:
-            label_size = 7
-        plt.tick_params(axis='y', labelsize=label_size)
-
-        plt.tight_layout()
-        plt.show()
-
-
 def create_bar_plots(sub_biome_counter):
     for biome, counter in sub_biome_counter.items():
         filtered_counter = {k: v for k, v in counter.items() if v > 1}
@@ -109,13 +53,12 @@ def create_bar_plots(sub_biome_counter):
 
         num_sub_biomes = len(sorted_sub_biomes)
         fig_width = 14
-        fig_height = max(6, 0.5 * num_sub_biomes)  # At least 6 inches tall
+        fig_height = max(6, 0.5 * num_sub_biomes)  # 6 inches tall
 
         plt.figure(figsize=(fig_width, fig_height))
         keys = list(sorted_sub_biomes.keys())
         values = list(sorted_sub_biomes.values())
 
-        # Creating horizontal bar plot
         plt.barh(keys, values)
         plt.xlabel('Frequency')
         plt.title(f'Sub-biome Frequency in {biome}')
@@ -127,11 +70,9 @@ def create_bar_plots(sub_biome_counter):
             label_size = 13
         plt.tick_params(axis='y', labelsize=label_size)
 
-        # Adjust layout to ensure everything fits
         plt.tight_layout()
         plt.show()
 
-        # Print sub-biomes with a single occurrence to the console
         if single_occurrence: 
             print(f"Sub-biomes in '{biome}' with a single occurrence:")
             for k, v in sorted(single_occurrence.items(), key=lambda item: item[0]):
@@ -140,35 +81,30 @@ def create_bar_plots(sub_biome_counter):
 
 
 
-
 gold_dict = load_gold_dict(GOLD_DICT_PATH)
 
-# Analyze the dictionary
 biome_counter, sub_biome_counter = analyze_gold_dict(gold_dict)
 print(biome_counter)
 
-# Create bar plots
 create_bar_plots(sub_biome_counter)
 
 
 
 
-
-def find_keys_by_sub_biome(gold_dict, sub_biome_str):
-    matching_keys = []
-    for key, value in gold_dict.items():
-        # Check if value has at least three elements and the third element contains the sub_biome_str
-        if len(value) >= 3 and sub_biome_str in value[2]:
-            matching_keys.append(key)
-    return matching_keys
-
-
-
-sub_biome_to_search = 'NA'
-matching_keys = find_keys_by_sub_biome(gold_dict, sub_biome_to_search)
-print(f"Keys with sub-biome '{sub_biome_to_search}': {matching_keys}")
-
-len(matching_keys)
+# =============================================================================
+# # Use to find sample IDs of unusual sub-biomes (to then edit with edi_gold_dict.py)
+# def find_keys_by_sub_biome(gold_dict, sub_biome_str):
+#     matching_keys = []
+#     for key, value in gold_dict.items():
+#         if len(value) >= 3 and sub_biome_str in value[2]:
+#             matching_keys.append(key)
+#     return matching_keys
+# 
+# sub_biome_to_search = 'NA'
+# matching_keys = find_keys_by_sub_biome(gold_dict, sub_biome_to_search)
+# print(f"Keys with sub-biome '{sub_biome_to_search}': {matching_keys}")
+# print(len(matching_keys))
+# =============================================================================
 
 
 
