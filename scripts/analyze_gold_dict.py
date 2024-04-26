@@ -7,11 +7,8 @@ Created on Wed Apr 24 14:39:52 2024
 """
 
 import matplotlib.pyplot as plt
-from wordcloud import WordCloud
 import pickle
-import os
 from collections import Counter
-import textwrap
 
 
 
