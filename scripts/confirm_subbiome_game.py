@@ -23,7 +23,7 @@ def save_gold_data(gold_data, filename=GOLD_DICT_PATH):
         pickle.dump(gold_data, f)
 
 def update_gold_data(sample_id, sub_biome, coordinates, location_text, gold_data):
-    gold_dict, processed_pmids = gold_data
+    gold_dict = gold_data
     gold_dict[sample_id] = (
         gold_dict[sample_id][0],  # Keep the original pmid
         gold_dict[sample_id][1],  # Keep the original biome
@@ -55,7 +55,7 @@ def display_biome_stats(gold_dict):
 
 
 def play_game(gold_data):
-    gold_dict, _ = gold_data
+    gold_dict = gold_data
     biome_mapping = {
         'a': 'animal',
         'w': 'water',
