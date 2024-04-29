@@ -23,7 +23,7 @@ def fetch_metadata_from_sample(sample):
 
 # Load the existing data
 with open(GOLD_DICT_PATH, 'rb') as file:
-    data, processed_pmids = pickle.load(file)
+    data = pickle.load(file)
 
 # Ask the user for the sample key
 sample_key = input("What is the sample key you want to edit? ")
@@ -51,7 +51,7 @@ if sample_key in data:
 
         # Save the updated dictionary back to the .pkl file
         with open(GOLD_DICT_PATH, 'wb') as file:
-            pickle.dump((data, processed_pmids), file)
+            pickle.dump((data), file)
 
         print(f"Value at position {value_position} for '{sample_key}' has been updated to '{new_value}'.")
     else:
@@ -59,6 +59,8 @@ if sample_key in data:
 
 else:
     print(f"The key '{sample_key}' was not found in the dictionary.")
+
+
 
 
 

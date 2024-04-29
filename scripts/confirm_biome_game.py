@@ -17,7 +17,7 @@ import pickle
 
 
 path_to_dirs = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs"
-GOLD_DICT_PATH = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gold_dict.pkl"
+GOLD_DICT_PATH = "/Users/dgaio/github/metadata_mining/source_data/gold_dict.pkl"
 CSV_PATH = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/training_data_pmids_based.csv"
 filename = CSV_PATH
 df = pd.read_csv(filename)
