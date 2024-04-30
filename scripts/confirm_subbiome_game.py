@@ -45,10 +45,10 @@ def fetch_metadata_from_sample(sample):
 def display_biome_stats(gold_dict):
     biome_counts = {biome: 0 for biome in ['animal', 'plant', 'water', 'soil', 'other']}
     for details in gold_dict.values():
-        if len(details) > 3:
+        if len(details) > 4:
             biome_counts[details[1]] += 1
 
-    print("\nNumber of samples classified (more than three values) per biome:")
+    print("\nNumber of samples classified (more than four values) per biome:")
     print("------------------------------------------------------------")
     for biome, count in biome_counts.items():
         print(f"{biome.capitalize()}: {count}")

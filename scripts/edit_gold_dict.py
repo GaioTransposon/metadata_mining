@@ -109,7 +109,7 @@ else:
 # 
 #         # Save the updated dictionary back to the .pkl file
 #         with open(GOLD_DICT_PATH, 'wb') as file:
-#             pickle.dump((data, processed_pmids), file)
+#             pickle.dump((data), file)
 # 
 #         print(f"New value '{new_value}' has been inserted at position {insert_position} for '{sample_key}'.")
 #     else:
@@ -117,8 +117,8 @@ else:
 # 
 # else:
 #     print(f"The key '{sample_key}' was not found in the dictionary.")
+# 
 # =============================================================================
-
 
 ################################################################################
 ################################################################################

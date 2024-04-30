@@ -177,6 +177,7 @@ print(gold_dict_bsb)
 CSV_PATH = '/Users/dgaio/MicrobeAtlasProject/gpt_clean_output_nspb200_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs32_API226_normal_dt20240415_1859.txt'
 gpt_clean_bsb = make_biome_subbiome_dict(CSV_PATH, source_type='csv')
 print(gpt_clean_bsb)
+len(gpt_clean_bsb)
 
 
 ########################################
