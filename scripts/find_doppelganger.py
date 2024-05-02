@@ -81,8 +81,40 @@ with open(OUTPUT_FILE_PATH, 'w') as file:
 print(f"Top {n} similar samples' metadata saved to {OUTPUT_FILE_PATH}")
 
 
-+= 0.70 
-# discard: 
-SRS2619194
+
+
+# =============================================================================
+# # with the script above I found 6 doppelgangers (below) and I removed them with the script below:  
+# # ['SRS2619194', 'SRS391596', 'SRS024071', 
+# # 'SRS2418985', 'SRS2627211', 'SRS2364942']
+# 
+# # Load the existing data
+# with open(GOLD_DICT_PATH, 'rb') as file:
+#     gold_dict = pickle.load(file)
+# 
+# # List of keys to be removed
+# keys_to_remove = ['SRS2619194', 'SRS391596', 'SRS024071', 
+#                   'SRS2418985', 'SRS2627211', 'SRS2364942']  
+# 
+# # Remove the keys from the dictionary
+# for key in keys_to_remove:
+#     gold_dict.pop(key, None)  
+# 
+# # Save the updated dictionary back to the .pkl file
+# with open(GOLD_DICT_PATH, 'wb') as file:
+#     pickle.dump(gold_dict, file)
+# 
+# print("Specified keys have been removed from the dictionary.")
+# =============================================================================
+
+
+
+
+
+
+
+
+
+
 
 

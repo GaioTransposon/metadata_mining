@@ -13,7 +13,6 @@ import pickle
 GOLD_DICT_PATH = "/Users/dgaio/github/metadata_mining/source_data/gold_dict.pkl"
 METADATA_DIRECTORY = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs"  
 
-# Function to fetch metadata
 def fetch_metadata_from_sample(sample):
     folder_name = f"dir_{sample[-3:]}"
     folder_path = os.path.join(METADATA_DIRECTORY, folder_name)
@@ -21,21 +20,16 @@ def fetch_metadata_from_sample(sample):
     with open(metadata_file_path, 'r') as file:
         return file.read()
 
-# Load the existing data
 with open(GOLD_DICT_PATH, 'rb') as file:
     data = pickle.load(file)
 
-# Ask the user for the sample key
 sample_key = input("What is the sample key you want to edit? ")
 
-# Check if the key exists in the dictionary
 if sample_key in data:
-    # Retrieve and print the metadata
     metadata = fetch_metadata_from_sample(sample_key)
     print(f"Metadata for '{sample_key}':\n{metadata}")
 
-    # Retrieve the current tuple for the key
-    values = list(data[sample_key])  # Convert tuple to list to allow modifications
+    values = list(data[sample_key])  
     print(f"Current values for '{sample_key}': {values}")
 
     # Ask the user which value to change
@@ -44,12 +38,10 @@ if sample_key in data:
         value_position = int(value_position)
         print(f"Current value at position {value_position}: {values[value_position]}")
 
-        # Ask for the new value
         new_value = input("Enter the new value: ")
         values[value_position] = new_value
-        data[sample_key] = tuple(values)  # Convert back to tuple and reassign to the key
+        data[sample_key] = tuple(values)  
 
-        # Save the updated dictionary back to the .pkl file
         with open(GOLD_DICT_PATH, 'wb') as file:
             pickle.dump((data), file)
 
@@ -59,10 +51,6 @@ if sample_key in data:
 
 else:
     print(f"The key '{sample_key}' was not found in the dictionary.")
-
-
-
-
 
 
 
