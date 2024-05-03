@@ -6,7 +6,7 @@ single-word label for the sample ID.
 -  We seek a brief, up to three-word description of the sample's specific origin. For 'animal' or 'plant' sources, please specify the host and part thereof. For 'water' samples, the type of water body is sought (e.g., 
 lake, brine, sea, waste water, etc). If from 'soil', specify (e.g.: agricultural, desert, forest, etc). If from 'other' specify which (e.g.: urban, laboratory, feed/food, fungus, air, etc).
 
-If information is missing, kindly indicate 'NA'. Please separate all values with two underscores ('__').
-An example response: SRS123456__animal__Los Angeles, USA__{medical, bone fracture, infection, collagen, hospital, intensive care, cast, Staphilococcus epidermidis}__human elbow
+If information is missing, kindly indicate 'NA'. Please separate all values with three underscores ('___').
+An example response: SRS123456___animal___Los Angeles, USA___{medical, bone fracture, infection, collagen, hospital, intensive care, cast, Staphilococcus epidermidis}___human elbow
 
 
