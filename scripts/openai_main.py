@@ -7,17 +7,24 @@ Created on Wed Dec  6 13:58:00 2023
 """
 
 
+
 import argparse
+import time
+import pandas as pd
+from datetime import datetime
+import os
+import logging
+#import cProfile
+#import pstats
+import io
+
 from openai_01_setup_and_args import setup_logging
 from openai_02_metadata_fetching import MetadataFetching
 from openai_02_metadata_processing import MetadataProcessor
 from openai_03_gpt_interaction import GPTInteractor
 from openai_04_gpt_parsing import GPTOutputParsing
-import time  
-import pandas as pd
-from datetime import datetime
-import os
-import logging
+
+
 
 
 # =======================================================
@@ -48,7 +55,26 @@ def parse_arguments():
     
     return parser.parse_args()
 
+
+# =============================================================================
+# 
+# def profile_function(func, *args, **kwargs):
+#     """ Function to profile another function or method. """
+#     pr = cProfile.Profile()
+#     pr.enable()
+#     result = func(*args, **kwargs)
+#     pr.disable()
+#     s = io.StringIO()
+#     sortby = 'cumulative'
+#     ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+#     ps.print_stats()
+#     logging.info(s.getvalue())
+#     return result
+# 
+# =============================================================================
+
     
+
 def main():
     
     
@@ -171,7 +197,8 @@ if __name__ == "__main__":
     main()
     
     
-    
+
+
     
 
 # eventually...
@@ -301,6 +328,10 @@ if __name__ == "__main__":
 # tests on Orion: 
 # MicrobeAtlasProject
 # "cloudstor/Gaio/MicrobeAtlasProject" 
+
+# 20240502
+# testing if it still works (after gold dict is now no longer a tuple) 
+# nspb 2, 20, 
 
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "MicrobeAtlasProject" \

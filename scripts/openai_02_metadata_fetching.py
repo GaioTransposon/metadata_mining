@@ -33,7 +33,7 @@ class MetadataFetching:
     def load_gold_dict(self):
         with open(self.input_gold_dict, 'rb') as file:
             input_gold_dict = pickle.load(file)
-            return input_gold_dict[0]  # these are the sample ids
+            return input_gold_dict
 
 
     def transform_gold_dict_to_df(self, input_gold_dict):
@@ -47,8 +47,9 @@ class MetadataFetching:
 
 
     def get_random_samples(self, gold_dict_df):
+        #print(gold_dict_df.groupby('curated_biome').size())
         random_samples_df = gold_dict_df.groupby('curated_biome').apply(lambda x: x.sample(n=self.n_samples_per_biome, random_state=self.seed)).reset_index(drop=True)
-        random_samples_list = random_samples_df.iloc[:, 0].tolist()  # Selecting the first column and converting to list
+        random_samples_list = random_samples_df.iloc[:, 0].tolist()  
         return random_samples_list
 
     
@@ -59,7 +60,6 @@ class MetadataFetching:
         """
         metadata_dict = {}
         for sample_id in random_samples:
-            #print(sample_id)
             folder_name = f"dir_{sample_id[-3:]}"
             
             folder_path = os.path.join(self.directory_with_split_metadata, folder_name)

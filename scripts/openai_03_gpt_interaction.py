@@ -173,39 +173,27 @@ class GPTInteractor:
     
         return gpt_responses
     
-    
-    
+        
+
     def save_gpt_responses_to_file(self, gpt_responses):
         """
-        Save the content of GPT responses to a file.
-    
-        Parameters:
-        - gpt_responses: List of GPT responses.
-    
-        Returns:
-        - None
+        Save the content of GPT raw responses to a file.
         """
-
-        contents = []
-        for response in gpt_responses:
-            try:
-                contents.append(response['choices'][0]['message']['content'])
-            except KeyError:
-                contents.append("ERROR: Malformed response")
-        
-        # join all contents with a separator (two newlines for readability)
-        final_content = "\n\n".join(contents)
-        
         current_datetime = datetime.now().strftime('%Y%m%d_%H%M')
-        self.saved_filename = f"gpt_raw_dt{current_datetime}.txt"
-        self.saved_filename = os.path.join(self.work_dir, self.saved_filename)
+        saved_filename = f"gpt_raw_{current_datetime}.txt"
+        saved_filepath = os.path.join(self.work_dir, saved_filename)
+        with open(saved_filepath, 'a') as file:  # 'a' for append mode
+            for response in gpt_responses:
+                try:
+                    content = response['choices'][0]['message']['content']
+                    file.write(content + "\n\n")
+                except KeyError:
+                    file.write("ERROR: Malformed response\n\n")
+                    logging.error("Malformed response encountered: {}".format(response))
     
-        with open(self.saved_filename, 'w') as file:
-            file.write(final_content)
-    
-        logging.info(f"Saved GPT responses to: {self.saved_filename}")
-        
-    
+        logging.info(f"Appended GPT responses to: {saved_filepath}")
+
+
     
     def get_api_request_count(self):
         """
