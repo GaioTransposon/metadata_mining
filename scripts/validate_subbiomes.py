@@ -459,9 +459,6 @@ plot_normalized_comparison_distribution(actual_similarities, background_similari
 
 
 
-
-
-
 ####
 
 # into a single score system? 
@@ -489,70 +486,16 @@ overall_score = weight_direct * average_direct_cosine_similarity + weight_backgr
 
 
 
-
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+# Heatmap 
 from sklearn.metrics.pairwise import cosine_similarity
 
-
-#### !!!!!!!!!!!!
-# good, but all. 
-# keep because heatmap below looks different though it should not. see what the problem is. 
-#####
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.metrics.pairwise import cosine_similarity
-import random
-
-# Modify the sorting function to sort by category for the ground truth
-def sort_by_category(labels):
-    # Split the labels into primary category and secondary description, sorting by primary category
-    categorized = {k: v.split(' - ')[0] for k, v in labels.items()}
-    return sorted(labels.keys(), key=lambda x: (categorized[x], labels[x]))
-
-
-# Sort the ground truth keys by category
-keys_gd_sorted = sort_by_category(gold_dict_bsb_filtered)
-# Ensure test keys are exactly aligned with sorted ground truth keys
-keys_gpt_sorted = [key for key in keys_gd_sorted]  # Direct alignment by using the same sorted keys
-
-# To visualize categories, it's best not to sample randomly here but to focus on the full sorted arrays
-matrix_gd = np.array([embeddings_gd[key] for key in keys_gd_sorted])
-matrix_gpt = np.array([embeddings_gpt[key] for key in keys_gpt_sorted])
-
-# Calculate the cosine similarity matrix
-similarity_matrix = cosine_similarity(matrix_gd, matrix_gpt)
-
-# Plot the heatmap
-plt.figure(figsize=(12, 10))
-sns.set(font_scale=0.7)  # Slightly larger font scale for readability
-ax = sns.heatmap(similarity_matrix, annot=False, cmap='coolwarm',
-                 xticklabels=[gpt_clean_bsb_filtered[key] for key in keys_gpt_sorted], 
-                 yticklabels=[gold_dict_bsb_filtered[key] for key in keys_gd_sorted])
-ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
-ax.set_yticklabels(ax.get_yticklabels(), rotation=0, ha='right')
-
-plt.title('Cosine Similarity Heatmap Grouped by Category')
-plt.xlabel('Test Samples')
-plt.ylabel('Ground Truth Samples')
-plt.show()
-
-
-
-
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.metrics.pairwise import cosine_similarity
-import random
-
-
-n_samples_per_category = 200  
+n_samples_per_category = 10  # Adjust this number as needed
 
 # Function to sample n items per category
 def sample_by_category(labels, n):
+    
+    random.seed(42) 
+    
     # Split the labels into primary category and description
     categorized = {k: v.split(' - ')[0] for k, v in labels.items()}
     # Group keys by category
@@ -573,7 +516,7 @@ def sample_by_category(labels, n):
 # Sample keys from the gold dictionary
 keys_gd_sampled = sample_by_category(gold_dict_bsb_filtered, n_samples_per_category)
 # Assume the test keys align exactly with the sampled ground truth keys
-keys_gpt_sampled = [key for key in keys_gd_sampled]  # Direct alignment by using the same sampled keys
+keys_gpt_sampled = [key for key in keys_gd_sampled]  # Ensuring alignment
 
 # Construct the matrices for the sampled keys
 matrix_gd = np.array([embeddings_gd[key] for key in keys_gd_sampled])
@@ -595,64 +538,5 @@ plt.title('Cosine Similarity Heatmap Grouped by Category')
 plt.xlabel('Test Samples')
 plt.ylabel('Ground Truth Samples')
 plt.show()
-
-
-
-
-
-
-# =============================================================================
-# 
-# # good but not grouped
-# # Extract categories and sort by category first, then by label within each category
-# def sort_by_category(labels):
-#     # Split the labels into categories and sort by category
-#     categorized = {k: v.split(' - ')[0] for k, v in labels.items()}
-#     return sorted(labels.keys(), key=lambda x: (categorized[x], labels[x]))
-# 
-# 
-# keys_gd = sort_by_category(gold_dict_bsb_filtered)
-# keys_gpt = sort_by_category(gpt_clean_bsb_filtered)
-# 
-# 
-# keys_gd = sorted(keys_gd)
-# keys_gpt = sorted(keys_gpt)
-# 
-# 
-# # Assuming the data size is large, focus on the first 100 samples for better visibility
-# focus_size = 50  # Adjust this to show more or fewer samples
-# 
-# matrix_gd = np.array([embeddings_gd[key] for key in keys_gd[:focus_size]])
-# matrix_gpt = np.array([embeddings_gpt[key] for key in keys_gpt[:focus_size]])
-# 
-# # Calculate the cosine similarity matrix
-# similarity_matrix = cosine_similarity(matrix_gd, matrix_gpt)
-# 
-# # Plot the heatmap
-# plt.figure(figsize=(12, 10))
-# ax = sns.heatmap(similarity_matrix, annot=False, cmap='coolwarm', 
-#                  xticklabels=[gpt_clean_bsb_filtered[key] for key in keys_gpt[:focus_size]], 
-#                  yticklabels=[gold_dict_bsb_filtered[key] for key in keys_gd[:focus_size]])
-# 
-# # Improve readability by rotating labels and only showing every nth label
-# n = 1  # Adjust this to change the density of the labels
-# for ind, label in enumerate(ax.get_xticklabels()):
-#     if ind % n == 0:  # Show every nth label
-#         label.set_visible(True)
-#     else:
-#         label.set_visible(False)
-# for ind, label in enumerate(ax.get_yticklabels()):
-#     if ind % n == 0:
-#         label.set_visible(True)
-#     else:
-#         label.set_visible(False)
-# 
-# plt.title('Cosine Similarity Heatmap (Partial View)')
-# plt.xlabel('Test Samples')
-# plt.ylabel('Ground Truth Samples')
-# plt.show()
-# 
-# 
-# =============================================================================
 
 
