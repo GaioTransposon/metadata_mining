@@ -48,7 +48,6 @@ class MetadataProcessor:
             return None
 
 
-
     def process_metadata(self, missing_samples=None):
         metadata_dict = self.load_metadata()  
         if metadata_dict is None:
@@ -82,6 +81,7 @@ class MetadataProcessor:
 
     def load_system_prompt(self):
         prompt_file = os.path.join(self.work_dir, self.system_prompt_file)
+
         try:
             with open(prompt_file, 'r') as file:
                 return file.read().strip()

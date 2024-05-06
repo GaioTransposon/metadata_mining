@@ -7,21 +7,29 @@ Created on Wed Dec  6 13:58:00 2023
 """
 
 
+
 import argparse
+import time
+import pandas as pd
+from datetime import datetime
+import os
+import logging
+#import cProfile
+#import pstats
+import io
+
 from openai_01_setup_and_args import setup_logging
+from openai_02_metadata_fetching import MetadataFetching
 from openai_02_metadata_processing import MetadataProcessor
 from openai_03_gpt_interaction import GPTInteractor
 from openai_04_gpt_parsing import GPTOutputParsing
-import time  
-import pandas as pd
+
+
 
 
 # =======================================================
 # Main Execution
 # =======================================================
-
-
-
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Run the pipeline.')
@@ -48,73 +56,149 @@ def parse_arguments():
     return parser.parse_args()
 
 
+# =============================================================================
+# 
+# def profile_function(func, *args, **kwargs):
+#     """ Function to profile another function or method. """
+#     pr = cProfile.Profile()
+#     pr.enable()
+#     result = func(*args, **kwargs)
+#     pr.disable()
+#     s = io.StringIO()
+#     sortby = 'cumulative'
+#     ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+#     ps.print_stats()
+#     logging.info(s.getvalue())
+#     return result
+# 
+# =============================================================================
+
     
+
 def main():
     
-    setup_logging()
+    
     args = parse_arguments()  
-
-    # Phase 1: Metadata Processing
+    
+    # PATHS
+    home_dir = os.getenv('HOME')
+    work_dir = os.path.join(home_dir, args.work_dir)
+    input_gold_dict = os.path.join(home_dir, args.input_gold_dict)
+    system_prompt_file = os.path.join(home_dir, args.system_prompt_file)
+    api_key_path = os.path.join(home_dir, args.api_key_path)
+    
+    
+    # Phase 0: set up a logging system 
+    setup_logging()
+    
+    
+    # Phase 1: Metadata Fetching
     start_time = time.time()
-    metadata_processor = MetadataProcessor(args.work_dir, args.input_gold_dict, args.n_samples_per_biome, args.chunk_size, args.system_prompt_file, args.encoding_name, args.seed, args.directory_with_split_metadata)
-    metadata_processor.run()
+    metadata_fetcher = MetadataFetching(work_dir, args.directory_with_split_metadata, input_gold_dict, args.n_samples_per_biome, args.seed)
+    metadata_fetcher.run()
+    end_time = time.time() 
+    print(f"Metadata fetching time: {end_time - start_time} seconds")
+    logging.info(f"Metadata fetching time: {end_time - start_time} seconds")
+    
+    
+    # Phase 2: Metadata Processing 
+    start_time = time.time()
+    metadata_processor = MetadataProcessor(work_dir, args.chunking, args.chunk_size, system_prompt_file, args.encoding_name)
+    processed_metadata = metadata_processor.process_metadata()
+    chunks, complete_sample_ids = metadata_processor.create_and_save_chunks(processed_metadata, return_ids=True)
+    metadata_processor.save_chunks_to_file(chunks) 
     end_time = time.time() 
     print(f"Metadata Processing time: {end_time - start_time} seconds")
+    logging.info(f"Metadata Processing time: {end_time - start_time} seconds")
     
-    # Phase 2: GPT Interaction
+
+    print('complete_sample_ids', len(complete_sample_ids))
+    complete_sample_ids =set(complete_sample_ids)
+    
+    
+    # PHASE 3: GPT Interaction
     start_time = time.time()
-    gpt_interactor = GPTInteractor(args.work_dir, args.n_samples_per_biome, args.chunking, args.chunk_size, args.seed, args.system_prompt_file, args.api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.max_requests_per_minute, args.opt_text, metadata_processor)
-    gpt_interactor.run()
+    gpt_interactor = GPTInteractor(work_dir, system_prompt_file, api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.max_requests_per_minute)
+    responses = gpt_interactor.get_gpt_responses()
+    #print(responses)
+    gpt_interactor.save_gpt_responses_to_file(responses)
     end_time = time.time() 
     print(f"GPT Interaction time: {end_time - start_time} seconds")
-    
-    # Phase 3: Parsing GPT Output
+    logging.info(f"GPT Interaction time: {end_time - start_time} seconds")
+
+    # Phase 4: Parsing GPT Output
     start_time = time.time()
-    gpt_parser = GPTOutputParsing(gpt_interactor, args.encoding_name, metadata_processor.processed_sample_ids)
-    parsed_df, missing_sample_ids = gpt_parser.run()
+    parser = GPTOutputParsing(work_dir)
+    main_parsed_df = parser.run(responses)
+    parsed_sample_ids = set(main_parsed_df['col_0'].unique())
+    missing_samples = list(complete_sample_ids - parsed_sample_ids)
     end_time = time.time() 
     print(f"Parsing GPT Output time: {end_time - start_time} seconds")
-    print('parsed_df before adding missing samples:', parsed_df)
-    print('missing_sample_ids: ', missing_sample_ids)
+    logging.info(f"Parsing GPT Output time: {end_time - start_time} seconds")
     
-    
-    max_retries = 3
+    print('parsed_df before adding missing samples:', main_parsed_df)
+
+
     retry_count = 0
+    max_retries = 3
+    
+    print('##########')
+    print(f"missing samples after {retry_count}th retry: {missing_samples}")   
+    logging.info(f"missing samples after {retry_count}th retry: {missing_samples}")
+    
 
-    while missing_sample_ids and retry_count < max_retries:
+    #missing_samples = ['SRS5495722', 'SRS1416741', 'SRS2920130', 'ERS4232978', 'SRS1761000', 'ERS2363505', 'SRS6079931', 'ERS3333693']
+    while missing_samples and retry_count < max_retries:
         retry_count += 1
+        print('##########')
         print(f"Retry attempt {retry_count}")
-    
-        missing_samples_df = pd.DataFrame(list(missing_sample_ids), columns=['sample'])
         
-        ###
-        specific_metadata_dict = metadata_processor.process_metadata(missing_samples_df)
-        specific_chunks = metadata_processor.create_and_save_chunks(specific_metadata_dict, metadata_processor.encoding_name)
-        gpt_responses = gpt_interactor.interact_with_gpt(specific_chunks)
-        parsed_df_for_specific_samples = gpt_parser.parse_direct_responses(gpt_responses)
-        combined_parsed_df = pd.concat([parsed_df, parsed_df_for_specific_samples]).reset_index(drop=True)
-        gpt_parser.parsed_data = combined_parsed_df 
-        gpt_parser.save_cleaned_to_file()  
-    
-        print('combined_parsed_df after : ', combined_parsed_df)
+        # Convert missing_samples to set for set operation
+        missing_samples_set = set(missing_samples)
         
-        combined_parsed_df_ids = set(combined_parsed_df['col_0'].unique())
-        print('combined_parsed_df_ids: ', len(combined_parsed_df_ids))
-        missing_sample_ids =  missing_sample_ids - combined_parsed_df_ids
-        print('missing_sample_ids: ', missing_sample_ids)
+        processed_metadata = metadata_processor.process_metadata(missing_samples)
+        chunks = metadata_processor.create_and_save_chunks(processed_metadata)
+        metadata_processor.save_chunks_to_file(chunks) 
+
+        responses = gpt_interactor.get_gpt_responses()
+        #print(responses)
+        gpt_interactor.save_gpt_responses_to_file(responses)
+
+        parser = GPTOutputParsing(work_dir)
+        new_parsed_df = parser.run(responses)
+        
+        new_parsed_sample_ids = set(new_parsed_df['col_0'].unique()) if 'col_0' in new_parsed_df.columns else set()
+        missing_samples_set -= new_parsed_sample_ids
+        missing_samples = list(missing_samples_set)  
+
+        # append parsed_df to main_parsed_df
+        if 'col_0' in new_parsed_df.columns:
+            main_parsed_df = pd.concat([main_parsed_df, new_parsed_df], axis=0)
+        
+              
+    my_tot_api_count = gpt_interactor.get_api_request_count()
+    print('my_tot_api_count', my_tot_api_count)
+    logging.info(f"my_tot_api_count: {my_tot_api_count}")
+
+    # save final df to file:
+    current_datetime = datetime.now().strftime('%Y%m%d_%H%M')
+    filename = f"gpt_clean_output_nspb{args.n_samples_per_biome}_chunking{args.chunking}_chunksize{args.chunk_size}_model{args.model}_temp{args.temperature}_maxtokens{args.max_tokens}_topp{args.top_p}_freqp{args.frequency_penalty}_presp{args.presence_penalty}_rs{args.seed}_API{my_tot_api_count}_{args.opt_text}_dt{current_datetime}.txt"
+    output_path = os.path.join(work_dir, filename)
+    main_parsed_df.to_csv(output_path, index=False)
+    logging.info(f"Saved clean GPT output to: {output_path}")
+    
+    print(f"missing samples after all retries: {missing_samples}")   
+    logging.info(f"missing samples after all retries: {missing_samples}")
+    print('parsed_df after adding all missing samples:', main_parsed_df)
     
     
-    print('missing_sample_ids after all retries : ', missing_sample_ids)
     
-    print(f"Total API requests made: {gpt_interactor.get_api_request_count()}")
-
-
-
 if __name__ == "__main__":
     main()
     
     
-    
+
+
     
 
 # eventually...
@@ -237,17 +321,29 @@ if __name__ == "__main__":
 # 20240326
 # opt_text: "normal" vs "please" 
 
+# 20240412
+# chunking vs no chunking
+
+# 20240415
+# tests on Orion: 
+# MicrobeAtlasProject
+# "cloudstor/Gaio/MicrobeAtlasProject" 
+
+# 20240502
+# testing if it still works (after gold dict is now no longer a tuple) 
+# nspb 2, 20, 
+
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
-#     --work_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/" \
-#     --input_gold_dict "gold_dict.pkl" \
+#     --work_dir "MicrobeAtlasProject" \
+#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
 #     --n_samples_per_biome 2 \
-#     --chunk_size 2000 \
 #     --chunking "yes" \
-#     --seed 42 \
+#     --chunk_size 2000 \
+#     --seed 22 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "openai_system_prompt.txt" \
+#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
 #     --encoding_name "cl100k_base" \
-#     --api_key_path "/Users/dgaio/my_api_key" \
+#     --api_key_path "my_api_key" \
 #     --model "gpt-3.5-turbo-1106" \
 #     --temperature 1.00 \
 #     --max_tokens 4096 \
@@ -256,6 +352,7 @@ if __name__ == "__main__":
 #     --presence_penalty 1.5 \
 #     --max_requests_per_minute 10000 \
 #     --opt_text "normal"
+
 
 
 

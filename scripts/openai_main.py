@@ -14,10 +14,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import logging
-#import cProfile
-#import pstats
 import io
-
 from openai_01_setup_and_args import setup_logging
 from openai_02_metadata_fetching import MetadataFetching
 from openai_02_metadata_processing import MetadataProcessor
@@ -56,24 +53,6 @@ def parse_arguments():
     return parser.parse_args()
 
 
-# =============================================================================
-# 
-# def profile_function(func, *args, **kwargs):
-#     """ Function to profile another function or method. """
-#     pr = cProfile.Profile()
-#     pr.enable()
-#     result = func(*args, **kwargs)
-#     pr.disable()
-#     s = io.StringIO()
-#     sortby = 'cumulative'
-#     ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-#     ps.print_stats()
-#     logging.info(s.getvalue())
-#     return result
-# 
-# =============================================================================
-
-    
 
 def main():
     

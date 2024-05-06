@@ -17,33 +17,19 @@ import logging
 # =======================================================
 
 
-class CustomFormatter(logging.Formatter):
-    MAX_LENGTH = 500  # log messages longer than this # of characters, will be truncated 
-
-    def format(self, record):
-        if record.levelno == logging.DEBUG and len(record.msg) > self.MAX_LENGTH:
-            record.msg = record.msg[:self.MAX_LENGTH] + "..."
-        return super().format(record)
-    
 # Logging function: logs to both the console and a file
 def setup_logging():
     
     # determine the dir of the running script - logging file will be save there
     script_directory = os.path.dirname(os.path.abspath(__file__))
-    
-    # give timestamp to log filename 
     log_filename = datetime.now().strftime("openai_validate_biomes_%Y%m%d_%H%M%S.log")
-    
-    # construct full path
     log_filepath = os.path.join(script_directory, log_filename)
 
-    # create logger
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)  # captures all logs at the DEBUG level and above
+    logger.setLevel(logging.DEBUG) # captures all logs at the DEBUG level and above
 
-    formatter = CustomFormatter('%(asctime)s [%(levelname)s]: %(message)s')
-
-
+    formatter = logging.Formatter('%(asctime)s [%(levelname)s]: %(message)s')
+    
     ###
     # sets up logging to file and to console with different log levels, but a common formatter.
 
@@ -59,9 +45,3 @@ def setup_logging():
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
     ###
-    
-
-
-
-    
-    

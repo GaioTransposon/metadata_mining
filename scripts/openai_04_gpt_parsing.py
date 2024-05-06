@@ -44,27 +44,6 @@ class GPTOutputParsing:
         return contents
 
 
-
-# =============================================================================
-#     def parse_responses(self, gpt_responses):
-#         responses_content = self.extract_contents_from_responses(gpt_responses)
-#         sample_pattern = re.compile(r'(ERS|SRS|DRS)\d+__.*')  
-# 
-#         parsed_samples = []
-#         for line in responses_content:
-#             match = sample_pattern.search(line)
-#             if match:
-#                 matched_sample = match.group()
-#                 parts = matched_sample.split('___')
-#                 sample_dict = {f'col_{i}': part for i, part in enumerate(parts)}
-#                 parsed_samples.append(sample_dict)
-#             else:
-#                 if line.strip():
-#                     self.unparsed_lines.append(line)
-# 
-#         self.parsed_data = pd.DataFrame(parsed_samples)
-# =============================================================================
-
     def parse_responses(self, gpt_responses):
         responses_content = self.extract_contents_from_responses(gpt_responses)
         # pattern that captures sequences separated by two to four underscores
