@@ -179,7 +179,6 @@ input_gold_dict = os.path.join(home_dir, "github/metadata_mining/source_data/gol
 with open(input_gold_dict, 'rb') as file:
     gold_dict = pickle.load(file)
 
-gold_dict = gold_dict[0]
 gold_dict_df = pd.DataFrame(gold_dict.items(), columns=['sample', 'tuple_data'])
 gold_dict_df['pmid'] = gold_dict_df['tuple_data'].apply(lambda x: x[0])
 gold_dict_df['biome'] = gold_dict_df['tuple_data'].apply(lambda x: x[1])

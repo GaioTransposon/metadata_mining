@@ -14,6 +14,7 @@ import pickle
 from datetime import datetime
 import logging
 import re
+import csv
 
 # =======================================================
 # PHASE 1: Metadata Fetching
@@ -71,16 +72,31 @@ class MetadataFetching:
                 logging.error(f"Failed to fetch metadata for sample {sample_id}: {e}")
         return metadata_dict
     
-    
+
     def save_metadata(self, metadata_dict):
         """
-        Saves the metadata dictionary as a pickle file in the work directory.
-        This will overwrite the file if it already exists.
+        Saves the metadata dictionary as a pickle file in the work directory and
+        also converts and saves it as a CSV file. Both files will overwrite existing
+        files if they exist.
         """
-        output_path = os.path.join(self.work_dir, 'metadata_prov.pkl')
-        with open(output_path, 'wb') as file:
+        # Save as pickle
+        output_path_pkl = os.path.join(self.work_dir, 'metadata_prov.pkl')
+        with open(output_path_pkl, 'wb') as file:
             pickle.dump(metadata_dict, file)
-        print(f"Metadata dictionary saved to {output_path}")
+        print(f"Metadata dictionary saved to {output_path_pkl}")
+    
+        # Convert and save as CSV
+        output_path_csv = os.path.join(self.work_dir, 'metadata_prov.csv')
+        with open(output_path_csv, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['sample_id', 'metadata'])
+            for sample_id, text in metadata_dict.items():
+                
+                # removed quotes and converts line breaks to \n
+                text = text.replace("'", "").replace('"', "").replace("\n", " ")
+                
+                writer.writerow([sample_id, text])
+        print(f"Metadata dictionary also saved as CSV to {output_path_csv}")
         
         
     def run(self):
