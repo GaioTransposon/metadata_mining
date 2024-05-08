@@ -88,6 +88,7 @@ class MetadataFetching:
         gold_dict_df = self.transform_gold_dict_to_df(gold_dict)
         random_samples = self.get_random_samples(gold_dict_df)
         metadata_dict = self.fetch_metadata_for_samples(random_samples)
+ 
         self.save_metadata(metadata_dict)
 
 
