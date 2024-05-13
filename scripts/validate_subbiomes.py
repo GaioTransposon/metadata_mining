@@ -21,7 +21,7 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import seaborn as sns
 import random
-
+from sklearn.metrics.pairwise import cosine_similarity
 
 def make_biome_subbiome_dict(source, source_type='csv'):
     result_dict = {}
@@ -100,38 +100,38 @@ def get_embeddings(data_dict, verbose='no'):
     return embeddings_dict, failed_samples
 
 
-
-def plot_embeddings_1D_to_html(embeddings_dict1, embeddings_dict2, labels_dict1, labels_dict2, X):
-    x, y, hover_texts, colors = [], [], [], []
-
-    # hex colors for each biome
-    color_map = {
-        'animal': '#C67D7B',  # pinkish
-        'water': '#8CC8CF',   # bluish
-        'plant': '#C0D184',   # greenish
-        'soil': '#CBBF82',    # brownish
-        'other': '#CCCCCC'    # gray
-    }
-
-    for sample_id in embeddings_dict1:
-        if sample_id in embeddings_dict2 and sample_id in labels_dict1 and sample_id in labels_dict2:
-            vec1 = embeddings_dict1[sample_id]
-            vec2 = embeddings_dict2[sample_id]
-            if vec1 is not None and vec2 is not None:
-                x.append(vec1[X])  # projection of just one dimension!
-                y.append(vec2[X])  # projection of just one dimension!
-                biome = labels_dict1[sample_id].split(' - ')[0]  # extract biome part to assign color
-                colors.append(color_map.get(biome, '#000000'))  # Use black for unknown biomes
-                hover_text = f"'{sample_id}':<br>gold_dict: '{labels_dict1[sample_id]}'<br>gpt: '{labels_dict2[sample_id]}'"
-                hover_texts.append(hover_text)
-
-    fig = go.Figure(data=go.Scatter(x=x, y=y, mode='markers', text=hover_texts, hoverinfo='text', marker=dict(color=colors)))
-    fig.update_layout(title='Embeddings comparison',
-                      xaxis_title='GPT embeddings',
-                      yaxis_title='ground truth embeddings',
-                      hovermode='closest')
-    fig.write_html(f"/Users/dgaio/MicrobeAtlasProject/20240423_biome_and_subbiomes_dim{X}.html")
-
+# =============================================================================
+# def plot_embeddings_1D_to_html(embeddings_dict1, embeddings_dict2, labels_dict1, labels_dict2, X):
+#     x, y, hover_texts, colors = [], [], [], []
+# 
+#     # hex colors for each biome
+#     color_map = {
+#         'animal': '#C67D7B',  # pinkish
+#         'water': '#8CC8CF',   # bluish
+#         'plant': '#C0D184',   # greenish
+#         'soil': '#CBBF82',    # brownish
+#         'other': '#CCCCCC'    # gray
+#     }
+# 
+#     for sample_id in embeddings_dict1:
+#         if sample_id in embeddings_dict2 and sample_id in labels_dict1 and sample_id in labels_dict2:
+#             vec1 = embeddings_dict1[sample_id]
+#             vec2 = embeddings_dict2[sample_id]
+#             if vec1 is not None and vec2 is not None:
+#                 x.append(vec1[X])  # projection of just one dimension!
+#                 y.append(vec2[X])  # projection of just one dimension!
+#                 biome = labels_dict1[sample_id].split(' - ')[0]  # extract biome part to assign color
+#                 colors.append(color_map.get(biome, '#000000'))  # Use black for unknown biomes
+#                 hover_text = f"'{sample_id}':<br>gold_dict: '{labels_dict1[sample_id]}'<br>gpt: '{labels_dict2[sample_id]}'"
+#                 hover_texts.append(hover_text)
+# 
+#     fig = go.Figure(data=go.Scatter(x=x, y=y, mode='markers', text=hover_texts, hoverinfo='text', marker=dict(color=colors)))
+#     fig.update_layout(title='Embeddings comparison',
+#                       xaxis_title='GPT embeddings',
+#                       yaxis_title='ground truth embeddings',
+#                       hovermode='closest')
+#     fig.write_html(f"/Users/dgaio/MicrobeAtlasProject/20240423_biome_and_subbiomes_dim{X}.html")
+# =============================================================================
 
 
 def compare_embeddings(embeddings_dict1, embeddings_dict2):
@@ -176,6 +176,63 @@ def plot_distribution_metrics(compare_results):
     plt.show()
     
     
+    
+def create_shuffled_background_distribution(embeddings_gd, embeddings_gpt, num_comparisons=None):
+    random_cosine_similarities = []
+    gd_keys = list(embeddings_gd.keys())
+    gpt_keys = list(embeddings_gpt.keys())
+    
+    random.shuffle(gpt_keys)
+    num_comparisons = min(len(gd_keys), len(gpt_keys))
+    
+    for i in range(num_comparisons):
+        gd_embedding = embeddings_gd[gd_keys[i]]
+        gpt_embedding = embeddings_gpt[gpt_keys[i]]
+        cosine_sim = 1 - distance.cosine(gd_embedding, gpt_embedding)
+        random_cosine_similarities.append(cosine_sim)
+    
+    return random_cosine_similarities
+
+
+    
+def plot_comparison_distribution(actual_similarities, background_similarities):
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    sns.histplot(actual_similarities, bins=30, kde=True, color='green', label='Cosine similarities', ax=ax, stat='density')
+    
+    sns.histplot(background_similarities, bins=30, kde=True, color='blue', label='Background cosine similarities', ax=ax, alpha=0.5, stat='density')
+    
+    ax.set_title('Actual vs Background similarities')
+    ax.set_xlabel('cosine similarity')
+    ax.set_ylabel('probability density')
+    ax.legend()
+    
+    plt.tight_layout()
+    plt.show()
+    
+    
+
+def sample_by_category(labels, n):
+    
+    random.seed(42) 
+    
+    # split labels into biome and subbiome
+    categorized = {k: v.split(' - ')[0] for k, v in labels.items()}
+    
+    category_groups = {}
+    for key, category in categorized.items():
+        if category not in category_groups:
+            category_groups[category] = []
+        category_groups[category].append(key)
+
+    sampled_keys = []
+    for category, keys in category_groups.items():
+        if len(keys) > n:
+            sampled_keys.extend(random.sample(keys, n))
+        else:
+            sampled_keys.extend(keys)  # if less than n, take all
+    return sampled_keys
+
 
 ########################################
 
@@ -183,12 +240,10 @@ def plot_distribution_metrics(compare_results):
 # STEP 1. Extract biome and sub-biome from gold dict and/or from gpt output
 
 
-# Example usage for pickle file
 GOLD_DICT_PATH = "/Users/dgaio/github/metadata_mining/source_data/gold_dict.pkl"
 gold_dict_bsb = make_biome_subbiome_dict(GOLD_DICT_PATH, source_type='pickle')
 print(gold_dict_bsb)
 
-# Example usage for CSV file
 
 #CSV_PATH = '/Users/dgaio/MicrobeAtlasProject/gpt_clean_output_nspb200_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs42_API233_normal_dt20240503_1348.txt'
 CSV_PATH = '/Users/dgaio/MicrobeAtlasProject/gpt_clean_output_modelgpt-3.5-turbo-1106_temp1.0_file-pwf3cm7lru1SPLZAf734bJ3Z_dt20240508_1655.txt'
@@ -288,38 +343,32 @@ for sample, embedding in items:
 ########################################
 
 
-# STEP 4. plot 1 (informative) dimension of the embeddings 
+# STEP 3.2 (optional) Plot one (informative) dimension of the embeddings 
 
 
 # Print the top 6 indices with the highest average absolute values: [ 194  954 1120 1246 1348 1487] all minus 1! 
-plot_embeddings_1D_to_html(embeddings_gd, embeddings_gpt, gold_dict_bsb_filtered, gpt_clean_bsb_filtered, 193)
+#plot_embeddings_1D_to_html(embeddings_gd, embeddings_gpt, gold_dict_bsb_filtered, gpt_clean_bsb_filtered, 193)
 
 
 ########################################
 
 
-# STEP 5. Computing and plotting similarity: 
+# STEP 4. Computing similarity: 
 
 compare_results = compare_embeddings(embeddings_gd, embeddings_gpt)  
 plot_distribution_metrics(compare_results)
 
 
+########################################
 
 
-
-
-
-
-
-
-
+# STEP 5. Plotting similarity distribution - with metadata 
 
 def plot_distribution_with_spread_details_fixed(compare_results, embeddings_dict1, embeddings_dict2, labels_dict1, labels_dict2, distance_type):
-    # Extract metrics and prepare data structures
+    
     sample_distances = [(key, result[distance_type]) for key, result in compare_results.items()]
     sample_ids = [key for key, _ in sample_distances]
 
-    # Prepare color mapping and hover texts
     color_map = {
         'animal': '#C67D7B',  # Pinkish
         'water': '#8CC8CF',   # Bluish
@@ -330,24 +379,21 @@ def plot_distribution_with_spread_details_fixed(compare_results, embeddings_dict
     colors = [color_map.get(labels_dict1[key].split(' - ')[0], '#CCCCCC') for key in sample_ids]
     hover_texts = [f"{key}:<br>Gold: {labels_dict1[key]}<br>GPT: {labels_dict2[key]}" for key in sample_ids]
 
-                   
-
-    # Create histogram and get bin information
     distances = [dist for _, dist in sample_distances]
-    bin_size = np.ptp(distances) / 30  # Define the bin size
+    bin_size = np.ptp(distances) / 30  # bin size
     bins = np.arange(min(distances), max(distances) + bin_size, bin_size)
     hist = np.histogram(distances, bins=bins)
     bin_edges = hist[1]
     bin_counts = hist[0]
     
-    # Calculate positions for scatter points
+    # positions for scatter points
     bin_assignment = [np.digitize(dist, bin_edges) - 1 for _, dist in sample_distances]
     y_positions = {bin_idx: [] for bin_idx in range(len(bin_counts))}
     
     for idx, bin_idx in enumerate(bin_assignment):
-        if bin_idx == len(bin_counts):  # Handle edge case where value falls on the last bin edge
+        if bin_idx == len(bin_counts):  # handle edge case where value falls on the last bin edge
             bin_idx -= 1
-        y_positions[bin_idx].append(sample_distances[idx][0])  # Store sample ID
+        y_positions[bin_idx].append(sample_distances[idx][0])  # store sample ID
     
     scatter_x = []
     scatter_y = []
@@ -355,180 +401,64 @@ def plot_distribution_with_spread_details_fixed(compare_results, embeddings_dict
     scatter_texts = []
     
     for bin_idx, ids in y_positions.items():
-        heights = np.linspace(1, bin_counts[bin_idx], num=len(ids))  # Evenly spread out within the bin
+        heights = np.linspace(1, bin_counts[bin_idx], num=len(ids))  # evenly spread out within the bin
         for i, id in enumerate(ids):
             scatter_x.append(compare_results[id][distance_type])
             scatter_y.append(heights[i])
             scatter_colors.append(colors[sample_ids.index(id)])
             scatter_texts.append(hover_texts[sample_ids.index(id)])
     
-    # Initialize the figure and add the histogram
     fig = go.Figure()
     hist_trace = go.Histogram(x=distances, xbins=dict(start=bins[0], end=bins[-1], size=bin_size), opacity=0.75, name=f'{distance_type.capitalize()} Distance')
     fig.add_trace(hist_trace)
     
-    # Create scatter plot on top of the histogram
+    # create scatter plot on top of histogram
     fig.add_trace(go.Scatter(x=scatter_x, y=scatter_y, mode='markers', text=scatter_texts, hoverinfo='text', marker=dict(color=scatter_colors, size=5)))
-    # Adding text annotations on the histogram bars to show the count of samples within each bin
+    # text annotations on the histogram bars to show the count of samples within each bin
     for i, bin_count in enumerate(bin_counts):
         if bin_count > 0:
-            # Calculate the position for the annotation to be in the middle of the bin
+            # calculate the position for the annotation to be in the middle of the bin
             bin_center = (bin_edges[i] + bin_edges[i + 1]) / 2
             fig.add_annotation(
-                x=bin_center, y=bin_count + 1,  # Add a small offset above the bar for clarity
+                x=bin_center, y=bin_count + 1,  # small offset above the bar for clarity
                 text=str(bin_count),
                 showarrow=False,
                 font=dict(color="black", size=12)
             )
     
-    # Update layout
-    fig.update_layout(title=f"{distance_type.capitalize()} Distance Distribution with Sample Details",
-                      xaxis_title=f"{distance_type.capitalize()} Distance",
-                      yaxis_title='Sample Spread within Bin',
+    fig.update_layout(title=f"{distance_type.capitalize()} Cosine similarity sistribution with sample metadata",
+                      xaxis_title=f"{distance_type.capitalize()} cosine similarity",
+                      yaxis_title='Samples (spread) within bin',
                       hovermode='closest',
                       showlegend=False)
     fig.show()
     fig.write_html(f"/Users/dgaio/MicrobeAtlasProject/20240423_biome_and_subbiomes_similarity_{distance_type}.html")
     
 
-
-
-
 plot_distribution_with_spread_details_fixed(compare_results, embeddings_gd, embeddings_gpt, gold_dict_bsb_filtered, gpt_clean_bsb_filtered, 'cosine')
 
 
 
+########################################
 
 
+# STEP 5.1 Plotting cosine similarity vs background 
 
-
-
-
-
-
-
-def create_background_distribution(embeddings_gd, embeddings_gpt, num_iterations=100):
-    random_cosine_similarities = []
-    gpt_keys = list(embeddings_gpt.keys())
-
-    for _ in range(num_iterations):
-        for gd_key in embeddings_gd:
-            gd_embedding = embeddings_gd[gd_key]
-            # ensure the selected gpt key is different from the ground truth key 
-            valid_gpt_keys = [key for key in gpt_keys if key != gd_key]
-            if not valid_gpt_keys:
-                continue  # skip if no valid gpt key is available
-
-            random_gpt_key = random.choice(valid_gpt_keys)
-            gpt_embedding = embeddings_gpt[random_gpt_key]
-            cosine_sim = 1 - distance.cosine(gd_embedding, gpt_embedding)
-            random_cosine_similarities.append(cosine_sim)
-
-    return random_cosine_similarities
-
-
-
-def plot_comparison_distribution(actual_similarities, background_similarities):
-    fig, ax = plt.subplots(figsize=(12, 6))
-    
-    # Plotting the actual distribution
-    sns.histplot(actual_similarities, bins=30, kde=True, color='green', label='Actual Cosine Similarities', ax=ax)
-    
-    # Plotting the background distribution
-    sns.histplot(background_similarities, bins=30, kde=True, color='blue', label='Background Cosine Similarities', ax=ax, alpha=0.5)
-    
-    ax.set_title('Comparison of Actual and Background Cosine Similarities')
-    ax.set_xlabel('Cosine Similarity')
-    ax.set_ylabel('Frequency')
-    ax.legend()
-    
-    plt.tight_layout()
-    plt.show()
-    
-    
-def plot_normalized_comparison_distribution(actual_similarities, background_similarities):
-    fig, ax = plt.subplots(figsize=(12, 6))
-    
-    # Plotting the normalized actual distribution
-    sns.histplot(actual_similarities, bins=30, kde=True, color='green', label='Actual Cosine Similarities', ax=ax, stat='density')
-    
-    # Plotting the normalized background distribution
-    sns.histplot(background_similarities, bins=30, kde=True, color='blue', label='Background Cosine Similarities', ax=ax, alpha=0.5, stat='density')
-    
-    ax.set_title('Normalized Comparison of Actual and Background Cosine Similarities')
-    ax.set_xlabel('Cosine Similarity')
-    ax.set_ylabel('Probability Density')
-    ax.legend()
-    
-    plt.tight_layout()
-    plt.show()
-    
-    
-
-# Generate background distribution
-background_similarities = create_background_distribution(embeddings_gd, embeddings_gpt)
-
-# Assuming 'compare_results' contains actual cosine similarities calculated previously
 actual_similarities = [result['cosine'] for result in compare_results.values()]
+num_comparisons = len(actual_similarities)  
 
-# Example usage assuming you have 'actual_similarities' and 'background_similarities' available
-plot_normalized_comparison_distribution(actual_similarities, background_similarities)
+background_similarities = create_shuffled_background_distribution(embeddings_gd, embeddings_gpt, num_comparisons=num_comparisons)
 
-
-
-####
-
-# into a single score system? 
-
-
-comparison_results = compare_embeddings(embeddings_gd, embeddings_gpt)
-background_distributions = create_background_distribution(embeddings_gd, embeddings_gpt)
-direct_cosine_similarities = [result['cosine'] for result in comparison_results.values()]
-average_direct_cosine_similarity = sum(direct_cosine_similarities) / len(direct_cosine_similarities)
-
-# You might also want to check Euclidean and Manhattan distances
-average_euclidean_distance = sum(result['euclidean'] for result in comparison_results.values()) / len(comparison_results)
-average_manhattan_distance = sum(result['manhattan'] for result in comparison_results.values()) / len(comparison_results)
-
-average_background_similarity = sum(background_distributions) / len(background_distributions)
-
-# Example weights (these can be adjusted based on specific requirements)
-weight_direct = 0.8
-weight_background = 0.2
-
-overall_score = weight_direct * average_direct_cosine_similarity + weight_background * (1 - average_background_similarity)
-
-
-####
+plot_comparison_distribution(actual_similarities, background_similarities)
 
 
 
-# Heatmap 
-from sklearn.metrics.pairwise import cosine_similarity
+########################################
+
+
+# STEP 5.1 Plotting cosine similarity - Heatmap 
 
 n_samples_per_category = 10  # Adjust this number as needed
-
-# Function to sample n items per category
-def sample_by_category(labels, n):
-    
-    random.seed(42) 
-    
-    # Split the labels into primary category and description
-    categorized = {k: v.split(' - ')[0] for k, v in labels.items()}
-    # Group keys by category
-    category_groups = {}
-    for key, category in categorized.items():
-        if category not in category_groups:
-            category_groups[category] = []
-        category_groups[category].append(key)
-    # Sample n items from each category, if available
-    sampled_keys = []
-    for category, keys in category_groups.items():
-        if len(keys) > n:
-            sampled_keys.extend(random.sample(keys, n))
-        else:
-            sampled_keys.extend(keys)  # If less than n, take all
-    return sampled_keys
 
 # Sample keys from the gold dictionary
 keys_gd_sampled = sample_by_category(gold_dict_bsb_filtered, n_samples_per_category)
