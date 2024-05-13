@@ -187,7 +187,7 @@ def convert_jsonl_to_csv(input_jsonl_path, output_csv_path):
     try:
         with open(input_jsonl_path, 'r') as jsonl_file, open(output_csv_path, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(['sample_id', 'biome_label', 'geo_location', 'keywords', 'sub-biome'])
+            writer.writerow(['col_0', 'col_1', 'col_2', 'col_3', 'col_4'])
             for line in jsonl_file:
                 json_obj = json.loads(line)
                 content_str = json_obj['response']['body']['choices'][0]['message']['content']

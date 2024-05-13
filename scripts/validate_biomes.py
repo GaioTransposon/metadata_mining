@@ -18,31 +18,21 @@ import os
 import pickle
 import re
 import matplotlib.pyplot as plt
-import numpy as np
-import argparse
 
 # -----------------------------
 # 1. Paths
 # -----------------------------
 
-# # Setup command line arguments
-# parser = argparse.ArgumentParser(description="Compare GPT outputs")
-# parser.add_argument('--work_dir', type=str, help="Working directory where the files are located and plots will be saved", required=True)
-# args = parser.parse_args()
-# home_dir = os.getenv('HOME')
-# work_dir = args.work_dir  
-# work_dir = os.path.join(home_dir, work_dir)
-# print(work_dir)
-
 home_dir = os.getenv('HOME')
 work_dir = "MicrobeAtlasProject"
+
 # -----------------------------
 # 2. Function Definitions
 # -----------------------------
 
 def interactive_file_selection(initial_pattern, work_dir):
     """
-    Allow user to interactively refine and select files based on their filename patterns or indices.
+    Allow user to interactively select files based on their filename patterns or indices.
     """
     
     if not os.path.isabs(work_dir):
@@ -55,15 +45,14 @@ def interactive_file_selection(initial_pattern, work_dir):
     full_pattern = os.path.join(work_dir, initial_pattern)
     
         
-    print("Current Working Directory:", work_dir)  # Debugging: print current directory
-    print("Full Pattern:", full_pattern)  # Debugging: print the full search pattern
+    print("Current Working Directory:", work_dir)  
+    print("Full Pattern:", full_pattern)  
 
-    # Find files matching the initial pattern
     current_files = glob.glob(full_pattern)
     
     
-    selected_files = []  # Initialize an empty list for selected files
-    print("Files Found:", current_files)
+    selected_files = []  
+    print("Files found:", current_files)
     
     
     while True:
@@ -71,7 +60,6 @@ def interactive_file_selection(initial_pattern, work_dir):
         for idx, file in enumerate(current_files, start=1):
             print(f"{idx}. {os.path.basename(file)}")
 
-        # Ask user for further refinement or selection
         action = input("\nEnter a keyword to refine further (must start with string), 'done' to finish, 'all' to select all, or space-separated indices (e.g., '2 3') to select specific files: ").strip().lower()
         
         if action == 'done':
@@ -79,14 +67,12 @@ def interactive_file_selection(initial_pattern, work_dir):
         elif action == 'all':
             return current_files
         else:
-            # Check if user entered indices
             indices = action.split()
             if all(idx.isdigit() for idx in indices):  
                 indices = [int(idx) - 1 for idx in indices]  # Convert to 0-based index
-                selected_files = [current_files[idx] for idx in indices if 0 <= idx < len(current_files)]  # Check if index is in range
+                selected_files = [current_files[idx] for idx in indices if 0 <= idx < len(current_files)]  # check if index is in range
                 return selected_files
             else:
-                # refine the list of files based on user input
                 current_files = [f for f in current_files if action in f]
                 
                 if not current_files:
@@ -94,23 +80,27 @@ def interactive_file_selection(initial_pattern, work_dir):
                     current_files = glob.glob(initial_pattern)
 
 
+
 def find_distinguishing_features(files):
     """
     Determine the distinguishing features between filenames.
-    For each segment in the filenames, identify the segments that differ between files.
+    Collect all tokens and identify those that are unique to some but not all filenames.
     """
-    # Split the filenames into tokens based on underscores
-    tokens = [os.path.basename(file).split('_')[:-2] for file in files]  # this excludes date and time parts
+    all_tokens = []
+    file_tokens = []
 
-    # Transpose the tokens list for easy comparison
-    tokens_transposed = list(zip(*tokens))
+    for file in files:
+        tokens = os.path.basename(file).split('_')[:-2]  # to exclude date and time
+        file_tokens.append(set(tokens))
+        all_tokens.extend(tokens)
 
-    # Find the distinguishing features
-    distinguishing_tokens = set()
-    for column in tokens_transposed:
-        unique_tokens = set(column)
-        if len(unique_tokens) > 1:  # If there's more than one unique token in this column
-            distinguishing_tokens.update(unique_tokens)
+    token_count = {}
+    for token in set(all_tokens):
+        token_count[token] = sum(1 for tokens in file_tokens if token in tokens)
+
+    # find tokens that are unique to some files but not common to all
+    num_files = len(files)
+    distinguishing_tokens = {token for token, count in token_count.items() if count != num_files}
 
     return distinguishing_tokens
 
@@ -120,18 +110,14 @@ def extract_labels_from_filename(filename, distinguishing_tokens):
     """
     Extract distinguishing labels from the filename.
     """
-    # Extract the content between "gpt" and "_dt"
+    # extract content between "gpt" and "_dt"
     pattern = re.compile(r'gpt(.*?)_dt')
     matches = pattern.search(filename)
 
     if matches:
-        # Extracted content
         content = matches.group(1)
-        
-        # Split the content on underscores to get individual features
+
         labels = content.split('_')
-        
-        # Only keep the labels that are in distinguishing tokens
         labels = [label for label in labels if label in distinguishing_tokens]
         
         return ", ".join(labels)
@@ -140,36 +126,47 @@ def extract_labels_from_filename(filename, distinguishing_tokens):
 
 
 
-
-
 def load_and_process_file(file_name, gold_standard_df, label):
-    # Load the file without headers, as the number of columns can vary
-    dfr = pd.read_csv(file_name, header=None)
+    dfr = pd.read_csv(file_name, header=None) # without headers, as the number of columns can vary
 
-    # Select only the first and second columns for processing
     dfr = dfr.iloc[:, [0, 1]]
-    dfr.columns = ['sample', 'gpt_biome']  # Rename columns for clarity
-
-    # Add the label column
+    dfr.columns = ['sample', 'gpt_biome']
     dfr['label'] = label
 
-    # Merge with the gold standard DataFrame
     merged_df = pd.merge(dfr, gold_standard_df, on='sample', how='inner')
 
     return merged_df
 
 
-def custom_sort(label):
-    # Use regex to split the string into its text and number components
-    match = re.match(r"([a-z]+)([0-9]+\.[0-9]+)", label, re.I)
-    if match:
-        # If the regex finds a match, sort by the string, then by the number
-        items = match.groups()
-        return items[0], float(items[1])
-    # If no match is found, sort only by the string
-    return label, 0
+def edit_features(file_label_map):
+    """
+    Allow the user to edit each label extracted from filenames, maintaining the dictionary structure.
+    """
+    print("Current labels for each file:")
+    for idx, (file, label) in enumerate(file_label_map.items(), start=1):
+        print(f"{idx}. {os.path.basename(file)} - {label}")
+
+    if input("Do you want to edit any labels? (y/n): ").strip().lower() == 'y':
+        for file in list(file_label_map.keys()):  
+            current_label = file_label_map[file]
+            new_label = input(f"Change the label for '{os.path.basename(file)}' from '{current_label}' to (press enter to keep the same): ")
+            if new_label:
+                file_label_map[file] = new_label
+
+    return file_label_map
 
 
+def match_files_to_features(files, labels):
+    file_feature_map = {}
+    for file in files:
+        file_base_name = os.path.basename(file)
+        # Check if any label fully matches sections of the filename
+        for label in labels:
+            label_parts = label.split(", ")
+            if all(part.strip() in file_base_name for part in label_parts):
+                file_feature_map[file] = label
+                break
+    return file_feature_map
 
 
 # -----------------------------
@@ -189,46 +186,25 @@ gold_dict_df.drop(columns='tuple_data', inplace=True)
 # 4. Interactive File Selection & feature extraction
 # -----------------------------
     
-# Interactive File Selection and File Analysis & Data Extraction
 initial_pattern = "gpt_clean*"
 selected_files = interactive_file_selection(initial_pattern, work_dir)
 print("\nSelected files for analysis:")
 for f in selected_files:
     print(os.path.basename(f))
     
-    
-    
-###
-    
-    
 distinguishing_features = find_distinguishing_features(selected_files)
+#352 367
 
-labels = [extract_labels_from_filename(file, distinguishing_features) for file in selected_files]
-labels = sorted(labels, key=custom_sort)
-print('Distinguishing features of GPT files are: ', labels)
+file_label_map = {file: extract_labels_from_filename(file, distinguishing_features) for file in selected_files}
 
-
-
+file_label_map = edit_features(file_label_map)
 
 
-# Assuming distinguishing_features and labels are already correctly identified
-def match_files_to_features(files, labels):
-    file_feature_map = {}
-    for file in files:
-        file_base_name = os.path.basename(file)
-        # Check if any label fully matches sections of the filename
-        for label in labels:
-            label_parts = label.split(", ")
-            if all(part.strip() in file_base_name for part in label_parts):
-                file_feature_map[file] = label
-                break
-    return file_feature_map
-
-# Using the mapping to process files
 all_dfs = []
-file_feature_map = match_files_to_features(selected_files, labels)
-
-for file, label in file_feature_map.items():
+for file, label in file_label_map.items():
+    print('\n')
+    print(file)
+    print(label, '\n')
     processed_df = load_and_process_file(file, gold_dict_df, label)
     all_dfs.append(processed_df)
 
@@ -238,51 +214,43 @@ concatenated_df['agreement'] = concatenated_df['gpt_biome'] == concatenated_df['
 
 
 # -----------------------------
-# 5. Plotting agreement and saving the plots
+# 5. Calculating agreement and plotting
 # -----------------------------
-
 
 ############
 
-
 # check if count of True per label matches the plot:
 df = concatenated_df
-df['agreement'] = df['agreement'].astype(int)  # Make sure the agreement column is of integer type for accurate summation
+df['agreement'] = df['agreement'].astype(int)  
 true_counts = df.groupby('label')['agreement'].sum()
 total_counts = df.groupby('label').size()
-true_percentage = (true_counts / total_counts * 100).round(2)  # Rounded for better readability
+true_percentage = (true_counts / total_counts * 100).round(2)  
 result = pd.DataFrame({
     'True Counts': true_counts,
     'Total Counts': total_counts,
     'Percentage True': true_percentage
 })
-print(result)
-
 
 ############
 
-### only for plot name: 
+# only for plot name: 
 unique_parts = set()
-for label in labels:
-    parts = label.split(', ')
-    # Filter out any part containing 'API'
-    filtered_parts = [part for part in parts if 'API' not in part]
+for label in file_label_map.values():
+    parts = label.split(', ')  # split each label into parts
+    filtered_parts = [part for part in parts if 'API' not in part]  # filter out parts containing 'API'
     unique_parts.update(filtered_parts)
 
 # Join the unique parts sorted alphabetically and separated by '_'
 feature_description = "_".join(sorted(unique_parts))
-###
 
-
-# Create a bar plot for the 'Percentage True' column
+# Plot
 plt.figure(figsize=(10, 6))
 ax = result['Percentage True'].plot(kind='bar', color='green')
 plt.title('Percentage of correct GPT output')
 plt.ylabel('agreement (%)')
 plt.xlabel('distinguishing feature(s)')
-plt.xticks(rotation=45)  # Rotate labels to prevent overlap
+plt.xticks(rotation=45)  
 
-# Annotate bars with the percentage and total counts
 for idx, p in enumerate(ax.patches):
     height = p.get_height()
     x, y = p.get_xy()
@@ -290,7 +258,7 @@ for idx, p in enumerate(ax.patches):
     total_count = result.at[label, 'Total Counts']
     percentage = result.at[label, 'Percentage True']
     
-    if height > 0:  # Avoid annotating zero-height bars
+    if height > 0:  # avoid annotating zero-height bars
         ax.text(x + p.get_width() / 2, y + height + 1, f'{percentage}%\n(n={total_count})', ha='center', va='center')
 
 plt.tight_layout()
@@ -298,16 +266,18 @@ plot_filename = os.path.join(work_dir, f'agreement_{feature_description}.png')
 #plt.savefig(plot_filename)
 plt.show()
 #plt.close()
-
 print(f"Plot saved as: {plot_filename}")
 
+
 ############
+
 
 filenames = [os.path.basename(file) for file in selected_files]
 for i in filenames: 
     print(i)
 
 print(result)
+
 # =============================================================================
 # 
 # # Generate filename based on distinguishing features
@@ -320,7 +290,6 @@ print(result)
 # print(f"Plot saved as: {plot_filename}")
 # =============================================================================
 
-
 ############
 
 
@@ -331,28 +300,152 @@ print(result)
 
 
 
+import pandas as pd
+import os
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Assuming 'work_dir' is already defined and 'selected_files' are available
+joao_biomes_path = os.path.join(work_dir, "joao_biomes_parsed.csv")
+joao_biomes_df = pd.read_csv(joao_biomes_path)
+joao_biomes_df['biome'] = joao_biomes_df['biome'].fillna('unknown').replace('aquatic', 'water').astype(str)
+joao_biomes_all = joao_biomes_df.copy()
+#joao_biomes_high_confidence = joao_biomes_df[joao_biomes_df['confidence'] != 'low']
+
+
+
+# Filter concatenated_df for rows where the label equals 'async'
+filtered_concat_df = concatenated_df[concatenated_df['label'] == 'sync']
+
+
+filtered_concat_df
+gold_dict_df
+joao_biomes_all
+
+
+
+# Extract sample IDs from each DataFrame
+gpt_samples = set(filtered_concat_df['sample'])
+joao_samples = set(joao_biomes_all['sample'])
+gold_samples = set(gold_dict_df['sample'])
+
+# Find common sample IDs among all three DataFrames
+common_samples = gpt_samples.intersection(joao_samples, gold_samples)
+print(f"Number of common samples: {len(common_samples)}")
+
+
+# Filter each DataFrame to include only common samples
+filtered_concat_df = filtered_concat_df[filtered_concat_df['sample'].isin(common_samples)]
+len(filtered_concat_df)
+filtered_joao_df = joao_biomes_all[joao_biomes_all['sample'].isin(common_samples)]
+len(filtered_joao_df)
+filtered_gold_df = gold_dict_df[gold_dict_df['sample'].isin(common_samples)]
+len(filtered_gold_df)
+
+
+# Sort DataFrames by 'sample' to align them
+filtered_concat_df = filtered_concat_df.sort_values(by='sample').reset_index(drop=True)
+filtered_joao_df = filtered_joao_df.sort_values(by='sample').reset_index(drop=True)
+filtered_gold_df = filtered_gold_df.sort_values(by='sample').reset_index(drop=True)
+
+# Combine all unique labels from GPT, João, and the Gold Standard
+all_labels = np.union1d(filtered_concat_df['gpt_biome'].unique(), filtered_gold_df['biome'].unique())
+all_labels = np.union1d(all_labels, filtered_joao_df['biome'].unique())
+
+
+# Compute the initial confusion matrices with all labels included
+cm_gpt_gold = confusion_matrix(filtered_gold_df['biome'], filtered_concat_df['gpt_biome'], labels=all_labels)
+cm_joao_gold = confusion_matrix(filtered_gold_df['biome'], filtered_joao_df['biome'], labels=all_labels)
+
+# =============================================================================
+# def filter_zero_rows_columns(cm, labels):
+#     # Determine which rows and columns sum to zero
+#     row_sums = cm.sum(axis=1)
+#     col_sums = cm.sum(axis=0)
+# 
+#     # Filter out rows and columns where the sum is zero
+#     non_zero_rows = row_sums != 0
+#     non_zero_cols = col_sums != 0
+# 
+#     # Filter the confusion matrix and labels
+#     filtered_cm = cm[non_zero_rows][:, non_zero_cols]
+#     filtered_labels = labels[non_zero_cols]  # Only need to filter columns for labels as they are the predictions
+# 
+#     return filtered_cm, filtered_labels
+# =============================================================================
+
+def filter_zero_rows_columns(cm, labels):
+    # Determine which rows and columns sum to zero
+    row_sums = cm.sum(axis=1)
+    col_sums = cm.sum(axis=0)
+
+    # Filter out rows and columns where the sum is zero
+    non_zero_rows = row_sums != 0
+    non_zero_cols = col_sums != 0
+
+    # Create a mask for rows and columns that are non-zero
+    mask = non_zero_rows[:, np.newaxis] & non_zero_cols[np.newaxis, :]
+
+    # Apply mask to filter the confusion matrix
+    filtered_cm = cm[mask].reshape(sum(non_zero_rows), sum(non_zero_cols))
+
+    # Adjust labels for rows and columns
+    filtered_row_labels = labels[non_zero_rows]
+    filtered_col_labels = labels[non_zero_cols]
+
+    return filtered_cm, filtered_row_labels, filtered_col_labels
 
 
 
 
+# =============================================================================
+# # Filter GPT vs Gold Standard matrix
+# filtered_cm_gpt_gold, filtered_labels_gpt_gold = filter_zero_rows_columns(cm_gpt_gold, all_labels)
+# 
+# # Filter João vs Gold Standard matrix
+# filtered_cm_joao_gold, filtered_labels_joao_gold = filter_zero_rows_columns(cm_joao_gold, all_labels)
+# 
+# =============================================================================
+
+# =============================================================================
+# def plot_confusion_matrix(cm, labels, title):
+#     plt.figure(figsize=(10, 7))
+#     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=labels, yticklabels=labels)
+#     plt.xlabel('Predicted')
+#     plt.ylabel('True')
+#     plt.title(title)
+#     plt.show()
+# =============================================================================
+
+def plot_confusion_matrix(cm, row_labels, col_labels, title):
+    plt.figure(figsize=(10, 7))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=col_labels, yticklabels=row_labels)
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.title(title)
+    plt.show()
 
 
 
+# =============================================================================
+# # Plotting the filtered confusion matrices
+# plot_confusion_matrix(filtered_cm_gpt_gold, filtered_labels_gpt_gold, "Filtered Confusion Matrix: GPT vs Gold Standard")
+# plot_confusion_matrix(filtered_cm_joao_gold, filtered_labels_joao_gold, "Filtered Confusion Matrix: João vs Gold Standard")
+# 
+# 
+# =============================================================================
 
+# Filter GPT vs Gold Standard matrix
+filtered_cm_gpt_gold, row_labels_gpt_gold, col_labels_gpt_gold = filter_zero_rows_columns(cm_gpt_gold, all_labels)
 
+# Filter João vs Gold Standard matrix
+filtered_cm_joao_gold, row_labels_joao_gold, col_labels_joao_gold = filter_zero_rows_columns(cm_joao_gold, all_labels)
 
-
-
-
-
-
-
-
-
-
-
-
-
+# Plotting the filtered confusion matrices
+plot_confusion_matrix(filtered_cm_gpt_gold, row_labels_gpt_gold, col_labels_gpt_gold, "Filtered Confusion Matrix: GPT vs Gold Standard")
+plot_confusion_matrix(filtered_cm_joao_gold, row_labels_joao_gold, col_labels_joao_gold, "Filtered Confusion Matrix: João vs Gold Standard")
 
 
 # =============================================================================

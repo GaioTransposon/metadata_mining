@@ -6,6 +6,10 @@ Created on Tue Apr 23 15:17:22 2024
 @author: dgaio
 """
 
+
+# mind! needs version 0.28 !
+# pip install openai==0.28
+
 import pickle
 import csv
 import openai
@@ -45,11 +49,14 @@ def make_biome_subbiome_dict(source, source_type='csv'):
 
 
 def get_embeddings(data_dict, verbose='no'):
+    
+
     embeddings_dict = {}
     failed_samples = []
 
     sample_ids = list(data_dict.keys())
     descriptions = list(data_dict.values())
+    
 
     try:
         start_api_call_time = time.time()
@@ -78,9 +85,17 @@ def get_embeddings(data_dict, verbose='no'):
         if verbose.lower() == 'yes':
             print(f"{datetime.now()} - API call for {len(descriptions)} texts took {end_api_call_time - start_api_call_time:.2f} seconds")
 
+    # except Exception as e:
+    #     print(f"General error in embedding function: {e}")
+    #     failed_samples.extend(sample_ids[i:])
+    
+    except openai.APIError as e:
+        print(f"API error for batch starting with {sample_ids_chunk[0]}: {e}")
+        failed_samples.extend(sample_ids_chunk)
     except Exception as e:
-        print(f"General error in embedding function: {e}")
-        failed_samples.extend(sample_ids[i:])
+        print(f"Unexpected error for batch starting with {sample_ids_chunk[0]}: {e}")
+        failed_samples.extend(sample_ids_chunk)
+
 
     return embeddings_dict, failed_samples
 
@@ -174,7 +189,9 @@ gold_dict_bsb = make_biome_subbiome_dict(GOLD_DICT_PATH, source_type='pickle')
 print(gold_dict_bsb)
 
 # Example usage for CSV file
-CSV_PATH = '/Users/dgaio/MicrobeAtlasProject/gpt_clean_output_nspb200_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs42_API233_normal_dt20240503_1348.txt'
+
+#CSV_PATH = '/Users/dgaio/MicrobeAtlasProject/gpt_clean_output_nspb200_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs42_API233_normal_dt20240503_1348.txt'
+CSV_PATH = '/Users/dgaio/MicrobeAtlasProject/gpt_clean_output_modelgpt-3.5-turbo-1106_temp1.0_file-pwf3cm7lru1SPLZAf734bJ3Z_dt20240508_1655.txt'
 gpt_clean_bsb = make_biome_subbiome_dict(CSV_PATH, source_type='csv')
 print(gpt_clean_bsb)
 len(gpt_clean_bsb)
