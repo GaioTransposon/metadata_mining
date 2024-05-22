@@ -22,6 +22,7 @@ def init_openai_client(api_key_path):
 # Retrieve results and save them locally
 def retrieve_results(client, batch_job_id):
     batch_job = client.batches.retrieve(batch_job_id)
+    print('\n', batch_job, '\n')
     result_file_id = batch_job.output_file_id
     if result_file_id is not None: 
         result = client.files.content(result_file_id).content
@@ -55,17 +56,21 @@ api_key_file = os.path.expanduser("~/my_api_key")
 client = init_openai_client(api_key_file)
 
 # Load batch job information including model, temperature, and batch_job_id
-with open("/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/save_batch_job_info.json", "r") as f:
+with open("/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/batch_job_info.json", "r") as f:
     batch_info = json.load(f)
 
 batch_job_id = batch_info["batch_job_id"]
 model = batch_info["model"]
 temperature = batch_info["temperature"]
+top_p = batch_info["top_p"]
+frequency_penalty = batch_info["frequency_penalty"]
+presence_penalty = batch_info["presence_penalty"]
+
 result_json = retrieve_results(client, batch_job_id)
 
 if result_json:
     # Determine output CSV file name using model, temperature, and batch job ID
-    output_csv_path = f"/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gpt_clean_model{model}_temp{temperature}_{batch_job_id}.csv"
+    output_csv_path = f"/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gpt_clean_model{model}_temp{temperature}_topp{top_p}_freqp{frequency_penalty}_presp{presence_penalty}_{batch_job_id}.csv"
     convert_jsonl_content_to_csv(result_json, output_csv_path)
     print("Batch completed and results saved to csv.")
 else:

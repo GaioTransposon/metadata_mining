@@ -27,7 +27,7 @@ def load_system_prompt(work_dir, system_prompt_file):
 
 
 # Prepare batch tasks
-def prepare_batch_tasks(df, output_file_path, system_prompt, model, temperature):
+def prepare_batch_tasks(df, output_file_path, system_prompt, model, temperature, top_p, frequency_penalty, presence_penalty):
     tasks = []
     for _, row in df.iterrows():
         user_content = f"Sample ID: {row['sample_id']}, Metadata: {row['metadata']}"
@@ -38,6 +38,9 @@ def prepare_batch_tasks(df, output_file_path, system_prompt, model, temperature)
             "body": {
                 "model": model,
                 "temperature": temperature,
+                "top_p": top_p,
+                "frequency_penalty": frequency_penalty,
+                "presence_penalty": presence_penalty,
                 "response_format": { "type": "json_object" },
                 "messages": [
                     {"role": "system", "content": system_prompt},
@@ -49,7 +52,6 @@ def prepare_batch_tasks(df, output_file_path, system_prompt, model, temperature)
     with open(output_file_path, 'w') as file:
         for task in tasks:
             file.write(json.dumps(task) + '\n')
-
 
         
 # Main execution
@@ -63,8 +65,11 @@ df = pd.read_csv(data_file)
 
 model = "gpt-3.5-turbo-1106"
 temperature = 1.0
-file_name = f"/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/batch_tasks_metadata_model{model}_temp{temperature}.jsonl"
-prepare_batch_tasks(df, file_name, categorize_system_prompt, model, temperature)
+top_p = 0.75
+frequency_penalty = 0.25
+presence_penalty = 1.5
+file_name = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/batch_tasks_metadata.jsonl"
+prepare_batch_tasks(df, file_name, categorize_system_prompt, model, temperature, top_p, frequency_penalty, presence_penalty)
 
 # Create and submit batch job
 batch_file = client.files.create(file=open(file_name, "rb"), purpose="batch")
@@ -75,9 +80,13 @@ batch_job = client.batches.create(input_file_id=batch_file.id, endpoint="/v1/cha
 batch_info = {
     "batch_job_id": batch_job.id,
     "model": model,
-    "temperature": temperature
+    "temperature": temperature,
+    "top_p": top_p,
+    "frequency_penalty": frequency_penalty,
+    "presence_penalty": presence_penalty
 }
-with open("/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/save_batch_job_info.json", "w") as f:
+
+with open("/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/batch_job_info.json", "w") as f:
     json.dump(batch_info, f, indent=2)
 
 
