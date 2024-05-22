@@ -62,6 +62,7 @@ with open("/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/batch_job_info.json",
 batch_job_id = batch_info["batch_job_id"]
 model = batch_info["model"]
 temperature = batch_info["temperature"]
+max_tokens = batch_info["max_tokens"]
 top_p = batch_info["top_p"]
 frequency_penalty = batch_info["frequency_penalty"]
 presence_penalty = batch_info["presence_penalty"]
@@ -70,7 +71,7 @@ result_json = retrieve_results(client, batch_job_id)
 
 if result_json:
     # Determine output CSV file name using model, temperature, and batch job ID
-    output_csv_path = f"/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gpt_clean_model{model}_temp{temperature}_topp{top_p}_freqp{frequency_penalty}_presp{presence_penalty}_{batch_job_id}.csv"
+    output_csv_path = f"/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gpt_clean_output_model{model}_temp{temperature}_maxtokens{max_tokens}_topp{top_p}_freqp{frequency_penalty}_presp{presence_penalty}_{batch_job_id}.csv"
     convert_jsonl_content_to_csv(result_json, output_csv_path)
     print("Batch completed and results saved to csv.")
 else:

@@ -27,7 +27,7 @@ def load_system_prompt(work_dir, system_prompt_file):
 
 
 # Prepare batch tasks
-def prepare_batch_tasks(df, output_file_path, system_prompt, model, temperature, top_p, frequency_penalty, presence_penalty):
+def prepare_batch_tasks(df, output_file_path, system_prompt, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty):
     tasks = []
     for _, row in df.iterrows():
         user_content = f"Sample ID: {row['sample_id']}, Metadata: {row['metadata']}"
@@ -38,6 +38,7 @@ def prepare_batch_tasks(df, output_file_path, system_prompt, model, temperature,
             "body": {
                 "model": model,
                 "temperature": temperature,
+                "max_tokens": max_tokens,
                 "top_p": top_p,
                 "frequency_penalty": frequency_penalty,
                 "presence_penalty": presence_penalty,
@@ -65,11 +66,12 @@ df = pd.read_csv(data_file)
 
 model = "gpt-3.5-turbo-1106"
 temperature = 1.0
+max_tokens = 4096
 top_p = 0.75
 frequency_penalty = 0.25
 presence_penalty = 1.5
 file_name = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/batch_tasks_metadata.jsonl"
-prepare_batch_tasks(df, file_name, categorize_system_prompt, model, temperature, top_p, frequency_penalty, presence_penalty)
+prepare_batch_tasks(df, file_name, categorize_system_prompt, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty)
 
 # Create and submit batch job
 batch_file = client.files.create(file=open(file_name, "rb"), purpose="batch")
@@ -81,6 +83,7 @@ batch_info = {
     "batch_job_id": batch_job.id,
     "model": model,
     "temperature": temperature,
+    "max_tokens": max_tokens,
     "top_p": top_p,
     "frequency_penalty": frequency_penalty,
     "presence_penalty": presence_penalty
