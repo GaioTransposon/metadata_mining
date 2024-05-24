@@ -6,35 +6,31 @@ Created on Wed May 22 14:07:58 2024
 @author: dgaio
 """
 
+
 import json
 import csv
 import os
 from openai import OpenAI
+import glob  
 
-
-# Initialize the OpenAI client
 def init_openai_client(api_key_path):
     with open(api_key_path, "r") as file:
         api_key = file.read().strip()
     return OpenAI(api_key=api_key)
 
-
-# Retrieve results and save them locally
 def retrieve_results(client, batch_job_id):
     batch_job = client.batches.retrieve(batch_job_id)
     print('\n', batch_job, '\n')
     result_file_id = batch_job.output_file_id
-    if result_file_id is not None: 
+    if result_file_id is not None:
         result = client.files.content(result_file_id).content
         return result.decode('utf-8')  # Decode bytes to string
     else:
         print('Batch not completed yet')
         return None
-    
 
-# Convert JSONL content directly to CSV
 def convert_jsonl_content_to_csv(jsonl_content, output_csv_path):
-    lines = jsonl_content.splitlines()  # Split the content into lines
+    lines = jsonl_content.splitlines()
     with open(output_csv_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['sample_id', 'biome_label', 'geo_location', 'keywords', 'sub_biome'])
@@ -49,33 +45,42 @@ def convert_jsonl_content_to_csv(jsonl_content, output_csv_path):
                 content_data['sub-biome']
             ])
 
+def get_existing_batch_ids(directory):
+    pattern = f"{directory}/gpt_clean_output*.csv"
+    files = glob.glob(pattern)
+    existing_ids = set()
+    for file in files:
+        # Extract the batch ID from the filename correctly including 'batch_'
+        batch_id = file.split('_batch_')[-1].split('.csv')[0]
+        existing_ids.add('batch_' + batch_id)  # Ensure to add 'batch_' to match JSON content
+    return existing_ids
 
 
 # Main execution
 api_key_file = os.path.expanduser("~/my_api_key")
 client = init_openai_client(api_key_file)
 
+directory = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject"
+existing_batch_ids = get_existing_batch_ids(directory)
+
 # Load batch job information including model, temperature, and batch_job_id
-with open("/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/batch_job_info.json", "r") as f:
-    batch_info = json.load(f)
+with open(f"{directory}/batch_job_info.json", "r") as f:
+    batch_info_list = json.load(f)
 
-batch_job_id = batch_info["batch_job_id"]
-model = batch_info["model"]
-temperature = batch_info["temperature"]
-max_tokens = batch_info["max_tokens"]
-top_p = batch_info["top_p"]
-frequency_penalty = batch_info["frequency_penalty"]
-presence_penalty = batch_info["presence_penalty"]
+for batch_info in batch_info_list:
+    batch_job_id = batch_info["batch_job_id"]
+    if batch_job_id not in existing_batch_ids:
+        result_json = retrieve_results(client, batch_job_id)
+        if result_json:
+            output_csv_path = f"{directory}/gpt_clean_output_nspb{batch_info['nspb']}_chunking{batch_info['chunking']}_chunksize{batch_info['chunksize']}_model{batch_info['model']}_temp{batch_info['temperature']}_maxtokens{batch_info['max_tokens']}_topp{batch_info['top_p']}_freqp{batch_info['frequency_penalty']}_presp{batch_info['presence_penalty']}_rs{batch_info['rs']}_batch_{batch_job_id.split('_')[-1]}.csv"
+            convert_jsonl_content_to_csv(result_json, output_csv_path)
+            print("Batch completed and results saved to CSV.")
+        else:
+            print("Please wait until the batch job is completed.")
+    else:
+        print(f"CSV file for batch {batch_job_id} already exists. Skipping creation.")
 
-result_json = retrieve_results(client, batch_job_id)
 
-if result_json:
-    # Determine output CSV file name using model, temperature, and batch job ID
-    output_csv_path = f"/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gpt_clean_output_model{model}_temp{temperature}_maxtokens{max_tokens}_topp{top_p}_freqp{frequency_penalty}_presp{presence_penalty}_{batch_job_id}.csv"
-    convert_jsonl_content_to_csv(result_json, output_csv_path)
-    print("Batch completed and results saved to csv.")
-else:
-    print("Please wait until the batch job is completed.")
 
 
 

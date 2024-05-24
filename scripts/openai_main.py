@@ -8,13 +8,14 @@ Created on Wed Dec  6 13:58:00 2023
 
 
 
+# NB: in order to run it needs `pip install openai==0.28`
+
 import argparse
 import time
 import pandas as pd
 from datetime import datetime
 import os
 import logging
-import io
 from openai_01_setup_and_args import setup_logging
 from openai_02_metadata_fetching import MetadataFetching
 from openai_02_metadata_processing import MetadataProcessor
@@ -38,7 +39,7 @@ def parse_arguments():
     parser.add_argument('--chunk_size', type=int, required=True, help='Number of tokens per chunk.')
     parser.add_argument('--seed', type=int, required=True, help='choose a seed for the random shuffling of the samples e.g.: 42')
     parser.add_argument('--directory_with_split_metadata', type=str, required=True, help='Directory with split metadata')
-    parser.add_argument('--system_prompt_file', type=str, required=True, help='it should be named openai_system_prompt.txt (location: work_dir)')
+    parser.add_argument('--system_prompt_file', type=str, required=True, help='it should be named openai_system_prompt.txt')
     parser.add_argument('--encoding_name', type=str, required=True, help='name of encoder (for tokenizer) e.g.: cl100k_base')
     parser.add_argument('--api_key_path', type=str, required=True, help='Path to the OpenAI API key')
     parser.add_argument('--model', type=str, required=True, help='GPT model to use')
@@ -73,7 +74,7 @@ def main():
     
     # Phase 1: Metadata Fetching
     start_time = time.time()
-    metadata_fetcher = MetadataFetching(work_dir, args.directory_with_split_metadata, input_gold_dict, args.n_samples_per_biome, args.seed)
+    metadata_fetcher = MetadataFetching(work_dir, args.directory_with_split_metadata, input_gold_dict, args.n_samples_per_biome, args.chunking, args.chunk_size, args.seed)
     metadata_fetcher.run()
     end_time = time.time() 
     print(f"Metadata fetching time: {end_time - start_time} seconds")
@@ -180,20 +181,7 @@ if __name__ == "__main__":
 
     
 
-# eventually...
-# =============================================================================
-# try:
-#     metadata_processor.run()
-# except Exception as e:
-#     logging.error(f"Error during metadata processing: {e}")
-# 
-# try:
-#     gpt_interactor.run()
-# except Exception as e:
-#     logging.error(f"Error during GPT interaction: {e}")
-# =============================================================================
-    
-    
+
 
 # 20231206 (14:20)
 # gpt-3.5-turbo-1106
@@ -315,10 +303,10 @@ if __name__ == "__main__":
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "MicrobeAtlasProject" \
 #     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 2 \
-#     --chunking "yes" \
+#     --n_samples_per_biome 200 \
+#     --chunking "no" \
 #     --chunk_size 2000 \
-#     --seed 22 \
+#     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
 #     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
 #     --encoding_name "cl100k_base" \

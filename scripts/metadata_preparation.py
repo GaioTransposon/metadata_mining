@@ -6,8 +6,6 @@ Created on Mon May  6 16:57:36 2024
 @author: dgaio
 """
 
-
-
 import argparse
 import time
 import os
@@ -61,7 +59,9 @@ def setup_logging():
     logger.addHandler(console_handler)
     ###
     
-    
+
+
+
 def main():
     args = parse_arguments()
     
@@ -75,7 +75,7 @@ def main():
     
     # Metadata Fetching
     start_time = time.time()
-    metadata_fetcher = MetadataFetching(work_dir, args.directory_with_split_metadata, input_gold_dict, args.n_samples_per_biome, args.seed)
+    metadata_fetcher = MetadataFetching(work_dir, args.directory_with_split_metadata, input_gold_dict, args.n_samples_per_biome, args.chunking, args.chunk_size, args.seed)
     metadata_fetcher.run()
     end_time = time.time()
     logging.info(f"Metadata fetching time: {end_time - start_time} seconds")
@@ -96,8 +96,8 @@ if __name__ == "__main__":
 # python /Users/dgaio/github/metadata_mining/scripts/metadata_preparation.py \
 #     --work_dir "MicrobeAtlasProject" \
 #     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 10 \
-#     --chunking "yes" \
+#     --n_samples_per_biome 200 \
+#     --chunking "no" \
 #     --chunk_size 2000 \
 #     --seed 22 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
