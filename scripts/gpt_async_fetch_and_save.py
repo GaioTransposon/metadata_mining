@@ -46,8 +46,9 @@ def convert_jsonl_content_to_csv(jsonl_content, output_csv_path):
             ])
 
 def get_existing_batch_ids(directory):
-    pattern = f"{directory}/gpt_clean_output*.csv"
+    pattern = f"{directory}/gpt_clean_output*batch*.csv"
     files = glob.glob(pattern)
+    print(files)
     existing_ids = set()
     for file in files:
         # Extract the batch ID from the filename correctly including 'batch_'
@@ -72,7 +73,9 @@ for batch_info in batch_info_list:
     if batch_job_id not in existing_batch_ids:
         result_json = retrieve_results(client, batch_job_id)
         if result_json:
-            output_csv_path = f"{directory}/gpt_clean_output_nspb{batch_info['nspb']}_chunking{batch_info['chunking']}_chunksize{batch_info['chunksize']}_model{batch_info['model']}_temp{batch_info['temperature']}_maxtokens{batch_info['max_tokens']}_topp{batch_info['top_p']}_freqp{batch_info['frequency_penalty']}_presp{batch_info['presence_penalty']}_rs{batch_info['rs']}_batch_{batch_job_id.split('_')[-1]}.csv"
+            
+            output_csv_path = f"{directory}/gpt_clean_output_nspb{batch_info['nspb']}_chunking{batch_info['chunking']}_chunksize{batch_info['chunksize']}_model{batch_info['model']}_temp{batch_info['temperature']}_maxtokens{batch_info['max_tokens']}_topp{batch_info['top_p']}_freqp{batch_info['frequency_penalty']}_presp{batch_info['presence_penalty']}_rs{batch_info['rs']}_batch{batch_job_id.split('_')[-1]}.csv"
+            #output_csv_path = f"{directory}/gpt_clean_output_nspb{batch_info['nspb']}_chunking{batch_info['chunking']}_chunksize{batch_info['chunksize']}_model{batch_info['model']}_temp{batch_info['temperature']}_maxtokens{batch_info['max_tokens']}_topp{batch_info['top_p']}_freqp{batch_info['frequency_penalty']}_presp{batch_info['presence_penalty']}_rs{batch_info['rs']}_batch_{batch_job_id.split('_')[-1]}.csv"
             convert_jsonl_content_to_csv(result_json, output_csv_path)
             print("Batch completed and results saved to CSV.")
         else:

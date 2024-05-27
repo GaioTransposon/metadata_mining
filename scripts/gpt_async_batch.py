@@ -6,6 +6,9 @@ Created on Tue May  7 14:36:00 2024
 @author: dgaio
 """
 
+# NB: works with latets openai (not 0.28)
+# pip uninstall openai
+# pip install openai 
 
 import argparse
 import json
@@ -25,12 +28,10 @@ def init_openai_client(api_key_path):
     return OpenAI(api_key=api_key)
 
 
-
 def load_system_prompt(system_prompt_file):
     with open(system_prompt_file, 'r') as file:
         return file.read().strip()
-
-
+    
 
 def prepare_batch_tasks(df, system_prompt, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty):
     tasks = []
@@ -57,6 +58,18 @@ def prepare_batch_tasks(df, system_prompt, model, temperature, max_tokens, top_p
         tasks.append(task)
     return tasks
 
+
+def parse_filename(filename):
+    pattern = r"metadataprov_nspb(\d+)_chunking(\w+)_chunksize(\d+)_rs(\d+)"
+    match = re.search(pattern, filename)
+    if match:
+        return {
+            "nspb": match.group(1),
+            "chunking": match.group(2),
+            "chunksize": match.group(3),
+            "rs": match.group(4),
+        }
+    return {}
 
 
 def find_latest_file(directory, prefix, file_extension):
@@ -94,6 +107,7 @@ def main():
     system_prompt = load_system_prompt(os.path.join(os.path.expanduser('~'), args.system_prompt_file))
     data_file = find_latest_file(work_dir_full, "metadataprov", ".pkl")
     print("Using metadata file:", data_file)
+    file_params = parse_filename(data_file)
     
     with open(data_file, 'rb') as file:
         metadata_dict = pickle.load(file)
@@ -119,16 +133,20 @@ def main():
 
     # Store batch info     
     batch_info = {
-        "batch_job_id": batch_job.id,
-        "datetime": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        "model": args.model,
-        "temperature": args.temperature,
-        "max_tokens": args.max_tokens,
-        "top_p": args.top_p,
-        "frequency_penalty": args.frequency_penalty,
-        "presence_penalty": args.presence_penalty
+    "batch_job_id": batch_job.id,
+    "nspb": file_params['nspb'],
+    "chunking": file_params['chunking'],
+    "chunksize": file_params['chunksize'],
+    "rs": file_params['rs'],
+    "model": args.model,
+    "temperature": args.temperature,
+    "max_tokens": args.max_tokens,
+    "top_p": args.top_p,
+    "frequency_penalty": args.frequency_penalty,
+    "presence_penalty": args.presence_penalty,
+    "datetime": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
-    
+
     info_filename = os.path.join(work_dir_full, "batch_job_info.json")
     if not os.path.exists(info_filename):
         with open(info_filename, "w") as f:

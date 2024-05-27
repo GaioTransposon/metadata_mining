@@ -12,7 +12,7 @@ import os
 import logging
 from datetime import datetime
 from openai_02_metadata_fetching import MetadataFetching
-from openai_02_metadata_processing import MetadataProcessor
+#from openai_02_metadata_processing import MetadataProcessor
 
 
 
@@ -68,7 +68,7 @@ def main():
     home_dir = os.getenv('HOME')
     work_dir = os.path.join(home_dir, args.work_dir)
     input_gold_dict = os.path.join(home_dir, args.input_gold_dict)
-    system_prompt_file = os.path.join(home_dir, args.system_prompt_file)
+    #system_prompt_file = os.path.join(home_dir, args.system_prompt_file)
     
     
     setup_logging()
@@ -80,14 +80,16 @@ def main():
     end_time = time.time()
     logging.info(f"Metadata fetching time: {end_time - start_time} seconds")
     
-    # Metadata Processing
-    start_time = time.time()
-    metadata_processor = MetadataProcessor(work_dir, args.chunking, args.chunk_size, system_prompt_file, args.encoding_name)
-    processed_metadata = metadata_processor.process_metadata()
-    chunks, complete_sample_ids = metadata_processor.create_and_save_chunks(processed_metadata, return_ids=True)
-    metadata_processor.save_chunks_to_file(chunks)
-    end_time = time.time()
-    logging.info(f"Metadata processing time: {end_time - start_time} seconds")
+# =============================================================================
+#     # Metadata Processing
+#     start_time = time.time()
+#     metadata_processor = MetadataProcessor(work_dir, args.chunking, args.chunk_size, system_prompt_file, args.encoding_name)
+#     processed_metadata = metadata_processor.process_metadata()
+#     chunks, complete_sample_ids = metadata_processor.create_and_save_chunks(processed_metadata, return_ids=True)
+#     metadata_processor.save_chunks_to_file(chunks)
+#     end_time = time.time()
+#     logging.info(f"Metadata processing time: {end_time - start_time} seconds")
+# =============================================================================
     
 if __name__ == "__main__":
     main()
@@ -96,7 +98,7 @@ if __name__ == "__main__":
 # python /Users/dgaio/github/metadata_mining/scripts/metadata_preparation.py \
 #     --work_dir "MicrobeAtlasProject" \
 #     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 200 \
+#     --n_samples_per_biome 100 \
 #     --chunking "no" \
 #     --chunk_size 2000 \
 #     --seed 22 \
@@ -105,11 +107,14 @@ if __name__ == "__main__":
 #     --encoding_name "cl100k_base"
     
 
-    
-
-
-
-
-
-    
+# python /Users/dgaio/github/metadata_mining/scripts/gpt_async_batch.py \
+#     --work_dir "MicrobeAtlasProject" \
+#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_batch.txt" \
+#     --api_key_path "my_api_key" \
+#     --model "gpt-3.5-turbo-1106" \
+#     --temperature 1.00 \
+#     --max_tokens 4096 \
+#     --top_p 0.75 \
+#     --frequency_penalty 0.25 \
+#     --presence_penalty 1.5 
     
