@@ -144,7 +144,7 @@ def main():
     "top_p": args.top_p,
     "frequency_penalty": args.frequency_penalty,
     "presence_penalty": args.presence_penalty,
-    "datetime": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    "datetime": datetime.now().strftime('%Y%m%d_%H%M')
     }
 
     info_filename = os.path.join(work_dir_full, "batch_job_info.json")

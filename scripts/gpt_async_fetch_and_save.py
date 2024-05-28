@@ -45,15 +45,14 @@ def convert_jsonl_content_to_csv(jsonl_content, output_csv_path):
                 content_data['sub-biome']
             ])
 
+
 def get_existing_batch_ids(directory):
     pattern = f"{directory}/gpt_clean_output*batch*.csv"
     files = glob.glob(pattern)
-    print(files)
     existing_ids = set()
     for file in files:
-        # Extract the batch ID from the filename correctly including 'batch_'
-        batch_id = file.split('_batch_')[-1].split('.csv')[0]
-        existing_ids.add('batch_' + batch_id)  # Ensure to add 'batch_' to match JSON content
+        batch_id = file.split('_batch')[-1].split('.csv')[0]
+        existing_ids.add('batch_' + batch_id) 
     return existing_ids
 
 
@@ -63,6 +62,7 @@ client = init_openai_client(api_key_file)
 
 directory = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject"
 existing_batch_ids = get_existing_batch_ids(directory)
+print(existing_batch_ids)
 
 # Load batch job information including model, temperature, and batch_job_id
 with open(f"{directory}/batch_job_info.json", "r") as f:
@@ -74,8 +74,7 @@ for batch_info in batch_info_list:
         result_json = retrieve_results(client, batch_job_id)
         if result_json:
             
-            output_csv_path = f"{directory}/gpt_clean_output_nspb{batch_info['nspb']}_chunking{batch_info['chunking']}_chunksize{batch_info['chunksize']}_model{batch_info['model']}_temp{batch_info['temperature']}_maxtokens{batch_info['max_tokens']}_topp{batch_info['top_p']}_freqp{batch_info['frequency_penalty']}_presp{batch_info['presence_penalty']}_rs{batch_info['rs']}_batch{batch_job_id.split('_')[-1]}.csv"
-            #output_csv_path = f"{directory}/gpt_clean_output_nspb{batch_info['nspb']}_chunking{batch_info['chunking']}_chunksize{batch_info['chunksize']}_model{batch_info['model']}_temp{batch_info['temperature']}_maxtokens{batch_info['max_tokens']}_topp{batch_info['top_p']}_freqp{batch_info['frequency_penalty']}_presp{batch_info['presence_penalty']}_rs{batch_info['rs']}_batch_{batch_job_id.split('_')[-1]}.csv"
+            output_csv_path = f"{directory}/gpt_clean_output_nspb{batch_info['nspb']}_chunking{batch_info['chunking']}_chunksize{batch_info['chunksize']}_model{batch_info['model']}_temp{batch_info['temperature']}_maxtokens{batch_info['max_tokens']}_topp{batch_info['top_p']}_freqp{batch_info['frequency_penalty']}_presp{batch_info['presence_penalty']}_rs{batch_info['rs']}_batch{batch_job_id.split('_')[-1]}_dt{batch_info['datetime']}.csv"
             convert_jsonl_content_to_csv(result_json, output_csv_path)
             print("Batch completed and results saved to CSV.")
         else:

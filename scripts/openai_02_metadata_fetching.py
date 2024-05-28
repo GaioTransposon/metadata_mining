@@ -90,24 +90,6 @@ class MetadataFetching:
         print(f"Metadata dictionary saved to {output_path_pkl}")
     
 
-# =============================================================================
-#         # Convert and save as CSV
-#         filename = f"metadataprov_nspb{self.n_samples_per_biome}_chunking{self.chunking}_chunksize{self.chunk_size}_rs{self.seed}.csv"
-#         output_path_csv = os.path.join(self.work_dir, filename)
-#         print('^^^^^^^', output_path_csv)
-#         with open(output_path_csv, 'w', newline='') as csvfile:
-#             writer = csv.writer(csvfile)
-#             writer.writerow(['sample_id', 'metadata'])
-#             for sample_id, text in metadata_dict.items():
-#                 
-#                 # removed quotes and converts line breaks to \n
-#                 text = text.replace("'", "").replace('"', "").replace("\n", " ")
-#                 
-#                 writer.writerow([sample_id, text])
-#         print(f"Metadata dictionary also saved as CSV to {output_path_csv}")
-# =============================================================================
-        
-        
     def run(self):
         gold_dict = self.load_gold_dict()
         gold_dict_df = self.transform_gold_dict_to_df(gold_dict)
@@ -115,7 +97,6 @@ class MetadataFetching:
         metadata_dict = self.fetch_metadata_for_samples(random_samples)
  
         self.save_metadata(metadata_dict)
-
 
 
 
