@@ -16,6 +16,10 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import pickle
 import csv
+import os
+from matplotlib.backends.backend_pdf import PdfPages
+
+
 
 def load_embeddings(json_file_path):
     with open(json_file_path, 'r') as file:
@@ -76,6 +80,14 @@ def compare_embeddings(embeddings_dict1, embeddings_dict2):
     return comparison_results
 
 
+def print_statistics(similarities):
+    avg_sim = np.mean(similarities)
+    median_sim = np.median(similarities)
+    print(f"Average cosine similarity: {avg_sim:.4f}")
+    print(f"Median cosine similarity: {median_sim:.4f}")
+    return avg_sim, median_sim
+
+
 def plot_distribution_metrics(compare_results):
     euclidean_distances = [result['euclidean'] for result in compare_results.values()]
     cosine_similarities = [result['cosine'] for result in compare_results.values()]
@@ -90,8 +102,21 @@ def plot_distribution_metrics(compare_results):
     axs[2].set_title('Manhattan distance distribution')
     plt.tight_layout()
     plt.show()
-    
-    
+
+
+def plot_comparison_distribution(actual_similarities, background_similarities, avg_sim, median_sim):
+    fig, ax = plt.subplots(figsize=(12, 6))
+    sns.histplot(actual_similarities, bins=30, kde=True, color='green', label='Actual Cosine Similarities', ax=ax, stat='density')
+    sns.histplot(background_similarities, bins=30, kde=True, color='blue', label='Background Cosine Similarities', ax=ax, alpha=0.5, stat='density')
+    ax.set_title('Actual vs Background Cosine Similarities')
+    ax.set_xlabel('Cosine Similarity')
+    ax.set_ylabel('Probability Density')
+    ax.legend()
+    plt.text(0.95, 0.95, f'Avg: {avg_sim:.4f}\nMed: {median_sim:.4f}', verticalalignment='top', horizontalalignment='right', transform=ax.transAxes, color='red', fontsize=12)
+    plt.tight_layout()
+    return fig  
+
+
 def create_shuffled_background_distribution(embeddings_gd, embeddings_gpt, num_comparisons=None):
     random_cosine_similarities = []
     gd_keys = list(embeddings_gd.keys())
@@ -109,23 +134,6 @@ def create_shuffled_background_distribution(embeddings_gd, embeddings_gpt, num_c
     return random_cosine_similarities
 
 
-    
-def plot_comparison_distribution(actual_similarities, background_similarities):
-    fig, ax = plt.subplots(figsize=(12, 6))
-    
-    sns.histplot(actual_similarities, bins=30, kde=True, color='green', label='Cosine similarities', ax=ax, stat='density')
-    
-    sns.histplot(background_similarities, bins=30, kde=True, color='blue', label='Background cosine similarities', ax=ax, alpha=0.5, stat='density')
-    
-    ax.set_title('Actual vs Background similarities')
-    ax.set_xlabel('cosine similarity')
-    ax.set_ylabel('probability density')
-    ax.legend()
-    
-    plt.tight_layout()
-    plt.show()
-    
-    
 
 def sample_by_category(labels, n):
     
@@ -146,16 +154,51 @@ def sample_by_category(labels, n):
             sampled_keys.extend(random.sample(keys, n))
         else:
             sampled_keys.extend(keys)  # if less than n, take all
-    return sampled_keys
+    return sampled_keys  
 
 
 
+def plot_heatmap(matrix_gd, matrix_gpt, gpt_labels, gold_labels, keys_gpt_sampled, keys_gd_sampled):
+    similarity_matrix = cosine_similarity(matrix_gd, matrix_gpt)
+    fig, ax = plt.subplots(figsize=(14, 12))
+    sns.set(font_scale=0.5)
+    sns.heatmap(similarity_matrix, annot=False, cmap='coolwarm', ax=ax,
+                          xticklabels=[gpt_labels[key] for key in keys_gpt_sampled],
+                          yticklabels=[gold_labels[key] for key in keys_gd_sampled])
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+    ax.set_yticklabels(ax.get_yticklabels(), rotation=0, ha='right')
+    plt.title('Cosine Similarity Heatmap Grouped by Category')
+    plt.xlabel('Test Samples')
+    plt.ylabel('Ground Truth Samples')
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.95, bottom=0.14, left=0.15, right=1.00)
+    plt.show()
+    return fig  
+
+
+
+# Function to save all figures to a single PDF
+def save_figures_to_pdf(figures, file_name, directory):
+    file_path = os.path.join(directory, file_name.replace('.json', '.pdf'))
+    with PdfPages(file_path) as pdf:
+        for fig in figures:
+            pdf.savefig(fig)
+            plt.close(fig)  
+        print(f"All plots saved to {file_path}")
+        
+        
 ########################################
 
 # Fetch embeddings: 
 
-# Define paths to the JSON files containing embeddings
-gpt_json_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/embeddings/gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs33_batchgTBuqJNA7w30eIjHax535YMQ_dt20240524_1537_bsbembeddings.json'  
+# File to test: 
+gpt_file = 'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs33_batchgTBuqJNA7w30eIjHax535YMQ_dt20240524_1537'
+
+
+gpt_json_path = gpt_file + '_bsbembeddings.json'
+work_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/embeddings'
+gpt_json_path = os.path.join(work_dir, gpt_json_path)
+
 gold_dict_json_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/embeddings/gold_dict_bsbembeddings.json'  
 
 embeddings_gpt, failed_samples_gpt = load_embeddings(gpt_json_path)
@@ -170,10 +213,9 @@ print("Filtered gpt_clean_bsb:", len(filtered_gpt))
 ########################################
 
 
-# Compute similarities
+# Compute and plot similarities
 compare_results = compare_embeddings(filtered_gd, filtered_gpt)
-plot_distribution_metrics(compare_results)
-
+#plot_distribution_metrics(compare_results)
 
 ########################################
 
@@ -181,20 +223,23 @@ plot_distribution_metrics(compare_results)
 # Plotting cosine similarity vs background 
 
 actual_similarities = [result['cosine'] for result in compare_results.values()]
-num_comparisons = len(actual_similarities)  
+background_similarities = create_shuffled_background_distribution(embeddings_gd, embeddings_gpt, num_comparisons=len(actual_similarities))
 
-background_similarities = create_shuffled_background_distribution(embeddings_gd, embeddings_gpt, num_comparisons=num_comparisons)
+# Calculate statistics
+avg_sim, median_sim = print_statistics(actual_similarities)
 
-plot_comparison_distribution(actual_similarities, background_similarities)
 
+# Plot similarity vs background
+comparison_fig = plot_comparison_distribution(actual_similarities, background_similarities, avg_sim, median_sim)
 
 ########################################
 
 
 # Heatmap 
 
-# labels from original files: 
-gpt_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs33_batchgTBuqJNA7w30eIjHax535YMQ_dt20240524_1537.csv'
+gpt_file = gpt_file + '.csv'
+work_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject'
+gpt_path = os.path.join(work_dir, gpt_file)
 gold_path = '/Users/dgaio/github/metadata_mining/source_data/gold_dict.pkl'
 
 
@@ -203,35 +248,28 @@ gold_labels = load_labels_gold_dict(gold_path)
 
 gold_labels, gpt_labels = filter_common_keys(gold_labels, gpt_labels)
 
-
 n_samples_per_category = 10  # Adjust this number as needed
-
 
 # use these labels in sampling function
 keys_gd_sampled = sample_by_category(gold_labels, n_samples_per_category)
 keys_gpt_sampled = [key for key in keys_gd_sampled]  # ensuring alignment
 
-
 matrix_gd = np.array([embeddings_gd[key] for key in keys_gd_sampled])
 matrix_gpt = np.array([embeddings_gpt[key] for key in keys_gpt_sampled])
 
-similarity_matrix = cosine_similarity(matrix_gd, matrix_gpt)
 
 # Plot heatmap
-plt.figure(figsize=(12, 10))
-sns.set(font_scale=0.7)
-ax = sns.heatmap(similarity_matrix, annot=False, cmap='coolwarm',
-                 xticklabels=[gpt_labels[key] for key in keys_gpt_sampled],
-                 yticklabels=[gold_labels[key] for key in keys_gd_sampled])
-ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
-ax.set_yticklabels(ax.get_yticklabels(), rotation=0, ha='right')
-
-plt.title('Cosine Similarity Heatmap Grouped by Category')
-plt.xlabel('Test Samples')
-plt.ylabel('Ground Truth Samples')
-plt.show()
+heatmap_fig = plot_heatmap(matrix_gd, matrix_gpt, gpt_labels, gold_labels, keys_gpt_sampled, keys_gd_sampled)
 
 
 ########################################
+
+# Save both figures to a PDF
+save_figures_to_pdf([comparison_fig, heatmap_fig], gpt_json_path, work_dir)
+
+
+
+
+
 
 
