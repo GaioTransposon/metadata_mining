@@ -83,11 +83,12 @@ def process_file(csv_file_path):
 
 
 
-def save_embeddings(embeddings_dict, failed_samples, output_file_path):
+def save_embeddings(embeddings_dict, output_file_path):
     with open(output_file_path, 'w') as json_file:
-        json.dump({'embeddings': embeddings_dict, 'failed_samples': failed_samples}, json_file)
+        json.dump(embeddings_dict, json_file)
 
 
+        
 
 with open(api_key_path, "r") as file:
     openai.api_key = file.read().strip()
@@ -133,7 +134,11 @@ if os.path.exists(output_file_path):
     print('Gold dict embeddings file already exists:', output_file_path)
 else:
     embeddings_dict, failed_samples = get_embeddings(gold_dict_bsb)
-    save_embeddings(embeddings_dict, failed_samples, output_file_path)
+    print('Failed samples for file: ', output_file_path)
+    print(failed_samples)
+    
+    save_embeddings(embeddings_dict, output_file_path)
+    
     print(f"Embeddings for gold dict saved to {output_file_path}.")
 ############
 

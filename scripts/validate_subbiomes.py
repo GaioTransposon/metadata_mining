@@ -7,26 +7,24 @@ Created on Tue Apr 23 15:17:22 2024
 """
 
 
-from scipy.spatial import distance
+import os
+import json
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import random
-import json
-import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
-import pickle
 import csv
-import os
+import pickle
+from scipy.spatial import distance
+from sklearn.metrics.pairwise import cosine_similarity
 from matplotlib.backends.backend_pdf import PdfPages
-
 
 
 def load_embeddings(json_file_path):
     with open(json_file_path, 'r') as file:
         data = json.load(file)
-    embeddings_dict = {k: np.array(v, dtype=np.float32) for k, v in data['embeddings'].items()}
-    failed_samples = data['failed_samples']
-    return embeddings_dict, failed_samples
+    embeddings_dict = {k: np.array(v, dtype=np.float32) for k, v in data.items()}
+    return embeddings_dict
 
 
 def load_labels_gpt(csv_file_path):
@@ -171,105 +169,91 @@ def plot_heatmap(matrix_gd, matrix_gpt, gpt_labels, gold_labels, keys_gpt_sample
     plt.xlabel('Test Samples')
     plt.ylabel('Ground Truth Samples')
     plt.tight_layout()
-    plt.subplots_adjust(top=0.95, bottom=0.14, left=0.15, right=1.00)
-    plt.show()
+    plt.subplots_adjust(top=0.95, bottom=0.20, left=0.15, right=1.00)
+    #plt.show()
     return fig  
-
-
 
 # Function to save all figures to a single PDF
 def save_figures_to_pdf(figures, file_name, directory):
-    file_path = os.path.join(directory, file_name.replace('.json', '.pdf'))
+    file_path = os.path.join(directory, file_name + '.pdf')
     with PdfPages(file_path) as pdf:
         for fig in figures:
             pdf.savefig(fig)
             plt.close(fig)  
         print(f"All plots saved to {file_path}")
+
         
         
-########################################
-
-# Fetch embeddings: 
-
-# File to test: 
-gpt_file = 'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs33_batchgTBuqJNA7w30eIjHax535YMQ_dt20240524_1537'
 
 
-gpt_json_path = gpt_file + '_bsbembeddings.json'
-work_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/embeddings'
-gpt_json_path = os.path.join(work_dir, gpt_json_path)
+# Directory containing the JSON files
+embeddings_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/embeddings'
+all_files = os.listdir(embeddings_dir)
 
-gold_dict_json_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/embeddings/gold_dict_bsbembeddings.json'  
+# Filter to get only files that start with 'gpt' and end with '.json'
+gpt_json_files = [f for f in all_files if f.startswith('gpt') and f.endswith('.json')]
 
-embeddings_gpt, failed_samples_gpt = load_embeddings(gpt_json_path)
-embeddings_gd, failed_samples_gd = load_embeddings(gold_dict_json_path)
+# Gold dict path (assuming it's constant for all comparisons)
+gold_dict_json_path = os.path.join(embeddings_dir, 'gold_dict_bsbembeddings.json')  
+embeddings_gd = load_embeddings(gold_dict_json_path)
 
-# Filter embeddings to include only common keys
-filtered_gd, filtered_gpt = filter_common_keys(embeddings_gd, embeddings_gpt)
-print("Filtered gold_dict_bsb:", len(filtered_gd))
-print("Filtered gpt_clean_bsb:", len(filtered_gpt))
+# Parent directory to access CSV files
+parent_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject'
 
+# Fetch embeddings from each gpt json file and compare to ground truth embeddings:
+for gpt_file in gpt_json_files:
+    gpt_json_path = os.path.join(embeddings_dir, gpt_file)
+    embeddings_gpt = load_embeddings(gpt_json_path)
+    
+    # Filter embeddings to include only common keys
+    filtered_gd, filtered_gpt = filter_common_keys(embeddings_gd, embeddings_gpt)
+    print("Filtered gold_dict_bsb:", len(filtered_gd))
+    print("Filtered gpt_clean_bsb:", len(filtered_gpt))
 
-########################################
+    ########################################
+    # Compare embeddings
+    compare_results = compare_embeddings(filtered_gd, filtered_gpt)
 
+    ########################################
+    # Calculate and print statistics
+    actual_similarities = [result['cosine'] for result in compare_results.values()]
+    avg_sim, median_sim = print_statistics(actual_similarities)
 
-# Compute and plot similarities
-compare_results = compare_embeddings(filtered_gd, filtered_gpt)
-#plot_distribution_metrics(compare_results)
+    ########################################
+    # Plot distribution metrics
+    # plot_distribution_metrics(compare_results)
 
-########################################
+    ########################################
+    # Plot similarity vs background
+    background_similarities = create_shuffled_background_distribution(filtered_gd, filtered_gpt, num_comparisons=len(actual_similarities))
+    comparison_fig = plot_comparison_distribution(actual_similarities, background_similarities, avg_sim, median_sim)
 
+    ########################################
+    # Setup for heatmap (cause we need to retrieve labels)
+    # Correctly adjust filename to match CSV naming convention
+    gpt_base_file = gpt_file.replace('_bsbembeddings.json', '')
+    gpt_csv_file = gpt_base_file + '.csv'
+    gpt_path = os.path.join(parent_dir, gpt_csv_file)
+    gpt_labels = load_labels_gpt(gpt_path)
 
-# Plotting cosine similarity vs background 
+    gold_path = '/Users/dgaio/github/metadata_mining/source_data/gold_dict.pkl'
+    gold_labels = load_labels_gold_dict(gold_path)
+    gold_labels, gpt_labels = filter_common_keys(gold_labels, gpt_labels)
 
-actual_similarities = [result['cosine'] for result in compare_results.values()]
-background_similarities = create_shuffled_background_distribution(embeddings_gd, embeddings_gpt, num_comparisons=len(actual_similarities))
+    # Sample keys by category and prepare data for heatmap
+    keys_gd_sampled = sample_by_category(gold_labels, 10)
+    keys_gpt_sampled = [key for key in keys_gd_sampled]  # ensuring alignment
+    matrix_gd = np.array([embeddings_gd[key] for key in keys_gd_sampled])
+    matrix_gpt = np.array([embeddings_gpt[key] for key in keys_gpt_sampled])
+    
+    # Heatmap
+    heatmap_fig = plot_heatmap(matrix_gd, matrix_gpt, gpt_labels, gold_labels, keys_gpt_sampled, keys_gd_sampled)
 
-# Calculate statistics
-avg_sim, median_sim = print_statistics(actual_similarities)
-
-
-# Plot similarity vs background
-comparison_fig = plot_comparison_distribution(actual_similarities, background_similarities, avg_sim, median_sim)
-
-########################################
-
-
-# Heatmap 
-
-gpt_file = gpt_file + '.csv'
-work_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject'
-gpt_path = os.path.join(work_dir, gpt_file)
-gold_path = '/Users/dgaio/github/metadata_mining/source_data/gold_dict.pkl'
-
-
-gpt_labels = load_labels_gpt(gpt_path)
-gold_labels = load_labels_gold_dict(gold_path)
-
-gold_labels, gpt_labels = filter_common_keys(gold_labels, gpt_labels)
-
-n_samples_per_category = 10  # Adjust this number as needed
-
-# use these labels in sampling function
-keys_gd_sampled = sample_by_category(gold_labels, n_samples_per_category)
-keys_gpt_sampled = [key for key in keys_gd_sampled]  # ensuring alignment
-
-matrix_gd = np.array([embeddings_gd[key] for key in keys_gd_sampled])
-matrix_gpt = np.array([embeddings_gpt[key] for key in keys_gpt_sampled])
-
-
-# Plot heatmap
-heatmap_fig = plot_heatmap(matrix_gd, matrix_gpt, gpt_labels, gold_labels, keys_gpt_sampled, keys_gd_sampled)
-
-
-########################################
-
-# Save both figures to a PDF
-save_figures_to_pdf([comparison_fig, heatmap_fig], gpt_json_path, work_dir)
-
-
-
-
-
-
-
+    ########################################
+    # Save both figures to a PDF
+    save_figures_to_pdf([comparison_fig, heatmap_fig], gpt_base_file, embeddings_dir)
+    
+    
+    
+    
+    
