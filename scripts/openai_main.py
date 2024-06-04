@@ -161,7 +161,7 @@ def main():
     logging.info(f"my_tot_api_count: {my_tot_api_count}")
 
     # save final df to file:
-    current_datetime = datetime.now().strftime('%Y%m%d_%H%M')
+    current_datetime = datetime.now().strftime('%Y%m%d%H%M')
     filename = f"gpt_clean_output_nspb{args.n_samples_per_biome}_chunking{args.chunking}_chunksize{args.chunk_size}_model{args.model}_temp{args.temperature}_maxtokens{args.max_tokens}_topp{args.top_p}_freqp{args.frequency_penalty}_presp{args.presence_penalty}_rs{args.seed}_API{my_tot_api_count}_{args.opt_text}_dt{current_datetime}.txt"
     output_path = os.path.join(work_dir, filename)
     main_parsed_df.to_csv(output_path, index=False)
@@ -303,8 +303,8 @@ if __name__ == "__main__":
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "MicrobeAtlasProject" \
 #     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 100 \
-#     --chunking "no" \
+#     --n_samples_per_biome 2 \
+#     --chunking "yes" \
 #     --chunk_size 2000 \
 #     --seed 42 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \

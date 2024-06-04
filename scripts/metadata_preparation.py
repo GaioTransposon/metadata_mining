@@ -35,7 +35,7 @@ def setup_logging():
     
     # determine the dir of the running script - logging file will be save there
     script_directory = os.path.dirname(os.path.abspath(__file__))
-    log_filename = datetime.now().strftime("metadata_preparation_%Y%m%d_%H%M%S.log")
+    log_filename = datetime.now().strftime("metadata_preparation_%Y%m%d%H%M%S.log")
     log_filepath = os.path.join(script_directory, log_filename)
 
     logger = logging.getLogger()

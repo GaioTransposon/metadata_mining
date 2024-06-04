@@ -10,11 +10,6 @@ Created on Mon Oct  9 13:05:41 2023
 # python ~/github/metadata_mining/scripts/compare_gpt_outputs.py --work_dir MicrobeAtlasProject
 
 
-
-
-
-
-
 import os
 import re
 import pandas as pd
