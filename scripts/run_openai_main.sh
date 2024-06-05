@@ -7,7 +7,7 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate spyder_env
 
 
-echo -e "\033[32m chunking yes/no"
+echo -e "\033[32m 1. chunking yes/no"
 echo -e "\033[0m"
 
 python ~/github/metadata_mining/scripts/openai_main.py \
@@ -32,7 +32,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m chunking yes/no"
+echo -e "\033[32m 2. chunking yes/no"
 echo -e "\033[0m"
 
 python ~/github/metadata_mining/scripts/openai_main.py \
@@ -57,7 +57,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m chunking sizes"
+echo -e "\033[32m 3. chunking sizes"
 echo -e "\033[0m"
 
 python ~/github/metadata_mining/scripts/openai_main.py \
@@ -82,7 +82,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m chunking sizes"
+echo -e "\033[32m 4. chunking sizes"
 echo -e "\033[0m"
 
 
@@ -108,7 +108,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m model"
+echo -e "\033[32m 5. model"
 echo -e "\033[0m"
 
 
@@ -134,7 +134,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m temp"
+echo -e "\033[32m 6. temp"
 echo -e "\033[0m"
 
 
@@ -160,7 +160,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m temp"
+echo -e "\033[32m 7. temp"
 echo -e "\033[0m"
 
 
@@ -186,7 +186,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m temp"
+echo -e "\033[32m 8. temp"
 echo -e "\033[0m"
 
 
@@ -212,7 +212,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m topp"
+echo -e "\033[32m 9. topp"
 echo -e "\033[0m"
 
 
@@ -239,7 +239,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m topp"
+echo -e "\033[32m 10. topp"
 echo -e "\033[0m"
 
 
@@ -265,7 +265,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m topp"
+echo -e "\033[32m 11. topp"
 echo -e "\033[0m"
 
 
@@ -291,7 +291,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m freqp"
+echo -e "\033[32m 12. freqp"
 echo -e "\033[0m"
 
 
@@ -317,7 +317,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m freqp"
+echo -e "\033[32m 13. freqp"
 echo -e "\033[0m"
 
 
@@ -343,7 +343,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m freqp"
+echo -e "\033[32m 14. freqp"
 echo -e "\033[0m"
 
 
@@ -369,7 +369,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m presp"
+echo -e "\033[32m 15. presp"
 echo -e "\033[0m"
 
 
@@ -395,7 +395,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m presp"
+echo -e "\033[32m 16. presp"
 echo -e "\033[0m"
 
 
@@ -421,7 +421,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m presp"
+echo -e "\033[32m 17. presp"
 echo -e "\033[0m"
 
 
@@ -447,7 +447,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m rs"
+echo -e "\033[32m 18. rs"
 echo -e "\033[0m"
 
 
@@ -473,7 +473,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 sleep 1m
-echo -e "\033[32m rs"
+echo -e "\033[32m 19. rs"
 echo -e "\033[0m"
 
 
