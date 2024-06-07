@@ -6,12 +6,11 @@ Created on Wed May 22 14:07:58 2024
 @author: dgaio
 """
 
-
 import json
 import csv
 import os
+import glob
 from openai import OpenAI
-import glob  
 
 def init_openai_client(api_key_path):
     with open(api_key_path, "r") as file:
@@ -45,9 +44,6 @@ def convert_jsonl_content_to_csv(jsonl_content, output_csv_path):
                 content_data['keywords'],
                 content_data['sub-biome']
             ])
-  
-            
-            
 
 def get_existing_batch_ids(directory):
     pattern = f"{directory}/gpt_clean_output*batch*.csv"
@@ -58,16 +54,17 @@ def get_existing_batch_ids(directory):
         existing_ids.add('batch_' + batch_id) 
     return existing_ids
 
-
 # Main execution
 api_key_file = os.path.expanduser("~/my_api_key")
 client = init_openai_client(api_key_file)
 
-directory = "MicrobeAtlasProject" # /Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject
+
+home_dir = os.getenv('HOME')
+directory = os.path.join(home_dir, "MicrobeAtlasProject")
 existing_batch_ids = get_existing_batch_ids(directory)
 print(existing_batch_ids)
 
-# Load batch job information including model, temperature, and batch_job_id
+# Load batch job information
 with open(f"{directory}/batch_job_info.json", "r") as f:
     batch_info_list = json.load(f)
 
@@ -75,24 +72,18 @@ for batch_info in batch_info_list:
     batch_job_id = batch_info["batch_job_id"]
     print('batch_job_id', batch_job_id)
     if batch_job_id not in existing_batch_ids:
-        result_json = retrieve_results(client, batch_job_id)
-        if result_json:
-            
-            output_csv_path = f"{directory}/gpt_clean_output_nspb{batch_info['nspb']}_chunking{batch_info['chunking']}_chunksize{batch_info['chunksize']}_model{batch_info['model']}_temp{batch_info['temperature']}_maxtokens{batch_info['max_tokens']}_topp{batch_info['top_p']}_freqp{batch_info['frequency_penalty']}_presp{batch_info['presence_penalty']}_rs{batch_info['rs']}_batch{batch_job_id.split('_')[-1]}_dt{batch_info['datetime']}.csv"
-            convert_jsonl_content_to_csv(result_json, output_csv_path)
-            print("Batch completed and results saved to CSV.")
-        else:
-            print("Please wait until the batch job is completed.")
+        try:
+            result_json = retrieve_results(client, batch_job_id)
+            if result_json:
+                output_csv_path = f"{directory}/gpt_clean_output_nspb{batch_info['nspb']}_chunking{batch_info['chunking']}_chunksize{batch_info['chunksize']}_model{batch_info['model']}_temp{batch_info['temperature']}_maxtokens{batch_info['max_tokens']}_topp{batch_info['top_p']}_freqp{batch_info['frequency_penalty']}_presp{batch_info['presence_penalty']}_rs{batch_info['rs']}_batch{batch_job_id.split('_')[-1]}_dt{batch_info['datetime']}.csv"
+                convert_jsonl_content_to_csv(result_json, output_csv_path)
+                print("Batch completed and results saved to CSV.")
+            else:
+                print("Please wait until the batch job is completed.")
+        except Exception as e:
+            print(f"Error processing batch {batch_job_id}: {str(e)}. Continuing with the next.")
     else:
         print(f"CSV file for batch {batch_job_id} already exists. Skipping creation.")
-
-
-
-
-
-
-
-
 
 
 
