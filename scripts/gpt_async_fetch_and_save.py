@@ -60,7 +60,7 @@ def get_existing_batch_ids(directory):
 api_key_file = os.path.expanduser("~/my_api_key")
 client = init_openai_client(api_key_file)
 
-directory = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject"
+directory = "MicrobeAtlasProject" # /Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject
 existing_batch_ids = get_existing_batch_ids(directory)
 print(existing_batch_ids)
 
@@ -70,6 +70,7 @@ with open(f"{directory}/batch_job_info.json", "r") as f:
 
 for batch_info in batch_info_list:
     batch_job_id = batch_info["batch_job_id"]
+    print('batch_job_id', batch_job_id)
     if batch_job_id not in existing_batch_ids:
         result_json = retrieve_results(client, batch_job_id)
         if result_json:
