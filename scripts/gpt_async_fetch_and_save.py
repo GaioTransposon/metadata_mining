@@ -37,14 +37,20 @@ def convert_jsonl_content_to_csv(jsonl_content, output_csv_path):
         for line in lines:
             json_obj = json.loads(line)
             content_data = json.loads(json_obj['response']['body']['choices'][0]['message']['content'])
+
+            # because gpt sometimes forgets...
+            sub_biome_key = 'sub_biome' if 'sub_biome' in content_data else 'sub-biome'
+
             writer.writerow([
                 content_data['sample_id'],
                 content_data['biome_label'],
                 content_data['geo_location'],
                 content_data['keywords'],
-                content_data['sub-biome']
+                content_data[sub_biome_key]
             ])
-
+  
+            
+            
 
 def get_existing_batch_ids(directory):
     pattern = f"{directory}/gpt_clean_output*batch*.csv"
