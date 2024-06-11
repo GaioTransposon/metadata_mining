@@ -10,6 +10,7 @@ Created on Mon Oct  9 13:05:41 2023
 # python ~/github/metadata_mining/scripts/compare_gpt_outputs.py --work_dir MicrobeAtlasProject
 
 
+
 import os
 import re
 import pandas as pd
@@ -27,7 +28,8 @@ def process_gpt_file(file_path, gold_dict_df):
         merged_df = gpt_data.merge(gold_dict_df, on='sample', suffixes=('_gpt', '_gold'))
         merged_df['agreement'] = merged_df['biome_gpt'] == merged_df['biome_gold']
         agreement_ratio = merged_df['agreement'].mean()
-        return [agreement_ratio, len(gpt_data)]
+        valid_samples = merged_df['agreement'].count()  # Count only the matched samples
+        return [agreement_ratio, valid_samples]
     except Exception as e:
         print(f"Error processing file {file_path}: {e}")
         return [None, 0]
@@ -85,13 +87,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
 
 
 
@@ -390,6 +385,31 @@ print(result)
 # =============================================================================
 
 ############
+
+
+
+import scipy.stats as stats
+
+# Assuming 'concatenated_df' has a column 'label' for group labels and 'agreement' as binary or continuous data
+grouped_data = {label: df['agreement'].tolist() for label, df in concatenated_df.groupby('label')}
+
+# Perform ANOVA
+f_value, p_value = stats.f_oneway(*grouped_data.values())
+print("ANOVA test results: F-value = {:.2f}, p-value = {:.5f}".format(f_value, p_value))
+
+# Adding this to decide on reporting the result
+if p_value < 0.05:
+    print("Statistically significant differences exist between the groups.")
+else:
+    print("No statistically significant differences were found between the groups.")
+
+
+
+
+
+
+
+
 
 
 
