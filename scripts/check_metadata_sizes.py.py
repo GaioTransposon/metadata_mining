@@ -133,78 +133,27 @@ print(f"Common words across different files: {common_words}")
 # >= 24000 # 27 # unspecified
 # 21000-24000 # 621 # {'unknown', 'unspecified', 'condition', 'times', 'week'}
 # 20500-21000 # 1229 # {'false', 'provided', 'condition', 'true', 'week'}
-# 
+
+# 19000-20500 # 14376
+# Bin 1 (Size Range: 19000 - 19614): Most common words across different files: ['condition', 'false', 'provided', 'week', 'true']
+# Bin 2 (Size Range: 19614 - 19762): Most common words across different files: ['provided', 'false', 'sample_vioscreen', 'frequency', 'diet']
+# Bin 3 (Size Range: 19762 - 19872): Most common words across different files: ['provided', 'false', 'true', 'gut', 'project']
+# Bin 4 (Size Range: 19872 - 19937): Most common words across different files: ['provided', 'false', 'true', 'gut', 'project']
+# Bin 5 (Size Range: 19937 - 20076): Most common words across different files: ['provided', 'false', 'true', 'gut', 'project']
+# Bin 6 (Size Range: 20076 - 20229): Most common words across different files: ['provided', 'false', 'condition', 'true', 'week']
+# Bin 7 (Size Range: 20229 - 20309): Most common words across different files: ['provided', 'false', 'condition', 'true', 'week']
+# Bin 8 (Size Range: 20309 - 20374): Most common words across different files: ['provided', 'false', 'condition', 'week', 'true']
+# Bin 9 (Size Range: 20374 - 20444): Most common words across different files: ['provided', 'false', 'condition', 'week', 'true']
+# Bin 10 (Size Range: 20444 - 20499): Most common words across different files: ['provided', 'false', 'condition', 'week', 'true']
+
+# 15000-19000 # 644 ['condition', 'unknown', 'week', 'yes', 'unspecified']
 
 
+df_filtered = df[(df['file_size'] >= 20500) & (df['file_size'] < 21000)]
 
-
-df_filtered = df[(df['file_size'] >= 19000)]
 len(df_filtered)
-# =============================================================================
-# 
-# import numpy as np
-# import pandas as pd
-# from collections import Counter
-# import re
-# import nltk
-# from nltk.corpus import stopwords
-# 
-# # Assuming you already have df and the necessary imports
-# nltk.download('stopwords')
-# stop_words = set(stopwords.words('english'))
-# 
-# def process_text(text):
-#     """Clean and process text."""
-#     text = text.lower()
-#     text = re.sub(r'\W+', ' ', text)
-#     words = text.split()
-#     return [word for word in words if word not in stop_words]
-# 
-# def get_top_words(file_path, num_words=5):
-#     """Get the top N words from a file."""
-#     with open(file_path, 'r', encoding='utf-8') as file:
-#         words = process_text(file.read())
-#         word_counts = Counter(words)
-#         return [word for word, _ in word_counts.most_common(num_words)]
-# 
-# # Sort the DataFrame by file_size for consistent binning
-# df_sorted = df_filtered.sort_values(by='file_size')
-# 
-# # Calculate the indices for each bin to ensure each has at most 1500 files
-# bin_size = 100
-# bin_limits = range(0, len(df_sorted), bin_size)
-# bins = [df_sorted.iloc[bin_limits[i]:bin_limits[i+1] if i+1 < len(bin_limits) else None] for i in range(len(bin_limits))]
-# len(bins)
-# 
-# bins[1]
-# 
-# # Initialize dictionary to hold common words for each bin
-# bin_common_words = {}
-# 
-# for i, bin_df in enumerate(bins):
-#     top_words_per_file = {}
-#     common_words = set()
-#     first_file = True
-# 
-#     for index, row in bin_df.iterrows():
-#         file_path = row['file_path']
-#         top_words = get_top_words(file_path)
-#         top_words_per_file[file_path] = top_words
-#         if first_file:
-#             common_words = set(top_words)
-#             first_file = False
-#         else:
-#             common_words.intersection_update(top_words)
-#     
-#     # Save common words for this bin
-#     bin_common_words[f'Bin {i+1} (Size Range: {bin_df["file_size"].min()} - {bin_df["file_size"].max()})'] = common_words
-# 
-# # Output the common words for each bin
-# for bin_info, words in bin_common_words.items():
-#     print(f"{bin_info}: {words}")
-# 
-# 
-# =============================================================================
+
+
 
 
 
@@ -245,31 +194,26 @@ bin_size = 1500
 bin_limits = range(0, len(df_sorted), bin_size)
 bins = [df_sorted.iloc[bin_limits[i]:bin_limits[i+1] if i+1 < len(bin_limits) else None] for i in range(len(bin_limits))]
 len(bins)
-# Initialize dictionary to hold common words for each bin
-bin_common_words = {}
 
+# Output the common words for each bin
 for i, bin_df in enumerate(bins):
     if bin_df.empty:
+        print(f"Bin {i+1} is empty. Skipping...")
         continue  # Skip processing if the bin is empty
-    top_words_per_file = {}
-    common_words = set()
-    first_file = True
+
+    aggregate_words = Counter()
 
     for index, row in bin_df.iterrows():
         file_path = row['file_path']
         top_words = get_top_words(file_path)
-        top_words_per_file[file_path] = top_words
-        if first_file:
-            common_words = set(top_words)
-            first_file = False
-        else:
-            common_words.intersection_update(top_words)
-    
-    print(common_words)
-    # Save common words for this bin
-    bin_common_words[f'Bin {i+1} (Size Range: {bin_df["file_size"].min()} - {bin_df["file_size"].max()})'] = common_words
+        print(file_path)
+        print(top_words)
+        aggregate_words.update(top_words)  # Aggregate all top words from all files in the bin
 
-    
-# Output the common words for each bin
-for bin_info, words in bin_common_words.items():
-    print(f"{bin_info}: {words}")
+    # Now determine the most common top words in the bin
+    most_common_words = [word for word, _ in aggregate_words.most_common(5)]
+
+    print(f"Bin {i+1} (Size Range: {bin_df['file_size'].min()} - {bin_df['file_size'].max()}): Most common words across different files: {most_common_words}")
+
+
+

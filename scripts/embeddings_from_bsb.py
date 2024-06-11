@@ -55,7 +55,7 @@ def get_embeddings(data_dict):
             print(f"Failed to retrieve embeddings for {sample_ids_chunk[0]} to {sample_ids_chunk[-1]}: {e}")
             failed_samples.extend(sample_ids_chunk)
 
-    return embeddings_dict, failed_samples, output_file_path
+    return embeddings_dict, failed_samples
 
 
 # opens gpt output files, gets biome and sub-biome, and gets embeddings for those (for each sample)
