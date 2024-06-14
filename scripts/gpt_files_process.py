@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jun 13 17:24:23 2024
+
+@author: dgaio
+"""
+
+import os
+import re
+import pandas as pd
+
+
+def find_distinguishing_features(files):
+    """
+    Determine the distinguishing features between filenames.
+    Collect all tokens and identify those that are unique to some but not all filenames.
+    """
+    all_tokens = []
+    file_tokens = []
+
+    for file in files:
+        tokens = os.path.basename(file).split('_')[:-2]  # to exclude date and time
+        file_tokens.append(set(tokens))
+        all_tokens.extend(tokens)
+
+    token_count = {}
+    for token in set(all_tokens):
+        token_count[token] = sum(1 for tokens in file_tokens if token in tokens)
+
+    # find tokens that are unique to some files but not common to all
+    num_files = len(files)
+    distinguishing_tokens = {token for token, count in token_count.items() if count != num_files}
+
+    return distinguishing_tokens
+
+
+def extract_labels_from_filename(filename, distinguishing_tokens):
+    """
+    Extract distinguishing labels from the filename based on the distinguishing tokens.
+    """
+    tokens = os.path.basename(filename).split('_')[:-2]  # to exclude date and time
+    labels = [token for token in tokens if token in distinguishing_tokens]
+    return ", ".join(labels)
+
+
+def edit_features(file_label_map):
+    """
+    Allow the user to edit each label extracted from filenames, maintaining the dictionary structure.
+    """
+    print("Current labels for each file:")
+    for idx, (file, label) in enumerate(file_label_map.items(), start=1):
+        print(f"{idx}. {os.path.basename(file)} - {label}")
+
+    if input("Do you want to edit any labels? (y/n): ").strip().lower() == 'y':
+        for file in list(file_label_map.keys()):
+            current_label = file_label_map[file]
+            new_label = input(f"Change the label for '{os.path.basename(file)}' from '{current_label}' to (press enter to keep the same): ")
+            if new_label:
+                file_label_map[file] = new_label
+
+    return file_label_map
+
+
+def load_and_process_file(file_name, gold_standard_df, label):
+    dfr = pd.read_csv(file_name, header=None) # without headers, as the number of columns can vary
+
+    dfr = dfr.iloc[:, [0, 1]]
+    dfr.columns = ['sample', 'gpt_biome']
+    dfr['label'] = label
+
+    merged_df = pd.merge(dfr, gold_standard_df, on='sample', how='inner')
+
+    return merged_df
+
+
+# vuoi veram che te lo spieghi vermanete? in realtaa e' abbstanza semplice...'
