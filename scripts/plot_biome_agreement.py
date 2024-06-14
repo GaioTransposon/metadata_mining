@@ -19,6 +19,7 @@ def plot_biome_agreement(concatenated_df, file_label_map, work_dir):
         'Total Counts': total_counts,
         'Percentage True': (true_counts / total_counts * 100).round(2)
     })
+    print(result)
 
     # Plotting
     plt.figure(figsize=(10, 6))

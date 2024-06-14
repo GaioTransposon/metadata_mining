@@ -2,7 +2,7 @@
 
 
 
-source ~/miniconda3/etc/profile.d/conda.sh
+source /mnt/mnemo5/dgaio/miniconda3/etc/profile.d/conda.sh
 
 conda activate spyder_env
 

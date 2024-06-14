@@ -18,7 +18,8 @@ directory_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject'
 output_dir = os.path.join(directory_path, 'embeddings')
 api_key_path = '/Users/dgaio/my_api_key_embeddings'
 gold_dict_path = '/Users/dgaio/github/metadata_mining/source_data/gold_dict.pkl'
-input_file_pattern = 'gpt_clean_output*.csv'
+#input_file_pattern = 'gpt_clean_output*.csv'
+input_file_pattern = 'gpt_clean_output*.{csv,txt}'
 
 
 # loads ground truth and combines for each sample, biome with sub-biome
@@ -104,7 +105,8 @@ existing_output_files = set(os.path.basename(f) for f in glob.glob(os.path.join(
 
 for file_path in file_paths:
     base_filename = os.path.basename(file_path)
-    expected_output_filename = base_filename.replace('.csv', '_bsbembeddings.json')
+    expected_output_filename = base_filename.replace('.csv', '_bsbembeddings.json').replace('.txt', '_bsbembeddings.json')
+    #expected_output_filename = base_filename.replace('.csv', '_bsbembeddings.json')
     
     if expected_output_filename in existing_output_files:
         
@@ -123,28 +125,54 @@ for file_path in file_paths:
 ############
 
 
-
 ############
 # Get embeddings from ground truth: 
 gold_dict_bsb = load_and_combine_gold_dict(gold_dict_path)
 output_filename = 'gold_dict_bsbembeddings.json'
 output_file_path = os.path.join(output_dir, output_filename)
 
-if os.path.exists(output_file_path):
-    print('Gold dict embeddings file already exists:', output_file_path)
-else:
-    embeddings_dict, failed_samples = get_embeddings(gold_dict_bsb)
-    print('Failed samples for file: ', output_file_path)
-    print(failed_samples)
-    
-    save_embeddings(embeddings_dict, output_file_path)
-    
-    print(f"Embeddings for gold dict saved to {output_file_path}.")
+# =============================================================================
+# if os.path.exists(output_file_path):
+#     print('Gold dict embeddings file already exists:', output_file_path)
+# else:
+#     embeddings_dict, failed_samples = get_embeddings(gold_dict_bsb)
+#     print('Failed samples for file: ', output_file_path)
+#     print(failed_samples)
+#     
+#     save_embeddings(embeddings_dict, output_file_path)
+#     
+#     print(f"Embeddings for gold dict saved to {output_file_path}.")
+# =============================================================================
 ############
 
 
 
 
+def merge_embeddings(new_embeddings, output_file_path):
+    # Load existing embeddings if the file exists
+    if os.path.exists(output_file_path):
+        with open(output_file_path, 'r') as file:
+            existing_embeddings = json.load(file)
+        existing_embeddings.update(new_embeddings)
+        print("Embeddings updated with new data.")
+    else:
+        existing_embeddings = new_embeddings
+        print("New embeddings file created.")
+
+    # Save the merged embeddings back to the file
+    with open(output_file_path, 'w') as file:
+        json.dump(existing_embeddings, file)
+
+if os.path.exists(output_file_path):
+    print('Gold dict embeddings file already exists:', output_file_path)
+    embeddings_dict, failed_samples = get_embeddings(gold_dict_bsb)
+    merge_embeddings(embeddings_dict, output_file_path)
+else:
+    embeddings_dict, failed_samples = get_embeddings(gold_dict_bsb)
+    print('Failed samples for file: ', output_file_path)
+    print(failed_samples)
+    save_embeddings(embeddings_dict, output_file_path)
+    print(f"Embeddings for gold dict saved to {output_file_path}.")
 
 
 
