@@ -7,9 +7,12 @@ Created on Thu Jun 13 17:24:23 2024
 """
 
 import os
-import re
 import pandas as pd
+import csv
+import pickle
 
+
+# biomes
 
 def find_distinguishing_features(files):
     """
@@ -75,3 +78,41 @@ def load_and_process_file(file_name, gold_standard_df, label):
 
 
 # vuoi veram che te lo spieghi vermanete? in realtaa e' abbstanza semplice...'
+
+
+
+# sub-biomes
+
+
+def load_bsb_gpt(gpt_file_path):
+    samples = {}
+    with open(gpt_file_path, mode='r', newline='', encoding='utf-8') as file:
+        reader = csv.reader(file)
+        next(reader)  # skip header 
+        for row in reader:
+            if len(row) < 5:
+                continue  
+            sample_id = row[0]
+            combined_text = f"{row[1]} - {row[4]}" # loads biome + sub-biome columns
+            samples[sample_id] = combined_text
+    return samples
+
+def load_bsb_gold_dict(gold_dict_path):
+    gold_dict_bsb = {}
+    with open(gold_dict_path, 'rb') as file:
+        data = pickle.load(file)
+        for key, values in data.items():
+            if len(values) >= 3:
+                combined_text = f"{values[1]} - {values[2]}" # loads biome + sub-biome columns
+                gold_dict_bsb[key] = combined_text
+    return gold_dict_bsb
+
+
+def filter_common_keys(embeddings_dict1, embeddings_dict2):
+    common_keys = set(embeddings_dict1.keys()) & set(embeddings_dict2.keys())
+    filtered_dict1 = {k: embeddings_dict1[k] for k in common_keys}
+    filtered_dict2 = {k: embeddings_dict2[k] for k in common_keys}
+    return filtered_dict1, filtered_dict2
+
+
+

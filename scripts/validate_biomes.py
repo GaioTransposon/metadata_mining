@@ -6,16 +6,16 @@ Created on Thu Jun 13 17:25:37 2024
 @author: dgaio
 """
 
+import sys 
+sys.path.append('/Users/dgaio/github/metadata_mining/scripts')
 import os
 import pickle
 import pandas as pd
-from gpt_files_process import find_distinguishing_features, extract_labels_from_filename
-from gpt_files_process import edit_features, load_and_process_file
+from features_process import find_distinguishing_features, extract_labels_from_filename
+from features_process import edit_features, load_and_process_file
 from plot_biome_agreement import plot_biome_agreement
 from biome_stats_module import mcnemar_test_with_correction
 from biome_stats_module import t_test_agreements
-import sys 
-sys.path.append('/Users/dgaio/github/metadata_mining/scripts')
 
 
 # Paths
@@ -32,11 +32,8 @@ gold_dict_df = pd.DataFrame({
     'sample': [k for k, v in gold_dict.items()],
     'biome': [v[1] for k, v in gold_dict.items()]})
 
-# Files
-# my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt',
-#             'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt']
 
-my_files = [os.path.join(work_dir, f) for f in my_files]
+my_files = [os.path.join(work_dir, f) for f in my_files]    # my_files is in middle_dir/my_files.txt
 
 features = find_distinguishing_features(my_files)
 file_label_map = {file: extract_labels_from_filename(file, features) for file in my_files}
@@ -54,11 +51,18 @@ concatenated_df['agreement'] = concatenated_df['gpt_biome'] == concatenated_df['
 # Calculating agreement and plotting
 plot_biome_agreement(concatenated_df, file_label_map, work_dir)
 
-
 # run mcnemar test for dependent samples 
 result_df = mcnemar_test_with_correction(concatenated_df)
 
 # run independent t-test for indipendent samples 
 result_df = t_test_agreements(concatenated_df)
+
+
+
+
+my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API120_normal_dt202406051442.txt',
+            'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp2.0_presp1.5_rs22_API153_normal_dt202406051500.txt']
+
+
 
 
