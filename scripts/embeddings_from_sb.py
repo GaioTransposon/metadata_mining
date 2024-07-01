@@ -22,14 +22,14 @@ gold_dict_path = '/Users/dgaio/github/metadata_mining/source_data/gold_dict.pkl'
 
 # Load and combine ground truth for each sample
 def load_and_combine_gold_dict(gold_dict_path):
-    gold_dict_bsb = {}
+    gold_dict_sb = {}
     with open(gold_dict_path, 'rb') as file:
         data = pickle.load(file)
         for key, values in data.items():
             if len(values) >= 3:
                 combined_text = f"{values[1]} - {values[2]}"
-                gold_dict_bsb[key] = combined_text
-    return gold_dict_bsb
+                gold_dict_sb[key] = combined_text
+    return gold_dict_sb
 
 # Retrieve embeddings in batches
 def get_embeddings(data_dict):
@@ -68,7 +68,7 @@ def process_file(csv_file_path):
 
     embeddings_dict, failed_samples = get_embeddings(samples)
     base_filename = os.path.basename(csv_file_path)
-    output_filename = base_filename.replace('.csv', '_bsbembeddings.json').replace('.txt', '_bsbembeddings.json')
+    output_filename = base_filename.replace('.csv', '_sbembeddings.json').replace('.txt', '_sbembeddings.json')
     output_file_path = os.path.join(output_dir, output_filename)
 
     return embeddings_dict, failed_samples, output_file_path
@@ -84,8 +84,6 @@ with open(api_key_path, "r") as file:
 
 
 
-
-
 input_filenames = my_files   # my_files is in middle_dir/my_files.txt
 
 
@@ -93,7 +91,7 @@ input_filenames = my_files   # my_files is in middle_dir/my_files.txt
 for filename in input_filenames:
     file_path = os.path.join(directory_path, filename)
     base_filename = os.path.basename(file_path)
-    output_filename = base_filename.replace('.csv', '_bsbembeddings.json').replace('.txt', '_bsbembeddings.json')
+    output_filename = base_filename.replace('.csv', '_sbembeddings.json').replace('.txt', '_sbembeddings.json')
     output_file_path = os.path.join(output_dir, output_filename)
 
     if os.path.exists(output_file_path):
