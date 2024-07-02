@@ -51,6 +51,35 @@ for i in my_files:
    gpt_json_files.append(j)
 ########
 
+def compare_embeddings_filtered(gold_embeddings, gpt_embeddings, threshold=0.75):
+    compare_results = {}
+    for key in gold_embeddings:
+        if key in gpt_embeddings:
+            # Extract embeddings
+            gold_vector = gold_embeddings[key]['embedding']
+            gpt_vector = gpt_embeddings[key]['embedding']
+            
+            # Calculate cosine similarity (Note: scipy's cosine returns the cosine distance, not similarity)
+            cos_sim = 1 - cosine(gold_vector, gpt_vector)
+            
+            # Apply threshold filter
+            if cos_sim >= threshold:
+                compare_results[key] = {'cosine': cos_sim}
+    return compare_results
+
+
+
+def print_statistics(similarities):
+    if similarities:
+        average_similarity = np.mean(similarities)
+        median_similarity = np.median(similarities)
+        print(f"Average similarity: {average_similarity:.3f}")
+        print(f"Median similarity: {median_similarity:.3f}")
+        return average_similarity, median_similarity
+    else:
+        print("No similarities above the threshold.")
+        return 0, 0
+
 
 
 
@@ -118,56 +147,31 @@ for gpt_file in gpt_json_files:
     
     
     
-    
 
-
-
-
-import json
-import os
-
-# Directory containing the JSON files
-embeddings_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/embeddings'
-
-# expected different
-my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API120_normal_dt202406051442.txt',
-            'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp2.0_presp1.5_rs22_API153_normal_dt202406051500.txt']
-
-
-
-# Gold dictionary file
-gold_dict_json_path = os.path.join(embeddings_dir, 'gold_dict_sbembeddings.json')
-
-# Function to load embeddings and extract sub-biome assignments
-def extract_sub_biomes(json_file_path):
-    with open(json_file_path, 'r') as file:
-        data = json.load(file)
-    sub_biomes = {k: v['sub-biome'] for k, v in data.items()}
-    return sub_biomes
-
-# Extract sub-biome assignments for GPT files
-gpt_sub_biomes = {}
+# Main execution block
 for gpt_file in gpt_json_files:
+    
+    print(gpt_json_path)
     gpt_json_path = os.path.join(embeddings_dir, gpt_file)
-    gpt_sub_biomes[gpt_file] = extract_sub_biomes(gpt_json_path)
+    embeddings_gpt = load_embeddings(gpt_json_path)
+    
+    # Filter embeddings to include only common keys
+    filtered_gd, filtered_gpt = filter_common_keys(embeddings_gd, embeddings_gpt)
+    
+    # Compare embeddings using the new filtered function
+    compare_results = compare_embeddings_filtered(filtered_gd, filtered_gpt)
+    
+    # Calculate and print statistics based on the new comparison results
+    actual_similarities = [result['cosine'] for result in compare_results.values()]
+    avg_sim, median_sim = print_statistics(actual_similarities)
+    
+    # Visualize and analyze further as needed
 
-# Extract sub-biome assignments for gold dictionary
-gold_sub_biomes = extract_sub_biomes(gold_dict_json_path)
 
-# Print header
-print("Sample ID\tGold Dict Sub-Biome\tGPT File 1 Sub-Biome\tGPT File 2 Sub-Biome")
 
-# Extract sample IDs common to all
-common_sample_ids = set(gold_sub_biomes.keys())
-for gpt_sub_biome in gpt_sub_biomes.values():
-    common_sample_ids &= set(gpt_sub_biome.keys())
 
-# Print sub-biomes for each common sample ID
-for sample_id in common_sample_ids:
-    gold_sub_biome = gold_sub_biomes[sample_id]
-    gpt_sub_biome1 = gpt_sub_biomes[gpt_json_files[0]].get(sample_id, "N/A")
-    gpt_sub_biome2 = gpt_sub_biomes[gpt_json_files[1]].get(sample_id, "N/A")
-    print(f"{sample_id}\t#{gold_sub_biome}\t#{gpt_sub_biome1}\t#{gpt_sub_biome2}")
+
+
 
 
 

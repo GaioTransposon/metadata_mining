@@ -115,6 +115,8 @@ def save_embeddings(embeddings_dict, output_file_path):
     with open(output_file_path, 'w', encoding='utf-8') as json_file:
         json.dump(embeddings_dict, json_file, ensure_ascii=False, indent=4)
 
+
+###
 # Process the gold dictionary
 output_file_path = os.path.join(output_dir, 'gold_dict_sbembeddings.json')
 # Check if the embeddings file already exists
@@ -125,18 +127,15 @@ else:
     embeddings_dict, failed_samples = get_embeddings(gold_dict_sb, include_biome=True)
     save_embeddings(embeddings_dict, output_file_path)
     print('Embeddings saved to:', output_file_path)
-
+###
     
     
 
-# embeddings expected to be different 
-my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API120_normal_dt202406051442.txt',
+my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt',
+            'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API120_normal_dt202406051442.txt',
+            'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp1.0_presp1.5_rs22_API132_normal_dt202406051450.txt',
             'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp2.0_presp1.5_rs22_API153_normal_dt202406051500.txt']
 
-
-# embeddings expected to be similar 
-# my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API120_normal_dt202406051442.txt',
-#             'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt']
 
 
 
