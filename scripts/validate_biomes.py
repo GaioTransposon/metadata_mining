@@ -11,19 +11,22 @@ sys.path.append('/Users/dgaio/github/metadata_mining/scripts')
 import os
 import pickle
 import pandas as pd
-from features_process import find_distinguishing_features, extract_labels_from_filename
-from features_process import edit_features, load_and_process_file
-from plot_biome_agreement import plot_biome_agreement
-from biome_stats_module import mcnemar_test_with_correction
-from biome_stats_module import t_test_agreements
+from features_process import find_distinguishing_features, extract_labels_from_filename, edit_features, load_and_process_file
+from plot_biome_agreement import lenient_match, plot_biome_agreement
+from biome_stats_module import mcnemar_test_with_correction, t_test_agreements
 
-
-# Paths
+# -----------------------------
+# Files and Paths
+# ----------------------------- 
 home_dir = os.getenv('HOME')
 work_dir = os.path.join(home_dir, "MicrobeAtlasProject")
 
+# my_files is in middle_dir/my_files.txt
+my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API120_normal_dt202406051442.txt',
+            'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp2.0_presp1.5_rs22_API153_normal_dt202406051500.txt']
+
 # -----------------------------
-# 2. Ground truth loading & processing
+# Ground truth loading & processing
 # -----------------------------    
 input_gold_dict = os.path.join(home_dir, "github/metadata_mining/source_data/gold_dict.pkl")
 with open(input_gold_dict, 'rb') as file:
@@ -32,9 +35,10 @@ gold_dict_df = pd.DataFrame({
     'sample': [k for k, v in gold_dict.items()],
     'biome': [v[1] for k, v in gold_dict.items()]})
 
-
-my_files = [os.path.join(work_dir, f) for f in my_files]    # my_files is in middle_dir/my_files.txt
-
+# -----------------------------
+# Files processing
+# ----------------------------- 
+my_files = [os.path.join(work_dir, f) for f in my_files]    
 features = find_distinguishing_features(my_files)
 file_label_map = {file: extract_labels_from_filename(file, features) for file in my_files}
 file_label_map = edit_features(file_label_map)
@@ -43,25 +47,43 @@ print("\nFile and its label name:\n")
 for file, label in file_label_map.items():
     print(f"{os.path.basename(file)} - {label}\n")
 
-# Load, process, and concatenate DataFrames
-dfs = [load_and_process_file(f, gold_dict_df, label) for f, label in file_label_map.items()]
-concatenated_df = pd.concat(dfs, ignore_index=True)
-concatenated_df['agreement'] = concatenated_df['gpt_biome'] == concatenated_df['biome']
+# -----------------------------
+# Agreement calculation
+# ----------------------------- 
+full_dfs = [load_and_process_file(f, gold_dict_df, label) for f, label in file_label_map.items()]
+full_agreement_df = pd.concat(full_dfs, ignore_index=True)
+full_agreement_df['agreement'] = full_agreement_df['gpt_biome'] == full_agreement_df['biome']
 
-# Calculating agreement and plotting
-plot_biome_agreement(concatenated_df, file_label_map, work_dir)
+lenient_dfs = [load_and_process_file(f, gold_dict_df, label) for f, label in file_label_map.items()]
+lenient_agreement_df = pd.concat(lenient_dfs, ignore_index=True)
+lenient_agreement_df['agreement'] = lenient_agreement_df.apply(lambda row: lenient_match(row['biome'], row['gpt_biome']), axis=1)
 
-# run mcnemar test for dependent samples 
-result_df = mcnemar_test_with_correction(concatenated_df)
+# -----------------------------
+# Plotting
+# ----------------------------- 
+plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map, work_dir)
 
-# run independent t-test for indipendent samples 
-result_df = t_test_agreements(concatenated_df)
+# -----------------------------
+# Stats
+# ----------------------------- 
+print('\nmcnemar test for dependent samples - agreement based on full match')
+result_mcnemar = mcnemar_test_with_correction(full_agreement_df)  
+print('\nmcnemar test for dependent samples - agreement based on full+partial match')
+result_mcnemar = mcnemar_test_with_correction(lenient_agreement_df)  
+print('\n\n\n')
+print('\nt-test for independent samples - agreement based on full match')
+result_t_tests = t_test_agreements(full_agreement_df)  
+print('\nt-test for independent samples - agreement based on full+partial match')
+result_t_tests = t_test_agreements(lenient_agreement_df)  
 
 
 
 
-my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API120_normal_dt202406051442.txt',
-            'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp2.0_presp1.5_rs22_API153_normal_dt202406051500.txt']
+
+
+
+
+
 
 
 

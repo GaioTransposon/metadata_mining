@@ -8,9 +8,10 @@ Created on Tue Apr 23 15:17:22 2024
 
 import sys 
 sys.path.append('/Users/dgaio/github/metadata_mining/scripts')
+from features_process import filter_common_keys
+
 from embeddings_functions import load_embeddings
 from embeddings_functions import compare_embeddings
-from features_process import filter_common_keys
 from embeddings_functions import print_statistics
 from embeddings_functions import plot_distribution_metrics
 from embeddings_functions import plot_comparison_distribution
@@ -18,6 +19,7 @@ from embeddings_functions import create_shuffled_background_distribution
 from embeddings_functions import sample_by_category
 from embeddings_functions import plot_heatmap
 from embeddings_functions import save_figures_to_pdf
+
 import os
 import numpy as np
 import random
@@ -50,36 +52,6 @@ for i in my_files:
    j=i.replace('.txt', '_sbembeddings.json')
    gpt_json_files.append(j)
 ########
-
-def compare_embeddings_filtered(gold_embeddings, gpt_embeddings, threshold=0.75):
-    compare_results = {}
-    for key in gold_embeddings:
-        if key in gpt_embeddings:
-            # Extract embeddings
-            gold_vector = gold_embeddings[key]['embedding']
-            gpt_vector = gpt_embeddings[key]['embedding']
-            
-            # Calculate cosine similarity (Note: scipy's cosine returns the cosine distance, not similarity)
-            cos_sim = 1 - cosine(gold_vector, gpt_vector)
-            
-            # Apply threshold filter
-            if cos_sim >= threshold:
-                compare_results[key] = {'cosine': cos_sim}
-    return compare_results
-
-
-
-def print_statistics(similarities):
-    if similarities:
-        average_similarity = np.mean(similarities)
-        median_similarity = np.median(similarities)
-        print(f"Average similarity: {average_similarity:.3f}")
-        print(f"Median similarity: {median_similarity:.3f}")
-        return average_similarity, median_similarity
-    else:
-        print("No similarities above the threshold.")
-        return 0, 0
-
 
 
 
@@ -147,40 +119,140 @@ for gpt_file in gpt_json_files:
     
     
     
+    
+    
+
+
+
+
+
+
+# File paths
+my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt',
+            'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API120_normal_dt202406051442.txt',
+            'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp1.0_presp1.5_rs22_API132_normal_dt202406051450.txt',
+            'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp2.0_presp1.5_rs22_API153_normal_dt202406051500.txt']
+
+
+
+import os
+import sys
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.spatial.distance import cosine
+from scipy.stats import mannwhitneyu
+
+sys.path.append('/Users/dgaio/github/metadata_mining/scripts')
+from embeddings_functions import load_embeddings, compare_embeddings
+from features_process import filter_common_keys
+from embeddings_functions import print_statistics, plot_distribution_metrics, plot_comparison_distribution
+from embeddings_functions import create_shuffled_background_distribution, sample_by_category
+from embeddings_functions import plot_heatmap, save_figures_to_pdf
+
+# Directory containing the JSON files
+embeddings_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/embeddings'
+gold_dict_json_path = os.path.join(embeddings_dir, 'gold_dict_sbembeddings.json')
+embeddings_gd = load_embeddings(gold_dict_json_path)
+
+
+def find_distinguishing_features(files):
+    """
+    Determine the distinguishing features between filenames.
+    Collect all tokens and identify those that are unique to some but not all filenames.
+    """
+    all_tokens = []
+    file_tokens = []
+
+    for file in files:
+        tokens = os.path.basename(file).split('_')[:-2]  # to exclude date and time
+        file_tokens.append(set(tokens))
+        all_tokens.extend(tokens)
+
+    token_count = {}
+    for token in set(all_tokens):
+        token_count[token] = sum(1 for tokens in file_tokens if token in tokens)
+
+    # find tokens that are unique to some files but not common to all
+    num_files = len(files)
+    distinguishing_tokens = {token for token, count in token_count.items() if count != num_files}
+
+    return distinguishing_tokens
+
+
+def extract_labels_from_filename(filename, distinguishing_tokens):
+    """
+    Extract distinguishing labels from the filename based on the distinguishing tokens.
+    """
+    tokens = os.path.basename(filename).split('_')[:-2]  # to exclude date and time
+    labels = [token for token in tokens if token in distinguishing_tokens]
+    return ", ".join(labels)
+
+
+
+# Use the function to determine distinguishing features
+distinguishing_tokens = find_distinguishing_features(my_files)
+
+# Extract labels for plotting based on distinguishing features
+labels = [extract_labels_from_filename(f, distinguishing_tokens) for f in my_files]
+
+gpt_json_files = [os.path.join(embeddings_dir, f.replace('.txt', '_sbembeddings.json')) for f in my_files]
+
+def compare_embeddings_filtered(gold_embeddings, gpt_embeddings, threshold=0.85):
+    compare_results = {}
+    for key in gold_embeddings:
+        if key in gpt_embeddings:
+            gold_vector = gold_embeddings[key]['embedding']
+            gpt_vector = gpt_embeddings[key]['embedding']
+            cos_sim = 1 - cosine(gold_vector, gpt_vector)
+            if cos_sim >= threshold:
+                compare_results[key] = {'cosine': cos_sim}
+    return compare_results
+
+def print_statistics(similarities):
+    if similarities:
+        average_similarity = np.mean(similarities)
+        median_similarity = np.median(similarities)
+        print(f"Average similarity: {average_similarity:.3f}")
+        print(f"Median similarity: {median_similarity:.3f}")
+        return average_similarity, median_similarity
+    else:
+        print("No similarities above the threshold.")
+        return 0, 0
+
+all_similarities = []  # List to hold all similarity lists for statistical comparison
 
 # Main execution block
 for gpt_file in gpt_json_files:
-    
-    print(gpt_json_path)
-    gpt_json_path = os.path.join(embeddings_dir, gpt_file)
-    embeddings_gpt = load_embeddings(gpt_json_path)
-    
-    # Filter embeddings to include only common keys
+    print("Processing file:", gpt_file)
+    embeddings_gpt = load_embeddings(gpt_file)
     filtered_gd, filtered_gpt = filter_common_keys(embeddings_gd, embeddings_gpt)
-    
-    # Compare embeddings using the new filtered function
     compare_results = compare_embeddings_filtered(filtered_gd, filtered_gpt)
-    
-    # Calculate and print statistics based on the new comparison results
     actual_similarities = [result['cosine'] for result in compare_results.values()]
     avg_sim, median_sim = print_statistics(actual_similarities)
-    
-    # Visualize and analyze further as needed
+    all_similarities.append(actual_similarities)
 
+# Plotting and Statistical Test
+if len(all_similarities) > 1:
+    # Perform statistical test
+    stat, p_value = mannwhitneyu(all_similarities[0], all_similarities[1], alternative='two-sided')
+    print(f"Mann-Whitney U test statistic: {stat}, P-value: {p_value}")
 
+    # Visualization
+    fig, ax = plt.subplots()
+    bp = ax.boxplot(all_similarities, labels=labels)
+    plt.ylabel('Cosine Similarity')
+    plt.title('Comparison of Cosine Similarities Between Two GPT Runs')
+    plt.xticks(rotation=45)  # Rotate labels for better readability
 
+    # Annotating the sample size
+    for i, line in enumerate(bp['medians']):
+        x, y = line.get_xydata()[1]  # top of median line
+        ax.annotate(f'n={len(all_similarities[i])}', xy=(x, y), xytext=(0,5), 
+                    textcoords="offset points", ha='center', va='bottom')
 
+    plt.tight_layout()  # Adjust layout to make room for label rotation
+    plt.show()
 
-
-
-
-
-
-
-
-
-
-
-
-
+else:
+    print("Not enough data to perform statistical comparison.")
 
