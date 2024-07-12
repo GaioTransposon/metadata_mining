@@ -197,7 +197,7 @@ labels = [extract_labels_from_filename(f, distinguishing_tokens) for f in my_fil
 
 gpt_json_files = [os.path.join(embeddings_dir, f.replace('.txt', '_sbembeddings.json')) for f in my_files]
 
-def compare_embeddings_filtered(gold_embeddings, gpt_embeddings, threshold=0.85):
+def compare_embeddings_filtered(gold_embeddings, gpt_embeddings, threshold=0.75):
     compare_results = {}
     for key in gold_embeddings:
         if key in gpt_embeddings:
@@ -255,4 +255,73 @@ if len(all_similarities) > 1:
 
 else:
     print("Not enough data to perform statistical comparison.")
+
+
+
+# test normality in continuous data: Shapiro-Wilk Test for Normality:
+
+    
+# 2 files; independent samples; skewed data; continuous data --> Mann-Whitney
+# > 2 files, independent samples; skewed data; continuous data --> Kruskal-Wallis One-Way analysis of variance (ANOVA) 
+
+# 2 files; dependent; skewed/normal; continuous data --> Wilcoxon Signed-Rank Test (checks whether the differences between paired observations are symmetrically distributed around zero)
+# > 2 files, dependent: Friedman test
+
+
+import numpy as np
+from scipy.spatial.distance import cosine
+from scipy.stats import friedmanchisquare, shapiro
+import os
+
+def filter_common_keys_across_groups(groups):
+    # Using set intersection to find common keys
+    common_keys = set.intersection(*(set(group.keys()) for group in groups))
+    print(f"Number of common keys: {len(common_keys)}")  # Debug: Check how many keys are common
+
+    # Filter each group to retain only the common keys
+    filtered_groups = [{key: group[key] for key in common_keys} for group in groups]
+    
+    # Debug: Check the size of each group after filtering
+    for i, fg in enumerate(filtered_groups, 1):
+        print(f"Size of Group {i}: {len(fg)}")
+    
+    return filtered_groups
+
+def compare_embeddings_filtered(gold_embeddings, gpt_embeddings, threshold=0.75):
+    compare_results = {}
+    for key in gold_embeddings:
+        if key in gpt_embeddings:
+            gold_vector = gold_embeddings[key]['embedding']
+            gpt_vector = gpt_embeddings[key]['embedding']
+            cos_sim = 1 - cosine(gold_vector, gpt_vector)
+            compare_results[key] = {'cosine': cos_sim}  # Always return the cosine similarity
+    return compare_results
+
+
+# Assuming embeddings_groups is a list of dictionaries where each dictionary is a group of embeddings
+embeddings_groups = [load_embeddings(gpt_file) for gpt_file in gpt_json_files]
+
+# Filter to ensure all groups have the same keys
+filtered_groups = filter_common_keys_across_groups(embeddings_groups)
+
+
+all_similarities = []
+for group in filtered_groups:
+    filtered_gd = {key: embeddings_gd[key] for key in group.keys() if key in embeddings_gd}
+    compare_results = compare_embeddings_filtered(filtered_gd, group)
+    similarities = [result['cosine'] for result in compare_results.values()]
+    print(len(similarities))
+    all_similarities.append(similarities)
+    
+
+# Check all groups have the same number of entries
+if all(len(sim) == len(all_similarities[0]) for sim in all_similarities):
+    # Proceed with Friedman test
+    stat, p_value = friedmanchisquare(*all_similarities)
+    print(f"Friedman test statistic: {stat}, P-value: {p_value}")
+else:
+    print("Error: Not all groups have the same number of entries.")
+
+
+
 
