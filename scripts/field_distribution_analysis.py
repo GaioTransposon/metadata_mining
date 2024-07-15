@@ -32,18 +32,15 @@ base_dir = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_di
 # Optional biome variable
 specified_biome = None  # Set to None if you do not want to filter by biome
 
+
+
 # Dictionary to keep track of matches
 match_count = {}
 sample_match_count = {}  # Dictionary to keep track of total matches per sample
 
-# Function to process matches
-def process_matches(file_path, sub_biome, sample_id):
+def process_full_matches(file_path, sub_biome, sample_id):
     full_matches = set()
-    partial_matches = set()
-    sub_biome_parts = sub_biome.lower().split()
-
     sample_match_count_full = 0
-    sample_match_count_partial = 0
 
     with open(file_path, 'r') as file:
         for line in file:
@@ -55,39 +52,106 @@ def process_matches(file_path, sub_biome, sample_id):
                 if sub_biome.lower() in value_lower:
                     if key not in full_matches:
                         if key not in match_count:
-                            match_count[key] = {'full': 0, 'partial': 0}
+                            match_count[key] = {'full': 0, 'partial': 0}  # Initialize both counts
                         match_count[key]['full'] += 1
                         full_matches.add(key)
+                        print(f"Found full match for key: {key}")
                         sample_match_count_full += 1
 
+    print('Full matches:', full_matches)
+    current_partial = sample_match_count.get(sample_id, (0, 0))[1]
+    sample_match_count[sample_id] = (sample_match_count_full, current_partial)
+
+
+
+def process_partial_matches(file_path, sub_biome, sample_id):
+    partial_matches = set()
+    sub_biome_parts = sub_biome.lower().split()
+    sample_match_count_partial = 0
+
+    with open(file_path, 'r') as file:
+        for line in file:
+            if '=' in line:
+                key, value = line.strip().split('=', 1)
+                value_lower = value.lower().strip()
+
                 # Check for partial match
-                elif any(part in value_lower for part in sub_biome_parts):
-                    if key not in partial_matches and key not in full_matches:
+                if any(part in value_lower for part in sub_biome_parts):
+                    if key not in partial_matches:
                         if key not in match_count:
-                            match_count[key] = {'full': 0, 'partial': 0}
+                            match_count[key] = {'full': 0, 'partial': 0}  # Ensure proper initialization
                         match_count[key]['partial'] += 1
                         partial_matches.add(key)
+                        print(f"Found partial match for key: {key}")
                         sample_match_count_partial += 1
-                        
 
-    sample_match_count[sample_id] = sample_match_count_full, sample_match_count_partial
+    print('Partial matches:', partial_matches)
+    current_full = sample_match_count.get(sample_id, (0, 0))[0]
+    sample_match_count[sample_id] = (current_full, sample_match_count_partial)
 
 
-# Walk through directories to find relevant metadata files and process them
-for sample_id, info in list(gold_dict.items())[:1000]:   # Iterate through a subset or all items
+
+
+# Assuming 'gold_dict' and other setup from your provided code
+for sample_id, info in list(gold_dict.items())[:3]:
     sub_biome = info[2]
-    if specified_biome is None or info[1].lower() == specified_biome.lower():
-        subdir = "dir_" + sample_id[-3:]  # Directory based on the last three digits of sample_id
+    if not specified_biome or info[1].lower() == specified_biome.lower():
+        subdir = "dir_" + sample_id[-3:]
         metadata_filename = f"{sample_id}_clean.txt"
         metadata_filepath = os.path.join(base_dir, subdir, metadata_filename)
-    
-        if os.path.exists(metadata_filepath):
-            process_matches(metadata_filepath, sub_biome, sample_id)
 
+        if os.path.exists(metadata_filepath):
+            print('\n#####')
+            print(sample_id)
+            print(sub_biome)
+            process_full_matches(metadata_filepath, sub_biome, sample_id)
+            print('#')
+            process_partial_matches(metadata_filepath, sub_biome, sample_id)
+
+            
+
+
+
+
+
+# Assuming match_count is updated correctly by the modified functions
 # Convert the match_count dictionary to a DataFrame and sort it
 data_items = [(field, counts['full'], counts['partial']) for field, counts in match_count.items()]
 match_count_df = pd.DataFrame(data_items, columns=['Field', 'FullMatches', 'PartialMatches'])
+
+# Sort the DataFrame by 'FullMatches' in descending order
 match_count_df.sort_values(by='FullMatches', ascending=False, inplace=True)
+
+# Display the DataFrame to see the sorted values
+print(match_count_df)
+
+
+
+
+
+
+# in how many fields can one find the full sample origin, per sample? (mean, median and sd)
+# in how many fields can one find at least part of the sample origin info, per sample? (mean, median and sd)
+
+
+
+
+
+# in how many distinct fields does one have to look through to find sample origin? 
+# "for 1000 samples, the sample origin cabn be found in  ... to ... fields" 
+
+
+# tot count of distinct fields containing all sample origin (full match)
+
+# how many fields does one have to look through to find at least part of info about sample origin? 
+# tot count of distinct fields containing all sample origin (partial match)
+
+# which fields are the most popularly used to report sample origin (full matches)? 
+# are these fields the same when looking at partial matches? 
+
+
+
+
 
 
 
