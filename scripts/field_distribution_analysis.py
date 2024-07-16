@@ -26,17 +26,16 @@ input_gold_dict = os.path.join(home_dir, "github/metadata_mining/source_data/gol
 with open(input_gold_dict, 'rb') as file:
     gold_dict = pickle.load(file)
 
-# Base directory where metadata files are located
+# metadata files 
 base_dir = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs/"
 
-# Optional biome variable
-specified_biome = None  # Set to None if you do not want to filter by biome
+# optionally filter
+specified_biome = None  # options: None, "animal", "water", "plant", "soil", "other"
 
 
-
-# Dictionary to keep track of matches
+# keep track of matches
 match_count = {}
-sample_match_count = {}  # Dictionary to keep track of total matches per sample
+sample_match_count = {}  
 
 def process_full_matches(file_path, sub_biome, sample_id):
     full_matches = set()
@@ -48,11 +47,10 @@ def process_full_matches(file_path, sub_biome, sample_id):
                 key, value = line.strip().split('=', 1)
                 value_lower = value.lower().strip()
 
-                # Check for full match
                 if sub_biome.lower() in value_lower:
                     if key not in full_matches:
                         if key not in match_count:
-                            match_count[key] = {'full': 0, 'partial': 0}  # Initialize both counts
+                            match_count[key] = {'full': 0, 'partial': 0}  
                         match_count[key]['full'] += 1
                         full_matches.add(key)
                         print(f"Found full match for key: {key}")
@@ -61,7 +59,6 @@ def process_full_matches(file_path, sub_biome, sample_id):
     print('Full matches:', full_matches)
     current_partial = sample_match_count.get(sample_id, (0, 0))[1]
     sample_match_count[sample_id] = (sample_match_count_full, current_partial)
-
 
 
 def process_partial_matches(file_path, sub_biome, sample_id):
@@ -75,11 +72,10 @@ def process_partial_matches(file_path, sub_biome, sample_id):
                 key, value = line.strip().split('=', 1)
                 value_lower = value.lower().strip()
 
-                # Check for partial match
                 if any(part in value_lower for part in sub_biome_parts):
                     if key not in partial_matches:
                         if key not in match_count:
-                            match_count[key] = {'full': 0, 'partial': 0}  # Ensure proper initialization
+                            match_count[key] = {'full': 0, 'partial': 0}  
                         match_count[key]['partial'] += 1
                         partial_matches.add(key)
                         print(f"Found partial match for key: {key}")
@@ -91,9 +87,7 @@ def process_partial_matches(file_path, sub_biome, sample_id):
 
 
 
-
-# Assuming 'gold_dict' and other setup from your provided code
-for sample_id, info in list(gold_dict.items())[:3]:
+for sample_id, info in list(gold_dict.items())[:1000]:
     sub_biome = info[2]
     if not specified_biome or info[1].lower() == specified_biome.lower():
         subdir = "dir_" + sample_id[-3:]
@@ -108,105 +102,92 @@ for sample_id, info in list(gold_dict.items())[:3]:
             print('#')
             process_partial_matches(metadata_filepath, sub_biome, sample_id)
 
-            
+        
 
-
-
-
-
-# Assuming match_count is updated correctly by the modified functions
-# Convert the match_count dictionary to a DataFrame and sort it
 data_items = [(field, counts['full'], counts['partial']) for field, counts in match_count.items()]
 match_count_df = pd.DataFrame(data_items, columns=['Field', 'FullMatches', 'PartialMatches'])
-
-# Sort the DataFrame by 'FullMatches' in descending order
 match_count_df.sort_values(by='FullMatches', ascending=False, inplace=True)
+#print(match_count_df)
 
-# Display the DataFrame to see the sorted values
-print(match_count_df)
-
-
-
-
-
-
-# in how many fields can one find the full sample origin, per sample? (mean, median and sd)
-# in how many fields can one find at least part of the sample origin info, per sample? (mean, median and sd)
-
-
-
-
-
-# in how many distinct fields does one have to look through to find sample origin? 
-# "for 1000 samples, the sample origin cabn be found in  ... to ... fields" 
-
-
-# tot count of distinct fields containing all sample origin (full match)
-
-# how many fields does one have to look through to find at least part of info about sample origin? 
-# tot count of distinct fields containing all sample origin (partial match)
-
-# which fields are the most popularly used to report sample origin (full matches)? 
-# are these fields the same when looking at partial matches? 
-
-
-
-
-
-
-
-# Statistical Analysis on field matches
-total_matches = match_count_df['FullMatches'] + match_count_df['PartialMatches']
-print(f"Total fields: {len(total_matches)}")
-print(f"Total mentions: {total_matches.sum()}")
-print(f"Mean mentions per field: {total_matches.mean()}")
-print(f"Standard deviation: {total_matches.std()}")
-print(f"Range of mentions: {total_matches.max() - total_matches.min()}")
-
-
-
-
-# Convert sample_match_count to a DataFrame
+# convert to a df
 sample_match_df = pd.DataFrame.from_dict(sample_match_count, orient='index', columns=['FullMatches', 'PartialMatches'])
 sample_match_df['TotalMatches'] = sample_match_df['FullMatches'] + sample_match_df['PartialMatches']
 
-# Statistical Analysis on sample matches
-print("\nSample Match Statistics:")
-print(f"Total samples: {len(sample_match_df)}")
-print(f"Total full matches: {sample_match_df['FullMatches'].sum()}")
-print(f"Total partial matches: {sample_match_df['PartialMatches'].sum()}")
-print(f"Mean full matches per sample: {sample_match_df['FullMatches'].mean()}")
-print(f"Mean partial matches per sample: {sample_match_df['PartialMatches'].mean()}")
-print(f"Standard deviation of full matches: {sample_match_df['FullMatches'].std()}")
-print(f"Standard deviation of partial matches: {sample_match_df['PartialMatches'].std()}")
+
+# in how many distinct fields, for 1000 samples, was the sample origin reported? 
+fields_full_match = {key for key, value in match_count.items() if value['full'] > 0}
+fields_partial_match = {key for key, value in match_count.items() if value['partial'] > 0}
+
+# which fields are the most popularly used to report sample origin (full matches)? 
+most_popular_full = match_count_df.nlargest(10, 'FullMatches')[['Field', 'FullMatches']]
+
+# which fields are the most popularly used to report sample origin (partial matches)? 
+most_popular_partial = match_count_df.nlargest(5, 'PartialMatches')[['Field', 'PartialMatches']]
+
+# in how many fields can one find the full sample origin, per sample? (mean, median and sd)
+mean_full = sample_match_df['FullMatches'].mean()
+median_full = sample_match_df['FullMatches'].median()
+std_full = sample_match_df['FullMatches'].std()
+# in how many fields can one find at least part of the sample origin info, per sample? (mean, median and sd)
+mean_partial = sample_match_df['PartialMatches'].mean()
+median_partial = sample_match_df['PartialMatches'].median()
+std_partial = sample_match_df['PartialMatches'].std()
+
+print('#################')
+print('In how many distinct fields, for 1000 samples, was the sample origin reported?')
+print(f"For 1000 samples, the sample origin can be found in {len(fields_full_match)} distinct fields.")
+print(f"For 1000 samples, at least part of the sample origin can be found in {len(fields_partial_match)} distinct fields.")
+print('##')
+print("Most popular fields for full matches:")
+print(most_popular_full)
+print('##')
+print("Most popular fields for partial matches:")
+print(most_popular_partial)
+print('##')
+print('in how many fields can one find the full sample origin, per sample?')
+print(f"Mean full matches per sample: {mean_full}")
+print(f"Median full matches per sample: {median_full}")
+print(f"Standard deviation of full matches per sample: {std_full}")
+print('##')
+print('in how many fields can one find the partial sample origin, per sample?')
+print(f"Mean partial matches per sample: {mean_partial}")
+print(f"Median partial matches per sample: {median_partial}")
+print(f"Standard deviation of partial matches per sample: {std_partial}")
+print('#################')
 
 
-# Calculate the average number of fields used per sample
-fields_per_sample = [sum(x > 0 for x in matches) for matches in sample_match_df[['FullMatches', 'PartialMatches']].values]
-average_fields_per_sample = sum(fields_per_sample) / len(fields_per_sample)
-median_mentions = np.median(total_matches)
-print(f"Average number of fields mentioning sample origin per sample: {average_fields_per_sample}")
-print(f"Median number of fields mentioning sample origin per sample: {median_mentions}")
+##############
+# count words in each metadata field
+def count_words_in_fields(base_dir, gold_dict, top_fields):
+    word_counts = {field: [] for field in top_fields}  
+
+    for sample_id, info in list(gold_dict.items()):
+        subdir = "dir_" + sample_id[-3:]
+        metadata_filename = f"{sample_id}_clean.txt"
+        metadata_filepath = os.path.join(base_dir, subdir, metadata_filename)
+        
+        if os.path.exists(metadata_filepath):
+            with open(metadata_filepath, 'r') as file:
+                for line in file:
+                    if '=' in line:
+                        key, value = line.strip().split('=', 1)
+                        if key in top_fields:
+                            word_counts[key].append(len(value.split()))
+
+    return word_counts
+
+top_fields = list(most_popular_full['Field'])[0:5]
+word_counts = count_words_in_fields(base_dir, gold_dict, top_fields)
+
+for field, counts in word_counts.items():
+    if counts:
+        print(f"Average word count for {field}: {sum(counts) / len(counts)}")
+##############
 
 
-fields_per_sample = sample_match_df[['FullMatches', 'PartialMatches']].sum(axis=1)
-print(f"Average number of fields used per sample: {fields_per_sample.mean()}")
-print(f"Median number of fields used per sample: {fields_per_sample.median()}")
-
-print('Top 10 fields:')
-print(match_count_df.head(10))
-
-
-
-
-
-
-
-
-
-# Plotting
+# Plot
 plt.figure(figsize=(12, 8))
-bar_width = 0.35  # Width of the bars in the bar plot
+bar_width = 0.35  
 index = range(len(match_count_df))
 
 plt.bar(index, match_count_df['FullMatches'], bar_width, label='Full matches', color='b')
@@ -223,24 +204,10 @@ plt.show()
 
 
 
-# Sort the sample_match_df by FullMatches in descending order
-sample_match_df = sample_match_df.sort_values(by='FullMatches', ascending=False)
-sample_index = range(len(sample_match_df))
 
-# Plotting sample match statistics
-plt.figure(figsize=(12, 8))
-plt.bar(sample_index, sample_match_df['FullMatches'], bar_width, label='Full matches', color='b')
-plt.bar(sample_index, sample_match_df['PartialMatches'], bar_width, bottom=sample_match_df['FullMatches'], label='Partial matches', color='r')
-
-plt.xlabel('Samples')
-plt.ylabel('Count of Matches')
-plt.title('Total Matches per Sample')
-plt.xticks(ticks=sample_index, labels=[], rotation=90, ha="right")  # Remove x-axis labels
-plt.legend()
-plt.tight_layout()
-plt.show()
-
-
+# # save to csv:
+# most_popular_full.to_csv('most_popular_full_matches.csv', index=False)
+# most_popular_partial.to_csv('most_popular_partial_matches.csv', index=False)
 
 
 

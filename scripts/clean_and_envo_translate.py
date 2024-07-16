@@ -27,7 +27,7 @@ from multiprocessing import Process, cpu_count
 #     --max_processes 8
 ##
 # # or on atlas: 
-# python github/metadata_mining/scripts/clean_and_envo_translate2.py \
+# python github/metadata_mining/scripts/clean_and_envo_translate.py \
 #     --path_to_dir "MicrobeAtlasProject" \
 #     --ontology_dict "ontologies_dict.pkl" \
 #     --metadata_dirs "sample.info_split_dirs" \
