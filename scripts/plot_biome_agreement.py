@@ -12,14 +12,21 @@ import pandas as pd
 import os
 
 
+
+
 def lenient_match(a, b):
+    # Normalize the inputs by trimming spaces and converting to lowercase
+    a = str(a).strip().lower()
+    b = str(b).strip().lower()
+    
     if pd.isna(a) or pd.isna(b):
         return False  # No match if either value is missing
-    if str(a) in str(b) or str(b) in str(a):
-        if str(a) != str(b):  # Check if it's a partial match
+    if a in b or b in a:
+        if a != b:  # Check if it's a partial match
             print(f"Partial match: a={a}, b={b}")
         return True
     return False
+
 
 
 def plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map, work_dir):

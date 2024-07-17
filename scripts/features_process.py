@@ -23,7 +23,7 @@ def find_distinguishing_features(files):
     file_tokens = []
 
     for file in files:
-        tokens = os.path.basename(file).split('_')[:-2]  # to exclude date and time
+        tokens = os.path.basename(file).split('_')[:-1]  # to exclude date and time
         file_tokens.append(set(tokens))
         all_tokens.extend(tokens)
 
@@ -42,9 +42,10 @@ def extract_labels_from_filename(filename, distinguishing_tokens):
     """
     Extract distinguishing labels from the filename based on the distinguishing tokens.
     """
-    tokens = os.path.basename(filename).split('_')[:-2]  # to exclude date and time
+    tokens = os.path.basename(filename).split('_')[:-1]  # to exclude date and time
     labels = [token for token in tokens if token in distinguishing_tokens]
     return ", ".join(labels)
+
 
 
 def edit_features(file_label_map):
