@@ -17,6 +17,9 @@ from scipy.spatial import distance
 from sklearn.metrics.pairwise import cosine_similarity
 from matplotlib.backends.backend_pdf import PdfPages
 import random
+from scipy.stats import ttest_rel, mannwhitneyu
+from scipy.stats import ttest_rel, ttest_ind
+
 
 
 # Now adapted to load embeddings with this format: {sample_id: {'embedding': [values], 'sub_biome_text': text}}
@@ -63,9 +66,14 @@ def compare_embeddings(embeddings_dict1, embeddings_dict2):
 def print_statistics(similarities):
     avg_sim = np.mean(similarities)
     median_sim = np.median(similarities)
+    std_dev = np.std(similarities)
+    percentiles = np.percentile(similarities, [25, 50, 75])
     print(f"Average cosine similarity: {avg_sim:.4f}")
     print(f"Median cosine similarity: {median_sim:.4f}")
-    return avg_sim, median_sim
+    print(f"Standard deviation of cosine similarity: {std_dev:.4f}")
+    print(f"Percentiles: {percentiles}")
+    return avg_sim, median_sim, std_dev, percentiles
+
 
 
 def plot_distribution_metrics(compare_results):
@@ -81,20 +89,9 @@ def plot_distribution_metrics(compare_results):
     sns.histplot(manhattan_distances, bins=30, kde=True, ax=axs[2], color='red')
     axs[2].set_title('Manhattan distance distribution')
     plt.tight_layout()
-    plt.show()
+    #plt.show()
 
 
-def plot_comparison_distribution(actual_similarities, background_similarities, avg_sim, median_sim):
-    fig, ax = plt.subplots(figsize=(12, 6))
-    sns.histplot(actual_similarities, bins=30, kde=True, color='green', label='Actual Cosine Similarities', ax=ax, stat='density')
-    sns.histplot(background_similarities, bins=30, kde=True, color='blue', label='Background Cosine Similarities', ax=ax, alpha=0.5, stat='density')
-    ax.set_title('Actual vs Background Cosine Similarities')
-    ax.set_xlabel('Cosine Similarity')
-    ax.set_ylabel('Probability Density')
-    ax.legend()
-    plt.text(0.95, 0.95, f'Avg: {avg_sim:.4f}\nMed: {median_sim:.4f}', verticalalignment='top', horizontalalignment='right', transform=ax.transAxes, color='red', fontsize=12)
-    plt.tight_layout()
-    return fig  
 
 
 def create_shuffled_background_distribution(embeddings_gd, embeddings_gpt, num_comparisons=None):
@@ -124,6 +121,63 @@ def create_shuffled_background_distribution(embeddings_gd, embeddings_gpt, num_c
 
 
 
+def test_similarity_separation(actual_similarities, background_similarities):
+    """Performs a statistical test to see if actual and background similarities are significantly different and returns the p-value."""
+    stat, p_value = mannwhitneyu(actual_similarities, background_similarities)
+    print(f"Actual vs background similarities: Mann-Whitney U test: U={stat}, p-value={p_value}")
+    return p_value
+ 
+
+
+def plot_actual_vs_background(actual_similarities, background_similarities, title, avg_sim, median_sim, std_dev, p_value):
+    """Plots a box plot comparing actual and background cosine similarities and includes p-value."""
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.boxplot([actual_similarities, background_similarities], notch=True, patch_artist=True, labels=['Actual', 'Background'])
+    ax.set_title(title)
+    ax.set_ylabel('Cosine Similarity')
+    ax.text(0.95, 0.95, f'''
+            avg: {avg_sim:.2f} 
+            sd: {std_dev:.2f} 
+            med: {median_sim:.2f} 
+            MannWhitney U test\np-value: {p_value:.4f}
+            ''', 
+            horizontalalignment='right', verticalalignment='top', transform=ax.transAxes, fontsize=10)
+    ax.grid(True)
+    #plt.show()
+    return fig
+
+
+
+
+
+def compare_based_on_overlap(similarities_dict1, similarities_dict2, threshold=0.7):
+    keys1 = set(similarities_dict1.keys())
+    keys2 = set(similarities_dict2.keys())
+    common_keys = keys1 & keys2
+    total_keys = keys1 | keys2
+    overlap_percentage = len(common_keys) / len(total_keys)
+    print('Percentage of overlapping samples: ', overlap_percentage*100)
+    
+    # Important to sort (for dependent samples testing)
+    sorted_common_keys = sorted(common_keys)
+    similarities1 = [similarities_dict1[key]['cosine'] for key in sorted_common_keys]
+    similarities2 = [similarities_dict2[key]['cosine'] for key in sorted_common_keys]
+
+
+    if overlap_percentage >= threshold:
+        # Sufficient overlap, consider as dependent
+        stat, p_value = ttest_rel(similarities1, similarities2)
+        test_type = 'Paired'
+    else:
+        # Not enough overlap, consider as independent
+        similarities1 = [similarities_dict1[key]['cosine'] for key in keys1]
+        similarities2 = [similarities_dict2[key]['cosine'] for key in keys2]
+        stat, p_value = ttest_ind(similarities1, similarities2)
+        test_type = 'Independent'
+
+    print(f"{test_type} t-test result: t={stat}, p={p_value}")
+    
+
 def sample_by_category(common_keys, gold_biomes, n):
     random.seed(42)  # For reproducibility
     
@@ -145,7 +199,6 @@ def sample_by_category(common_keys, gold_biomes, n):
 
 
 
-
 def plot_heatmap(matrix_gd, matrix_gpt, gpt_labels, gold_labels, keys_gpt_sampled, keys_gd_sampled):
     similarity_matrix = cosine_similarity(matrix_gd, matrix_gpt)
     fig, ax = plt.subplots(figsize=(14, 12))
@@ -163,14 +216,16 @@ def plot_heatmap(matrix_gd, matrix_gpt, gpt_labels, gold_labels, keys_gpt_sample
     #plt.show()
     return fig  
 
-# Function to save all figures to a single PDF
-def save_figures_to_pdf(figures, file_name, directory):
-    file_path = os.path.join(directory, file_name + '.pdf')
-    with PdfPages(file_path) as pdf:
-        for fig in figures:
-            pdf.savefig(fig)
-            #plt.close(fig)  
-        print(f"All plots saved to {file_path}")
-        
+
+def save_figures_to_pdf(figures, base_filename, directory):
+    """Saves a list of figure objects to a PDF file in the specified directory."""
+    import matplotlib.backends.backend_pdf
+    pdf_path = os.path.join(directory, f"{base_filename}.pdf")
+    pdf = matplotlib.backends.backend_pdf.PdfPages(pdf_path)
+    for fig in figures:
+        pdf.savefig(fig)
+    pdf.close()
+    print(f"Saved to {pdf_path}")
+
         
         
