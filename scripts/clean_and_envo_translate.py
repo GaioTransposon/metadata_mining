@@ -20,7 +20,7 @@ from multiprocessing import Process, cpu_count
 # # $ ulimit -n 200000 <-- it's an estimation derived from: 
 # # 40 (dirs and cpus at a time) * 3800 (files per dir) = 152000 --> round up: 200000
 # # then run on local: 
-# python /Users/dgaio/github/metadata_mining/scripts/clean_and_envo_translate2.py \
+# python /Users/dgaio/github/metadata_mining/scripts/clean_and_envo_translate.py \
 #     --path_to_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject" \
 #     --ontology_dict "ontologies_dict.pkl" \
 #     --metadata_dirs "sample.info_split_dirs" \
