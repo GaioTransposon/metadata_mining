@@ -21,10 +21,18 @@ from biome_stats_module import calculate_overlap_and_run_tests
 home_dir = os.getenv('HOME')
 work_dir = os.path.join(home_dir, "MicrobeAtlasProject")
 
-# # my_files is in middle_dir/my_files.txt
-# # expected different
-# my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API120_normal_dt202406051442.txt',
-#             'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp2.0_presp1.5_rs22_API153_normal_dt202406051500.txt']
+# -----------------------------
+# Files processing
+# ----------------------------- 
+
+features = find_distinguishing_features(my_files)
+file_label_map = {file: extract_labels_from_filename(file, features) for file in my_files}
+file_label_map = edit_features(file_label_map)
+
+print("\nFile and its label name:\n")
+for file, label in file_label_map.items():
+    print(f"{os.path.basename(file)} - {label}\n")
+
 
 # -----------------------------
 # Ground truth loading & processing
@@ -37,31 +45,21 @@ gold_dict_df = pd.DataFrame({
     'biome': [v[1] for k, v in gold_dict.items()]})
 
 # -----------------------------
-# Files processing
+# Biome agreement calculation
 # ----------------------------- 
-my_files = [os.path.join(work_dir, f) for f in my_files]    
-features = find_distinguishing_features(my_files)
-file_label_map = {file: extract_labels_from_filename(file, features) for file in my_files}
-file_label_map = edit_features(file_label_map)
 
-print("\nFile and its label name:\n")
-for file, label in file_label_map.items():
-    print(f"{os.path.basename(file)} - {label}\n")
-
-
-# -----------------------------
-# Agreement calculation
-# ----------------------------- 
-full_dfs = [load_and_process_file(f, gold_dict_df, label) for f, label in file_label_map.items()]
+full_dfs = [
+    load_and_process_file(os.path.join(work_dir, f), gold_dict_df, label)
+    for f, label in file_label_map.items()
+]
 full_agreement_df = pd.concat(full_dfs, ignore_index=True)
 full_agreement_df['agreement'] = full_agreement_df['gpt_biome'] == full_agreement_df['biome']
 
-lenient_dfs = [load_and_process_file(f, gold_dict_df, label) for f, label in file_label_map.items()]
-lenient_agreement_df = pd.concat(lenient_dfs, ignore_index=True)
+lenient_agreement_df = pd.concat(full_dfs, ignore_index=True)
 lenient_agreement_df['agreement'] = lenient_agreement_df.apply(lambda row: lenient_match(row['biome'], row['gpt_biome']), axis=1)
 
 # -----------------------------
-# Plotting
+# Biome agreement plotting
 # ----------------------------- 
 full_result, lenient_result = plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map, work_dir)
 
@@ -80,6 +78,9 @@ filename_label_map = {label: os.path.basename(file) for file, label in file_labe
 combined_results['Filename'] = [filename_label_map.get(label) for label in combined_results.index]
 
 print(combined_results)
+# colnames are: label	Agreement biome (exact match)	Agreement biome (lenient match)	Filename
+
+
 
 # -----------------------------
 # Stats
@@ -90,8 +91,23 @@ results_stats = calculate_overlap_and_run_tests(full_agreement_df)
 results_stats['Filename1'] = results_stats['Label1'].map(filename_label_map)
 results_stats['Filename2'] = results_stats['Label2'].map(filename_label_map)
 
+results_stats['validation'] = 'biome'
 print(results_stats)
+# colnames are: 	Label1	Label2	Statistic	P-value	Adjusted P-value	Test Type	Filename1	Filename2
 
+
+
+
+
+# validate_subbiomes needs the Label1 and Label2 columns
+
+# combine validate_biomes.py and validate_subbiomes.py stats part
+
+# output unique csv for biome+sub-biome
+
+# output unique csv for biome stats and sub-biome stats
+
+# make sure csv if populated at each loop by first jumping 1 row when concatenating 
 
 
 

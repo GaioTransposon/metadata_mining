@@ -68,6 +68,7 @@ def print_statistics(similarities):
     median_sim = np.median(similarities)
     std_dev = np.std(similarities)
     percentiles = np.percentile(similarities, [25, 50, 75])
+    
     print(f"Average cosine similarity: {avg_sim:.4f}")
     print(f"Median cosine similarity: {median_sim:.4f}")
     print(f"Standard deviation of cosine similarity: {std_dev:.4f}")
@@ -125,11 +126,11 @@ def test_similarity_separation(actual_similarities, background_similarities):
     """Performs a statistical test to see if actual and background similarities are significantly different and returns the p-value."""
     stat, p_value = mannwhitneyu(actual_similarities, background_similarities)
     print(f"Actual vs background similarities: Mann-Whitney U test: U={stat}, p-value={p_value}")
-    return p_value
+    return stat, p_value
  
 
 
-def plot_actual_vs_background(actual_similarities, background_similarities, title, avg_sim, median_sim, std_dev, p_value):
+def plot_actual_vs_background(actual_similarities, background_similarities, title, avg_sim, median_sim, std_dev, MWU_stat, MWU_p_value):
     """Plots a box plot comparing actual and background cosine similarities and includes p-value."""
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.boxplot([actual_similarities, background_similarities], notch=True, patch_artist=True, labels=['Actual', 'Background'])
@@ -139,15 +140,13 @@ def plot_actual_vs_background(actual_similarities, background_similarities, titl
             avg: {avg_sim:.2f} 
             sd: {std_dev:.2f} 
             med: {median_sim:.2f} 
-            MannWhitney U test\np-value: {p_value:.4f}
+            MannWhitney U test\nU: {MWU_stat:.4f}
+            MannWhitney U test\np-value: {MWU_p_value:.4f}
             ''', 
             horizontalalignment='right', verticalalignment='top', transform=ax.transAxes, fontsize=10)
     ax.grid(True)
     #plt.show()
     return fig
-
-
-
 
 
 
@@ -165,17 +164,16 @@ def compare_based_on_overlap(similarities_dict1, similarities_dict2, threshold=0
 
     if overlap_percentage >= threshold:
         stat, p_value = ttest_rel(similarities1, similarities2)
-        test_type = 'Paired'
+        test_type = 'ttest_rel'
     else:
         stat, p_value = ttest_ind(similarities1, similarities2)
-        test_type = 'Independent'
+        test_type = 'ttest_ind'
 
     num_tests=len(sorted_common_keys)
     p_adjusted = min(p_value * num_tests, 1.0)  # ensures p-value does not exceed 1
     
     print(f"{test_type} t-test result: t={stat}, p={p_value}, p-adj={p_adjusted}")
-
-
+    return overlap_percentage*100, stat, p_value, p_adjusted, test_type
 
 
 
