@@ -13,7 +13,7 @@ import pickle
 import pandas as pd
 from features_process import find_distinguishing_features, extract_labels_from_filename, edit_features, load_and_process_file
 from plot_biome_agreement import lenient_match, plot_biome_agreement
-from biome_stats_module import mcnemar_test_with_correction, t_test_agreements
+from biome_stats_module import calculate_overlap_and_run_tests
 
 # -----------------------------
 # Files and Paths
@@ -25,10 +25,6 @@ work_dir = os.path.join(home_dir, "MicrobeAtlasProject")
 # # expected different
 # my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API120_normal_dt202406051442.txt',
 #             'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp2.0_presp1.5_rs22_API153_normal_dt202406051500.txt']
-
-# expected similar
-# my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API120_normal_dt202406051442.txt',
-#             'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt']
 
 # -----------------------------
 # Ground truth loading & processing
@@ -52,6 +48,7 @@ print("\nFile and its label name:\n")
 for file, label in file_label_map.items():
     print(f"{os.path.basename(file)} - {label}\n")
 
+
 # -----------------------------
 # Agreement calculation
 # ----------------------------- 
@@ -66,24 +63,34 @@ lenient_agreement_df['agreement'] = lenient_agreement_df.apply(lambda row: lenie
 # -----------------------------
 # Plotting
 # ----------------------------- 
-plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map, work_dir)
+full_result, lenient_result = plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map, work_dir)
+
+# Combining the full and lenient results into a single DataFrame
+full_result, lenient_result = plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map, work_dir)
+combined_results = pd.concat([
+    full_result[['full match label']].rename(columns={
+        'full match label': 'Agreement biome (exact match)'
+    }),
+    lenient_result[['full+partial match label']].rename(columns={
+        'full+partial match label': 'Agreement biome (lenient match)'
+    })
+], axis=1)
+
+filename_label_map = {label: os.path.basename(file) for file, label in file_label_map.items()}
+combined_results['Filename'] = [filename_label_map.get(label) for label in combined_results.index]
+
+print(combined_results)
 
 # -----------------------------
 # Stats
 # ----------------------------- 
-print('\nmcnemar test for dependent samples - agreement based on full match')
-result_mcnemar = mcnemar_test_with_correction(full_agreement_df)  
-print('\nmcnemar test for dependent samples - agreement based on full+partial match')
-result_mcnemar = mcnemar_test_with_correction(lenient_agreement_df)  
-print('\n\n\n')
-print('\nt-test for independent samples - agreement based on full match')
-result_t_tests = t_test_agreements(full_agreement_df)  
-print('\nt-test for independent samples - agreement based on full+partial match')
-result_t_tests = t_test_agreements(lenient_agreement_df)  
 
+results_stats = calculate_overlap_and_run_tests(full_agreement_df) 
 
+results_stats['Filename1'] = results_stats['Label1'].map(filename_label_map)
+results_stats['Filename2'] = results_stats['Label2'].map(filename_label_map)
 
-
+print(results_stats)
 
 
 

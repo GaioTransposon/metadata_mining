@@ -39,6 +39,7 @@ def plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map
         'full match': (full_true_counts / full_total_counts * 100).round(2),
         'full match label': (full_true_counts / full_total_counts * 100).round(2).astype(str) + '%\n(n=' + full_total_counts.astype(str) + ')'
     })
+    print('full', full_result)
 
     # Compute lenient agreement statistics
     lenient_true_counts = lenient_agreement_df.groupby('label')['agreement'].sum()
@@ -49,6 +50,7 @@ def plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map
         'full+partial match': (lenient_true_counts / lenient_total_counts * 100).round(2),
         'full+partial match label': (lenient_true_counts / lenient_total_counts * 100).round(2).astype(str) + '%\n(n=' + lenient_total_counts.astype(str) + ')'
     })
+    print('full+partial', lenient_result)
 
     # Merge results for plotting
     result = pd.merge(full_result, lenient_result, left_index=True, right_index=True, suffixes=('_full', '_lenient'))
@@ -81,8 +83,10 @@ def plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map
     feature_description = "_".join(sorted(unique_parts))
     plot_filename = os.path.join(work_dir, f'agreement_{feature_description}.png')
     plt.savefig(plot_filename)
-    plt.show()
+    #plt.show()
     print(f"Plot saved as: {plot_filename}")
+    
+    return full_result, lenient_result
     
 
 

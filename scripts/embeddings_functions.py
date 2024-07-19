@@ -19,7 +19,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import random
 from scipy.stats import ttest_rel, mannwhitneyu
 from scipy.stats import ttest_rel, ttest_ind
-
+from statsmodels.stats.multitest import multipletests
 
 
 # Now adapted to load embeddings with this format: {sample_id: {'embedding': [values], 'sub_biome_text': text}}
@@ -150,6 +150,7 @@ def plot_actual_vs_background(actual_similarities, background_similarities, titl
 
 
 
+
 def compare_based_on_overlap(similarities_dict1, similarities_dict2, threshold=0.7):
     keys1 = set(similarities_dict1.keys())
     keys2 = set(similarities_dict2.keys())
@@ -158,25 +159,25 @@ def compare_based_on_overlap(similarities_dict1, similarities_dict2, threshold=0
     overlap_percentage = len(common_keys) / len(total_keys)
     print('Percentage of overlapping samples: ', overlap_percentage*100)
     
-    # Important to sort (for dependent samples testing)
     sorted_common_keys = sorted(common_keys)
     similarities1 = [similarities_dict1[key]['cosine'] for key in sorted_common_keys]
     similarities2 = [similarities_dict2[key]['cosine'] for key in sorted_common_keys]
 
-
     if overlap_percentage >= threshold:
-        # Sufficient overlap, consider as dependent
         stat, p_value = ttest_rel(similarities1, similarities2)
         test_type = 'Paired'
     else:
-        # Not enough overlap, consider as independent
-        similarities1 = [similarities_dict1[key]['cosine'] for key in keys1]
-        similarities2 = [similarities_dict2[key]['cosine'] for key in keys2]
         stat, p_value = ttest_ind(similarities1, similarities2)
         test_type = 'Independent'
 
-    print(f"{test_type} t-test result: t={stat}, p={p_value}")
+    num_tests=len(sorted_common_keys)
+    p_adjusted = min(p_value * num_tests, 1.0)  # ensures p-value does not exceed 1
     
+    print(f"{test_type} t-test result: t={stat}, p={p_value}, p-adj={p_adjusted}")
+
+
+
+
 
 def sample_by_category(common_keys, gold_biomes, n):
     random.seed(42)  # For reproducibility

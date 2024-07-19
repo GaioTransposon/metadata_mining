@@ -303,10 +303,10 @@ if __name__ == "__main__":
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "MicrobeAtlasProject" \
 #     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 2 \
-#     --chunking "yes" \
+#     --n_samples_per_biome 100 \
+#     --chunking "no" \
 #     --chunk_size 2000 \
-#     --seed 42 \
+#     --seed 22 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
 #     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
 #     --encoding_name "cl100k_base" \

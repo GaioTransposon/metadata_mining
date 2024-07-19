@@ -1,20 +1,13 @@
-# Day 1 - sync
-
 # sync - chunking y/n
-# my_files = 
-['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt',
-#             
-'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt']
+my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202407191713.txt',           
+            'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API117_normal_dt202407191720.txt']
 
 
 # sync - chunksize
-# my_files = 
-['gpt_clean_output_nspb100_chunkingyes_chunksize1000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API190_normal_dt202406051341.txt',
-#             
-'gpt_clean_output_nspb100_chunkingyes_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API76_normal_dt202406051347.txt',
-#             
-'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt']
-
+my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize5000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API51_normal_dt202407191744.txt',
+            'gpt_clean_output_nspb100_chunkingyes_chunksize4000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API61_normal_dt202407191736.txt',
+            'gpt_clean_output_nspb100_chunkingyes_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API78_normal_dt202407191729.txt',
+            'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API117_normal_dt202407191720.txt']
 
 
 # sync - model
