@@ -55,8 +55,6 @@ for file, label in file_label_map.items():
     print(f"{os.path.basename(file)} - {label}\n")
 
 
-
-
 results={}
 results_sub_biome = []
 results_list = []
@@ -174,9 +172,6 @@ results_df_stats['validation'] = 'sub-biome'
 
 print(results_df_stats)
 # colnames are: 	Statistic	P-value	Adjusted P-value	Test Type	Filename1	Filename2
-
-
-
 
 
 

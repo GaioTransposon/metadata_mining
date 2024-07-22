@@ -48,13 +48,10 @@ gold_dict_df = pd.DataFrame({
 # Biome agreement calculation
 # ----------------------------- 
 
-full_dfs = [
-    load_and_process_file(os.path.join(work_dir, f), gold_dict_df, label)
-    for f, label in file_label_map.items()
-]
+# Load, process, and calculate agreements for data files
+full_dfs = [load_and_process_file(os.path.join(work_dir, f), gold_dict_df, label) for f, label in file_label_map.items()]
 full_agreement_df = pd.concat(full_dfs, ignore_index=True)
 full_agreement_df['agreement'] = full_agreement_df['gpt_biome'] == full_agreement_df['biome']
-
 lenient_agreement_df = pd.concat(full_dfs, ignore_index=True)
 lenient_agreement_df['agreement'] = lenient_agreement_df.apply(lambda row: lenient_match(row['biome'], row['gpt_biome']), axis=1)
 
@@ -64,14 +61,9 @@ lenient_agreement_df['agreement'] = lenient_agreement_df.apply(lambda row: lenie
 full_result, lenient_result = plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map, work_dir)
 
 # Combining the full and lenient results into a single DataFrame
-full_result, lenient_result = plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map, work_dir)
 combined_results = pd.concat([
-    full_result[['full match label']].rename(columns={
-        'full match label': 'Agreement biome (exact match)'
-    }),
-    lenient_result[['full+partial match label']].rename(columns={
-        'full+partial match label': 'Agreement biome (lenient match)'
-    })
+    full_result[['full match label']].rename(columns={'full match label': 'Agreement biome (exact match)'}),
+    lenient_result[['full+partial match label']].rename(columns={'full+partial match label': 'Agreement biome (lenient match)'})
 ], axis=1)
 
 filename_label_map = {label: os.path.basename(file) for file, label in file_label_map.items()}
@@ -79,7 +71,6 @@ combined_results['Filename'] = [filename_label_map.get(label) for label in combi
 
 print(combined_results)
 # colnames are: label	Agreement biome (exact match)	Agreement biome (lenient match)	Filename
-
 
 
 # -----------------------------
@@ -99,13 +90,7 @@ print(results_stats)
 
 
 
-# validate_subbiomes needs the Label1 and Label2 columns
 
-# combine validate_biomes.py and validate_subbiomes.py stats part
-
-# output unique csv for biome+sub-biome
-
-# output unique csv for biome stats and sub-biome stats
 
 # make sure csv if populated at each loop by first jumping 1 row when concatenating 
 

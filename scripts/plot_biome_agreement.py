@@ -76,7 +76,7 @@ def plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map
     plt.tight_layout()
 
     # Adjust legend position
-    plt.legend(title='', loc='upper right', title_fontsize='13', fontsize='11')
+    plt.legend(title='', loc='right', title_fontsize='13', fontsize='11')
 
     # Constructing file name from unique parts of labels
     unique_parts = set(sum((label.split(', ') for label in file_label_map.values()), []))

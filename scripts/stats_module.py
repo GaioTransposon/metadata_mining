@@ -10,6 +10,45 @@ import pandas as pd
 from statsmodels.stats.contingency_tables import mcnemar
 from itertools import combinations
 from scipy.stats import ttest_ind
+import numpy as np
+from scipy.stats import ttest_rel, mannwhitneyu
+
+
+
+def compare_based_on_overlap(similarities_dict1, similarities_dict2, threshold=0.7):
+    keys1 = set(similarities_dict1.keys())
+    keys2 = set(similarities_dict2.keys())
+    common_keys = keys1 & keys2
+    total_keys = keys1 | keys2
+    overlap_percentage = len(common_keys) / len(total_keys)
+    print('Percentage of overlapping samples: ', overlap_percentage*100)
+    
+    sorted_common_keys = sorted(common_keys)
+    similarities1 = [similarities_dict1[key]['cosine'] for key in sorted_common_keys]
+    similarities2 = [similarities_dict2[key]['cosine'] for key in sorted_common_keys]
+
+    if overlap_percentage >= threshold:
+        stat, p_value = ttest_rel(similarities1, similarities2)
+        test_type = 'ttest_rel'
+    else:
+        stat, p_value = ttest_ind(similarities1, similarities2)
+        test_type = 'ttest_ind'
+
+    num_tests=len(sorted_common_keys)
+    p_adjusted = min(p_value * num_tests, 1.0)  # ensures p-value does not exceed 1
+    
+    print(f"{test_type} t-test result: t={stat}, p={p_value}, p-adj={p_adjusted}")
+    return overlap_percentage*100, round(stat, 2), round(p_value, 2), round(p_adjusted, 2), test_type
+
+
+
+
+def test_similarity_separation(actual_similarities, background_similarities):
+    """Performs a statistical test to see if actual and background similarities are significantly different and returns the p-value."""
+    stat, p_value = mannwhitneyu(actual_similarities, background_similarities)
+    print(f"Actual vs background similarities: Mann-Whitney U test: U={stat}, p-value={p_value}")
+    return round(stat, 2), round(p_value, 2)
+
 
 
 
@@ -61,9 +100,26 @@ def calculate_overlap_and_run_tests(df):
     for result in results:
         label1, label2, stat, p_value, test_type = result
         corrected_pvalue = min(p_value * correction_factor, 1.0)
-        corrected_results.append((label1, label2, stat, p_value, corrected_pvalue, test_type))
+        corrected_results.append((label1, label2, round(stat, 2), round(p_value, 2), round(corrected_pvalue, 2), test_type))
 
     results_df = pd.DataFrame(corrected_results, columns=['Label1', 'Label2', 'Statistic', 'P-value', 'Adjusted P-value', 'Test Type'])
     print(results_df)
     return results_df
+
+
+
+def print_statistics(similarities):
+    
+    avg_sim = round(np.mean(similarities), 2)
+    median_sim = round(np.median(similarities), 2)
+    std_dev = round(np.std(similarities), 2)
+    percentiles = np.percentile(similarities, [25, 50, 75])
+    percentiles = np.round(percentiles, 2)  
+    
+    print(f"Average cosine similarity: {avg_sim}")
+    print(f"Median cosine similarity: {median_sim}")
+    print(f"Standard deviation of cosine similarity: {std_dev}")
+    print(f"Percentiles: {percentiles[0]}, {percentiles[1]}, {percentiles[2]}")
+    
+    return avg_sim, median_sim, std_dev, percentiles
 
