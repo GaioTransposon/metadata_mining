@@ -17,7 +17,7 @@ from itertools import combinations
 sys.path.append('/Users/dgaio/github/metadata_mining/scripts')
 from features_process import find_distinguishing_features, extract_labels_from_filename, edit_features, load_and_process_file, filter_common_keys
 from embeddings_functions import (load_embeddings, compare_embeddings, create_shuffled_background_distribution, sample_by_category)
-from stats_module import calculate_overlap_and_run_tests, print_statistics, test_similarity_separation, compare_based_on_overlap
+from stats_module import calculate_overlap_and_run_tests_biomes, compare_based_on_overlap_subbiomes, print_statistics, test_similarity_separation
 from output_writing import plot_biome_agreement, plot_actual_vs_background, plot_heatmap, save_figures_to_pdf, output_to_csv
 
 
@@ -181,7 +181,7 @@ results_subbiome = pd.DataFrame(results_list)
 # 1. Stats for biomes
 # ----------------------------- 
 
-results_stats = calculate_overlap_and_run_tests(full_agreement_df) 
+results_stats = calculate_overlap_and_run_tests_biomes(full_agreement_df) 
 
 results_stats['Filename1'] = results_stats['Label1'].map(filename_label_map)
 results_stats['Filename2'] = results_stats['Label2'].map(filename_label_map)
@@ -200,7 +200,7 @@ results_data = []
 # Stats pairwise comparisons with dynamic test selection based on overlap (if more than 70% samples in common, dependent test)
 for file1, file2 in combinations(results.keys(), 2):
     print(f"\n\nComparing file:\n\n{file1}\nwith file:\n{file2}\n")
-    overlap_percentage, stat, p_value, p_adjusted, test_type = compare_based_on_overlap(results[file1], results[file2])
+    overlap_percentage, stat, p_value, p_adjusted, test_type = compare_based_on_overlap_subbiomes(results[file1], results[file2])
 
     result_dict = {
         # label1 and labels2
@@ -251,10 +251,6 @@ print(biomes_subbiomes_stats.columns)
 
 filename = os.path.join(work_dir, 'biome_subbiome_stats.csv')
 output_to_csv(biomes_subbiomes_stats, filename)
-
-
-
-
 
 
 
