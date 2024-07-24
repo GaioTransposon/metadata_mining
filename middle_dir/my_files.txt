@@ -140,36 +140,26 @@ my_files = ['gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo
 
 
 
+# models - sync 
+my_files = ['gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API60_normal_dt202407241527.txt',
+            'gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API57_normal_dt202407241530.txt', 
+            'gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-4-0613_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API58_normal_dt202407241543.txt',
+            'gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API58_repeat_dt202407241550.txt',
+            'gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API58_repeat_dt202407241553.txt',
+            'gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-4-0613_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API57_repeat_dt202407241607.txt']
 
 
-# sync - model
-my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt',
-            'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API119_normal_dt202406051355.txt']
-
-# async - model
-my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv',         
-            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchzep2HCKajBvYk0XVAq20Fd1j_dt202406071409.csv']
+# =============================================================================
+# # models - async (not really necessar because the whole point is to compare with gpt-4 and async requests don t have gpt-4)
+# my_files = ['gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchVAmuWAerFQPBv4FFItx4P5i4_dt202407241240.csv', 
+#             'gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchE7jZgYz9sjFAKKyNoA1RkBw3_dt202407241240.csv']
+# =============================================================================
 
 
-
-
-
-
-
-
-
-
-
-
-# Day 3 - async
 
 # sync vs async
-# my_files = 
-['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt',
-#             
-'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv']
-
-
+my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv']
 
 
 
