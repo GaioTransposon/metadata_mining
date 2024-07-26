@@ -8,7 +8,7 @@ conda activate spyder_env
 
 
 # End date in format YYYY-MM-DD HH:MM:SS
-end_date="2023-07-27 23:00:00"
+end_date="2024-07-27 23:00:00"
 
 # Get current date and time
 current_date=$(date '+%Y-%m-%d %H:%M:%S')
