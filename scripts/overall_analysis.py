@@ -38,6 +38,12 @@ for pattern in file_patterns:
 print('\nNumber of files: ', len(my_files), '\n')
 
 
+# Joao's file:
+file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/joao_biomes_parsed.csv'
+joao_biomes_df = pd.read_csv(file_path, usecols=['sample', 'biome'])
+joao_biomes_df['biome'] = joao_biomes_df['biome'].replace({'aquatic': 'water', 'unknown': 'other'})
+joao_biomes_df['biome'].fillna('other', inplace=True)
+
 # -----------------------------
 # Ground truth loading & processing
 # -----------------------------
@@ -113,6 +119,86 @@ print(f"Kurtosis: {kurtosis:.2f}")
 
 
 
+
+
+
+################## Old (Joao's) vs new (GPT) biome agreements conf matrices: 
+###
+# GPT vs ground truth:
+    
+# Filter for specific 'gpt_biome' categories
+selected_biomes = ['animal', 'plant', 'soil', 'water', 'other']
+lenient_agreement_df_filt = lenient_agreement_df[lenient_agreement_df['gpt_biome'].isin(selected_biomes)]
+
+conf_matrix = pd.crosstab(lenient_agreement_df_filt['biome'], lenient_agreement_df_filt['gpt_biome'], rownames=['Actual Biome'], colnames=['Predicted Biome'])
+
+# reorder
+cols = [col for col in conf_matrix.columns if col != 'other'] + ['other'] if 'other' in conf_matrix.columns else conf_matrix.columns
+rows = [row for row in conf_matrix.index if row != 'other'] + ['other'] if 'other' in conf_matrix.index else conf_matrix.index
+conf_matrix = conf_matrix.loc[rows, cols]
+
+# normalize
+row_totals = conf_matrix.sum(axis=1)
+normalized_conf_matrix = conf_matrix.div(row_totals, axis=0)
+plt.figure(figsize=(12, 10))
+sns.heatmap(normalized_conf_matrix, annot=True, fmt=".3f", cmap='viridis')
+plt.xticks(rotation=45, ha='right')
+plt.yticks(rotation=0)
+plt.title('Normalized Confusion Matrix for Selected GPT Biomes')
+plt.show()
+###
+###
+# Joao's vs ground truth:
+    
+# merge
+merged_df = pd.merge(joao_biomes_df, gold_dict_df, on='sample', how='inner')
+
+conf_matrix = pd.crosstab(merged_df['gd_biome'], merged_df['biome'], rownames=['Actual Biome'], colnames=['Predicted Biome'])
+
+# reorder
+cols = [col for col in conf_matrix.columns if col != 'other'] + ['other'] if 'other' in conf_matrix.columns else conf_matrix.columns
+rows = [row for row in conf_matrix.index if row != 'other'] + ['other'] if 'other' in conf_matrix.index else conf_matrix.index
+conf_matrix = conf_matrix.loc[rows, cols]
+
+# normalize
+row_totals = conf_matrix.sum(axis=1)
+normalized_conf_matrix = conf_matrix.div(row_totals, axis=0)
+plt.figure(figsize=(12, 10))
+sns.heatmap(normalized_conf_matrix, annot=True, fmt=".3f", cmap='viridis')
+plt.xticks(rotation=45, ha='right')
+plt.yticks(rotation=0)
+plt.title('Normalized Confusion Matrix for Selected GPT Biomes')
+plt.show()
+###
+
+# =============================================================================
+# 
+# 
+# from scipy.stats import chi2_contingency
+# 
+# # Chi-squared test for GPT vs. ground truth
+# gpt_chi2, gpt_p, _, _ = chi2_contingency(conf_matrix_gpt)
+# # Chi-squared test for Joao's vs. ground truth
+# joao_chi2, joao_p, _, _ = chi2_contingency(conf_matrix_joao)
+# 
+# print(f"GPT Chi-squared: {gpt_chi2}, p-value: {gpt_p}")
+# print(f"Joao Chi-squared: {joao_chi2}, p-value: {joao_p}")
+# 
+# 
+# # Interpretation:
+# # A low p-value (typically < .05) indicates strong evidence against the null hypothesis, 
+# # suggesting a significant difference in distribution compared to the expected frequencies.
+# # Higher chi-squared values suggest greater divergence from expected frequencies.
+# 
+# 
+# # Calculate accuracy from the confusion matrices
+# gpt_accuracy = (np.diag(conf_matrix_gpt).sum() / conf_matrix_gpt.values.sum()) * 100
+# joao_accuracy = (np.diag(conf_matrix_joao).sum() / conf_matrix_joao.values.sum()) * 100
+# 
+# print(f"GPT Accuracy: {gpt_accuracy:.2f}%")
+# print(f"João Accuracy: {joao_accuracy:.2f}%")
+# 
+# =============================================================================
 
 
 
