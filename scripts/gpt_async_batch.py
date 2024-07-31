@@ -6,7 +6,7 @@ Created on Tue May  7 14:36:00 2024
 @author: dgaio
 """
 
-# NB: works with latets openai (not 0.28)
+# NB: works with latest openai (not 0.28)
 # pip uninstall openai
 # pip install openai 
 

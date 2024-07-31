@@ -98,7 +98,7 @@ if __name__ == "__main__":
 # python /Users/dgaio/github/metadata_mining/scripts/metadata_preparation.py \
 #     --work_dir "MicrobeAtlasProject" \
 #     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 1 \
+#     --n_samples_per_biome 100 \
 #     --chunking "no" \
 #     --chunk_size 2000 \
 #     --seed 22 \
@@ -107,11 +107,15 @@ if __name__ == "__main__":
 #     --encoding_name "cl100k_base"
     
 
+# NB: works with latest openai (not 0.28)
+# pip uninstall openai
+# pip install openai 
+
 # python /Users/dgaio/github/metadata_mining/scripts/gpt_async_batch.py \
 #     --work_dir "MicrobeAtlasProject" \
 #     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_batch.txt" \
 #     --api_key_path "my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
+#     --model "gpt-3.5-turbo-0125" \
 #     --temperature 1.00 \
 #     --max_tokens 4096 \
 #     --top_p 0.75 \
