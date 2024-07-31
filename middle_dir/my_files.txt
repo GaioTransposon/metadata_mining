@@ -162,6 +162,19 @@ my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turb
             'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv']
 
 
+# sync - Robustness
+my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API500_timeSat1600CEST_dt202407271555.txt',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API500_timeMon1100CEST_dt202407291058.txt',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API500_timeMon1600CEST_dt202407291559.txt',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue1100CEST_dt202407301104.txt',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API500_timeTue1100CESTrep_dt202407301116.txt',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue1600CEST_dt202407301558.txt',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue1600CESTrep_dt202407301622.txt',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue1800CEST_dt202407301757.txt',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API503_timeTue1800CESTrep_dt202407301808.txt',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue2100CEST_dt202407302116.txt',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue2100CESTrep_dt202407302129.txt']
+
 
 
 
