@@ -176,6 +176,21 @@ my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turb
             'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue2100CESTrep_dt202407302129.txt']
 
 
+# async - Robustness: 
+
+my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch3UrsPni6Ue63YXRYwisZ5Ygz_dt202407311542.csv',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch4V631Bmz2q8THhl5vWhjN7xL_dt202407311543.csv',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch9Kxb9CgSKO4Jrc4nHeNXjIlL_dt202407311542.csv',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchCIMrqld1ZrfyF7qtmkdMHt7V_dt202407311541.csv',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchWLGIEwamUdCiNXmuJ8ecDIiZ_dt202407311542.csv',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchWXV7DhkQXGAU3ieCwTOvVkrJ_dt202407311542.csv',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchYBPAJfHUxVnBm9YVywZL5wUc_dt202407311543.csv',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchbYb8LE5CosmqIJqySwqu6wyx_dt202407311543.csv',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchkJkjHPS0P9LlbDlUOfaXwotC_dt202407311543.csv',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchkeK2m8Hncyy2FaWDAJwvDyn3_dt202407311543.csv',
+            'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchkxeRGfXerVFAPjV6LvHDMDmu_dt202407311542.csv']
+
+
 
 
 

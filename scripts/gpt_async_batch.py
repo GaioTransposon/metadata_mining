@@ -10,6 +10,8 @@ Created on Tue May  7 14:36:00 2024
 # pip uninstall openai
 # pip install openai 
 
+# script: gpt_async_batch.py
+
 import argparse
 import json
 import os
@@ -170,8 +172,8 @@ if __name__ == "__main__":
 # python /Users/dgaio/github/metadata_mining/scripts/gpt_async_batch.py \
 #     --work_dir "MicrobeAtlasProject" \
 #     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_batch.txt" \
-#     --api_key_path "my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
+#     --api_key_path "my_api_key_production_run" \
+#     --model "gpt-3.5-turbo-0125" \
 #     --temperature 1.00 \
 #     --max_tokens 4096 \
 #     --top_p 0.75 \

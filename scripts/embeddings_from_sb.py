@@ -6,14 +6,21 @@ Created on Tue May 28 15:40:32 2024
 @author: dgaio
 """
 
-# makes a check if json already exists it won t re do it 
+
+# Runs for all .txt or .csv files
+# if json already exists it won t re get the embeddings for it
+
+# NB before running, run: 
+# pip uninstall
+# pip install openai==0.28
+# restart spyder 
 
 
-
+import os
 import csv
 import openai
 import json
-import os
+
 import pickle
 import re
 import glob
