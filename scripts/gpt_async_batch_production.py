@@ -241,23 +241,23 @@ if __name__ == "__main__":
 
 
 
-# python /Users/dgaio/github/metadata_mining/scripts/gpt_async_batch_production.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --sample_list_file "samples_list.txt" \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --output_pkl "metadataprov.pkl" \
-#     --system_prompt_file "/Users/dgaio/github/metadata_mining/source_data/openai_system_prompt_batch.txt" \
-#     --api_key_path "my_api_key_production_run" \
-#     --model "gpt-3.5-turbo-0125" \
-#     --temperature 1.00 \
-#     --max_tokens 4096 \
-#     --top_p 0.75 \
-#     --frequency_penalty 0.25 \
-#     --presence_penalty 1.5 \
-#     --n_samples 10 \
-#     --n_batches 2 \
-#     --delay_minutes 1.5 \
-#     --state_file "state_file.txt"
+python /Users/dgaio/github/metadata_mining/scripts/gpt_async_batch_production.py \
+    --work_dir "MicrobeAtlasProject" \
+    --sample_list_file "samples_list.txt" \
+    --directory_with_split_metadata "sample.info_split_dirs" \
+    --output_pkl "metadataprov.pkl" \
+    --system_prompt_file "/Users/dgaio/github/metadata_mining/source_data/openai_system_prompt_batch.txt" \
+    --api_key_path "my_api_key_production_run" \
+    --model "gpt-3.5-turbo-0125" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 1.5 \
+    --n_samples 3500 \
+    --n_batches 77 \
+    --delay_minutes 1.5 \
+    --state_file "state_file.txt"
     
     
     
