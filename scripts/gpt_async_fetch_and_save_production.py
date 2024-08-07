@@ -61,13 +61,17 @@ def convert_jsonl_content_to_csv(jsonl_content, output_csv_path, failed_samples_
 
 
 def get_existing_batch_ids(directory):
-    pattern = f"{directory}/gpt_clean_output*batch*.csv"
+    pattern = os.path.join(directory, "production", "gpt_clean_output*batch*.csv")
     files = glob.glob(pattern)
     existing_ids = set()
     for file in files:
-        batch_id = file.split('_batch')[-1].split('.csv')[0]
+        batch_id = os.path.basename(file).split('_batch')[-1].split('.csv')[0].split('_dt')[0]
         existing_ids.add('batch_' + batch_id) 
     return existing_ids
+
+
+
+
 
 def log_failed_batch(directory, batch_job_id):
     failed_log_path = os.path.join(directory, "failed_async_batches_production_run.txt")
@@ -95,7 +99,7 @@ for batch_info in batch_info_list:
         try:
             result_json = retrieve_results(client, batch_job_id)
             if result_json:
-                output_csv_path = f"{directory}/gpt_clean_output_batch{batch_job_id.split('_')[-1]}_dt{batch_info['datetime']}.csv"
+                output_csv_path = f"{directory}/production/gpt_clean_output_batch{batch_job_id.split('_')[-1]}_dt{batch_info['datetime']}.csv"
                 convert_jsonl_content_to_csv(result_json, output_csv_path, failed_samples_path)
                 print("Batch completed and results saved to CSV.")
             else:
