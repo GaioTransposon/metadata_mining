@@ -56,7 +56,7 @@ def get_existing_batch_ids(directory):
     files = glob.glob(pattern)
     existing_ids = set()
     for file in files:
-        batch_id = file.split('_batch')[-1].split('.csv')[0]
+        batch_id = file.split('_batch')[-1].split('.csv')[0].split('_dt')[0]
         existing_ids.add('batch_' + batch_id) 
     return existing_ids
 
