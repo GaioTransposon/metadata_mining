@@ -92,13 +92,11 @@ print(results_df[['latitude', 'longitude', 'place_name']])
 
 
 
-# =============================================================================
-# python /Users/dgaio/github/metadata_mining/scripts/coordinates_to_text.py \
+# python github/metadata_mining/scripts/coordinates_to_text.py \
 #     --work_dir "/mnt/mnemo5/dgaio/MicrobeAtlasProject" \
 #     --coordinates_file "sample.coordinates.reparsed.filtered" \
 #     --output_file "geocoded_coordinates.csv" \
 #     --min_delay_seconds 1.5
-# =============================================================================
 
 
 
