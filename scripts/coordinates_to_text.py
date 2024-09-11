@@ -53,6 +53,8 @@ df_coordinates_filtered = df_coordinates_filtered.drop_duplicates(subset=['latit
 
 df_coordinates_unique = df_coordinates_filtered
 
+print('Number of unique coordinates: ', len(df_coordinates_unique))
+
 # Function to perform reverse geocoding
 def reverse_geocode(lat, lon):
     if not results_df[(results_df['latitude'] == lat) & (results_df['longitude'] == lon)].empty:
@@ -68,12 +70,13 @@ def reverse_geocode(lat, lon):
         return None
 
 # Initialize Nominatim geocoder with RateLimiter
-geolocator = Nominatim(user_agent="Microbe Atlas metadata project - coordinates translation")
+geolocator = Nominatim(user_agent="Microbe Atlas metadata project - test - coordinates translation")
 geocode_with_rate_limit = RateLimiter(geolocator.reverse, min_delay_seconds=args.min_delay_seconds)
 
 # Check if the results file already exists, load it if it does, else create an empty DataFrame
 if os.path.exists(output_file):
     results_df = pd.read_csv(output_file)
+    print('Number of unique coordinates already obtained: ', len(results_df))
 else:
     results_df = pd.DataFrame(columns=['latitude', 'longitude', 'place_name'])
 
@@ -96,7 +99,7 @@ print(results_df[['latitude', 'longitude', 'place_name']])
 #     --work_dir "/mnt/mnemo5/dgaio/MicrobeAtlasProject" \
 #     --coordinates_file "sample.coordinates.reparsed.filtered" \
 #     --output_file "geocoded_coordinates.csv" \
-#     --min_delay_seconds 1.5
+#     --min_delay_seconds 1.3
 
 
 

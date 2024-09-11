@@ -14,6 +14,7 @@ import glob
 import os
 import re
 import matplotlib.pyplot as plt
+import numpy as np
 import requests
 import sys
 sys.path.append('/Users/dgaio/github/metadata_mining/scripts')
@@ -115,8 +116,7 @@ geo_cache = GoogleMapsLocationCache(work_dir, api_key_file)
 # update based on the False values 
 maps_coordinates = geo_cache.update_cache(unique_false_matches_counts['geo_location'].unique())
 
-
-
+print('Number of unique FALSE geo_locations: ', len(unique_false_matches_counts['geo_location'].unique()))
 
 
 # Haversine formula for calculating the distance between two lat/lon pairs
@@ -153,27 +153,13 @@ merged_false_matches['distance_km'] = merged_false_matches.apply(
 # Display the result with distance
 print(merged_false_matches[['geo_location', 'latitude_original', 'longitude_original', 'latitude_google', 'longitude_google', 'distance_km']])
 
-# Visualize the distance between original and Google coordinates
-plt.figure(figsize=(10, 6))
-plt.hist(merged_false_matches['distance_km'], bins=30, color='blue', alpha=0.7)
-plt.title('Distance between extracted coordinates and coordinates from gpt-retrieved-location (km)')
-plt.xlabel('Distance (km)')
-plt.ylabel('Frequency')
-plt.grid(True, linestyle='--', alpha=0.6)
-plt.show()
-
-
-
-
-import matplotlib.pyplot as plt
-import numpy as np
-
 # Calculate weighted distance by repeating the distance based on the 'count' column
 weighted_distances = np.repeat(merged_false_matches['distance_km'], merged_false_matches['count'])
+len(weighted_distances)
 
 # Plot histogram using the weighted distances
 plt.figure(figsize=(10, 6))
-plt.hist(weighted_distances, bins=30, color='blue', alpha=0.7)
+plt.hist(weighted_distances, bins=60, color='blue', alpha=0.7)
 plt.title('Distance between Original and Google Coordinates (km)')
 plt.xlabel('Distance (km)')
 plt.ylabel('Frequency (Weighted by Count)')
