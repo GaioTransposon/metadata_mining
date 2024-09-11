@@ -11,7 +11,7 @@ import pandas as pd
 import requests
 
 class GoogleMapsLocationCache:
-    def __init__(self, work_dir, api_key_file, cache_filename='geolocation_cache.csv'):
+    def __init__(self, work_dir, api_key_file, cache_filename):
         # Initialize paths
         self.work_dir = work_dir
         self.api_key_file = api_key_file
@@ -21,7 +21,7 @@ class GoogleMapsLocationCache:
         if os.path.exists(self.geolocation_cache_file_path):
             self.cache_df = pd.read_csv(self.geolocation_cache_file_path)
         else:
-            self.cache_df = pd.DataFrame(columns=['geo_location', 'latitude', 'longitude'])
+            self.cache_df = pd.DataFrame(columns=['gpt_name', 'latitude', 'longitude'])
 
         # Load API key
         with open(self.api_key_file, 'r') as file:
@@ -29,7 +29,7 @@ class GoogleMapsLocationCache:
 
     def get_coordinates_from_cache(self, geo_location):
         """ Return coordinates from cache if available. """
-        cached = self.cache_df[self.cache_df['geo_location'] == geo_location]
+        cached = self.cache_df[self.cache_df['gpt_name'] == geo_location]
         if not cached.empty:
             return cached.iloc[0]['latitude'], cached.iloc[0]['longitude']
         else:
@@ -49,7 +49,7 @@ class GoogleMapsLocationCache:
                 location = json_response['results'][0]['geometry']['location']
                 # Add to cache
                 new_row = pd.DataFrame([[geo_location, location['lat'], location['lng']]], 
-                                       columns=['geo_location', 'latitude', 'longitude'])
+                                       columns=['gpt_name', 'latitude', 'longitude'])
                 self.cache_df = pd.concat([self.cache_df, new_row], ignore_index=True)
                 return location['lat'], location['lng']
             else:
