@@ -46,6 +46,7 @@ class GoogleMapsLocationCache:
         if response.status_code == 200:
             json_response = response.json()
             if json_response['results']:
+                #print(json_response['results'])
                 location = json_response['results'][0]['geometry']['location']
                 # Add to cache
                 new_row = pd.DataFrame([[geo_location, location['lat'], location['lng']]], 
@@ -69,4 +70,23 @@ class GoogleMapsLocationCache:
         return self.cache_df
 
 
+
+
+
+
+
+# =============================================================================
+# def fetch_country_info(country_name):
+#     url = f"https://restcountries.com/v3.1/name/{country_name}"
+#     response = requests.get(url)
+#     if response.status_code == 200:
+#         data = response.json()
+#         return data[0]['area']  # area in square km
+#     else:
+#         return None
+# 
+# # Example usage
+# area = fetch_country_info('Antarctica')
+# print(area, 'square kilometers')
+# =============================================================================
 

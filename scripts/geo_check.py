@@ -94,21 +94,34 @@ plt.grid(True, linestyle='--', alpha=0.6)  # Optional: adds grid lines for bette
 plt.show()
 
 
-# Unique false matches
+# 130689 samples
+
+
+
+
+
+# Unique false matches including sample_id
 false_matches = final_merge[final_merge['location_match'] == False]
-columns_of_interest = ['latitude', 'longitude', 'latlon_name', 'gpt_name', 'location_match']
+columns_of_interest = ['sample_id', 'latitude', 'longitude', 'latlon_name', 'gpt_name', 'location_match']
 unique_false_matches_counts = false_matches.groupby(columns_of_interest).size().reset_index(name='count')
 print(unique_false_matches_counts)
 print(f"Total number of unique false matches: {len(unique_false_matches_counts)}")
 
+# Update cache with unique gpt_name to avoid redundant API calls
+unique_gpt_names = unique_false_matches_counts['gpt_name'].unique()
 
-# call class to retrieve coordinates from geo_location (uses google maps api)_
+# call class to retrieve coordinates from geo_location (uses google maps api)
 geo_cache = GoogleMapsLocationCache(work_dir, api_key_file, 'geolocation_cache.csv')
 
-# update based on the False values 
-maps_coordinates = geo_cache.update_cache(unique_false_matches_counts['gpt_name'].unique())
+maps_coordinates = geo_cache.update_cache(unique_gpt_names)  # This should update or write to 'geolocation_cache.csv'
 
-print('Number of unique FALSE gpt_names: ', len(unique_false_matches_counts['gpt_name'].unique()))
+updated_coordinates = pd.read_csv(os.path.join(work_dir, 'geolocation_cache.csv'))
+merged_false_matches = pd.merge(unique_false_matches_counts, updated_coordinates, on='gpt_name', how='left', suffixes=('_original', '_google'))
+print(merged_false_matches)
+
+
+
+
 
 
 # Haversine formula for calculating the distance between two lat/lon pairs
@@ -135,10 +148,6 @@ def haversine(lat1, lon1, lat2, lon2):
 
 
 
-# Merge the new coordinates with unique_false_matches_counts based on geo_location
-merged_false_matches = pd.merge(unique_false_matches_counts, maps_coordinates, on='gpt_name', how='left', suffixes=('_original', '_google'))
-
-
 # Calculate the distance between the original lat/lon and the lat/lon from Google Maps
 merged_false_matches['distance_km'] = merged_false_matches.apply(
     lambda row: haversine(row['latitude_original'], row['longitude_original'], row['latitude_google'], row['longitude_google']), axis=1)
@@ -162,7 +171,52 @@ plt.show()
 
 
 
+# percentage of samples where gpt name matches with coordinates from metadata 
+total_samples = len(final_merge)
+matches_count = final_merge['location_match'].sum()
+non_matches_count = total_samples - matches_count
+matches_percentage = (matches_count / total_samples) * 100
+non_matches_percentage = (non_matches_count / total_samples) * 100
 
+print(f"Total samples: {total_samples}")
+print(f"Matches: {matches_count} ({matches_percentage:.2f}%)")
+print(f"Non-matches: {non_matches_count} ({non_matches_percentage:.2f}%)")
+
+
+
+# how many false matches are sea/oceans/etc?
+x = merged_false_matches[merged_false_matches['gpt_name'].str.contains('ocean|sea|lake', case=False, na=False)]
+len(merged_false_matches)
+len(x)
+
+
+
+
+# how many samples per distance-category 
+bins = [0, 100, 500, 1000, 4000, np.inf]
+merged_false_matches['contains_keyword'] = merged_false_matches['gpt_name'].str.contains('ocean|sea|lake', case=False, na=False)
+distance_category_counts = merged_false_matches['distance_category'].value_counts().sort_index()
+total_samples = merged_false_matches.shape[0]
+distance_category_percentages = (distance_category_counts / total_samples) * 100
+keyword_counts = merged_false_matches[merged_false_matches['contains_keyword']].groupby('distance_category').size()
+keyword_percentages = (keyword_counts / distance_category_counts) * 100
+keyword_counts = keyword_counts.reindex(distance_category_counts.index, fill_value=0)
+keyword_percentages = keyword_percentages.reindex(distance_category_counts.index, fill_value=0)
+results = pd.DataFrame({
+    'Total Count': distance_category_counts,
+    'Total Percentage': distance_category_percentages,
+    'Keyword Count': keyword_counts,
+    'Keyword Percentage': keyword_percentages
+})
+print(results)
+
+
+
+
+
+#######################################################
+###################### Visualization all ##############
+#######################################################
 
 
 # Create a base map at a central point
@@ -187,19 +241,15 @@ for idx, row in final_merge.iterrows():
 # Save the map as an HTML file
 map.save('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/map_with_color_coded_points.html')
 
+#######################################################
+###################### Visualization mismatches #######
+#######################################################
 
+# drop 'sample_id' and get counts for mapping purposes:
+mapped_data = merged_false_matches.drop(columns='sample_id').groupby(['latitude_original', 'longitude_original', 'latlon_name', 'gpt_name', 'distance_km']).size().reset_index(name='count')
 
+map = folium.Map(location=[mapped_data['latitude_original'].mean(), mapped_data['longitude_original'].mean()], zoom_start=5)
 
-
-# Assuming merged_false_matches contains only the false matches and the distance_km column
-# Filter to remove any rows without a calculated distance (if necessary)
-merged_false_matches = merged_false_matches[merged_false_matches['distance_km'].notna()]
-
-# Create a base map
-map = folium.Map(location=[merged_false_matches['latitude_original'].mean(), 
-                           merged_false_matches['longitude_original'].mean()], zoom_start=5)
-
-# Function to choose color based on distance
 def get_color(distance):
     if 0 < distance <= 100:
         return '#ADD8E6'  # Light Blue
@@ -212,18 +262,28 @@ def get_color(distance):
     else:
         return '#FF0000'  # Red
 
+# determine the radius based on count
+def get_radius(count):
+    if count == 1:
+        return 2  # Tiniest dot
+    elif 2 <= count <= 30:
+        return 5  # Medium size
+    else:
+        return 8  # Large size
+
 # Add points to the map
-for idx, row in merged_false_matches.iterrows():
+for idx, row in mapped_data.iterrows():
     folium.CircleMarker(
         location=(row['latitude_original'], row['longitude_original']),
-        radius=3,
+        radius=get_radius(row['count']),
         color=get_color(row['distance_km']),
         fill=True,
         fill_color=get_color(row['distance_km']),
         fill_opacity=0.7,
         popup=(f"<div style='margin:10px;'><strong>Lat/Lon Name:</strong> {row['latlon_name']}<br>"
                f"<strong>GPT Name:</strong> {row['gpt_name']}<br>"
-               f"<strong>Distance (km):</strong> {row['distance_km']:.2f}</div>")
+               f"<strong>Distance (km):</strong> {row['distance_km']:.2f}<br>"
+               f"<strong>Count:</strong> {row['count']}</div>")
     ).add_to(map)
 
 # Save the map as an HTML file
@@ -231,10 +291,44 @@ map.save('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/map_with_color_coded_p
 
 
 
+#######################################################
+#######################################################
 
 
 
 
+
+# how many times out of the false matches, was gpt wrong or coordinates from metadata were wrong? 
+# take 200 samples: 
+    # metadata for sample XXXXXX: 
+    # ........
+    # gpt location: .....
+    # coordinates from metadata: .....
+    # Who is right: 
+        # gpt
+        # coordinates
+        # both 
+        # neither
+
+# extra: flag when gpt name is not present in metadata of sample
+
+
+# Filter the DataFrame for entries with a distance greater than 1000 km
+high_distance_samples = merged_false_matches[merged_false_matches['distance_km'] > 1000]
+
+# Check if there are at least 200 samples
+if len(high_distance_samples) >= 200:
+    random_samples = high_distance_samples.sample(n=200, random_state=1)  # Using a fixed seed for reproducibility
+else:
+    # If fewer than 200 samples meet the criteria, take all available samples
+    random_samples = high_distance_samples
+    print(f"Only {len(high_distance_samples)} samples found with distance > 1000 km.")
+
+# Create a dictionary from the random samples with 'sample_id' as keys and ['gpt_name', 'latlon_name'] as values
+random_samples_dict = random_samples.set_index('sample_id')[['gpt_name', 'latlon_name']].to_dict('index')
+
+# Print the dictionary to verify contents
+print(random_samples_dict)
 
 
 
