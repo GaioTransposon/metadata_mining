@@ -15,6 +15,7 @@ import numpy as np
 import sys
 sys.path.append('/Users/dgaio/github/metadata_mining/scripts')
 from call_googlemaps_get_coordinates import GoogleMapsLocationCache
+from location_validation import LocationValidationGame
 from math import radians, cos, sin, sqrt, atan2
 import folium
 
@@ -27,6 +28,7 @@ coordinates_file = os.path.join(work_dir, coordinates_file)
 translated_coordinates = 'geocoded_coordinates.csv'
 translated_coordinates = os.path.join(work_dir, translated_coordinates)
 api_key_file = os.path.join(os.path.expanduser('~'), 'google_maps_api_key')
+directory_with_split_metadata = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs'
 
 
 # 1. open gpt files and concatenate them: 
@@ -296,39 +298,79 @@ map.save('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/map_with_color_coded_p
 
 
 
-
-
-# how many times out of the false matches, was gpt wrong or coordinates from metadata were wrong? 
-# take 200 samples: 
-    # metadata for sample XXXXXX: 
-    # ........
-    # gpt location: .....
-    # coordinates from metadata: .....
-    # Who is right: 
-        # gpt
-        # coordinates
-        # both 
-        # neither
-
-# extra: flag when gpt name is not present in metadata of sample
-
+# Pick 200 samples from the false matches (distance >100km): 
 
 # Filter the DataFrame for entries with a distance greater than 1000 km
 high_distance_samples = merged_false_matches[merged_false_matches['distance_km'] > 1000]
 
+# List to keep track of unique (gpt_name, latlon_name) pairs
+unique_pairs = set()
+
+# when picking random samples make sure the values are not identical to another sample.
+def is_unique_and_add(row):
+    pair = (row['gpt_name'], row['latlon_name'])
+    if pair not in unique_pairs:
+        unique_pairs.add(pair)
+        return True
+    return False
+
+# Filter the high_distance_samples for unique pairs
+unique_high_distance_samples = high_distance_samples[high_distance_samples.apply(is_unique_and_add, axis=1)]
+
 # Check if there are at least 200 samples
-if len(high_distance_samples) >= 200:
-    random_samples = high_distance_samples.sample(n=200, random_state=1)  # Using a fixed seed for reproducibility
+if len(unique_high_distance_samples) >= 200:
+    random_samples = unique_high_distance_samples.sample(n=200, random_state=1)  # Using a fixed seed for reproducibility
 else:
     # If fewer than 200 samples meet the criteria, take all available samples
-    random_samples = high_distance_samples
-    print(f"Only {len(high_distance_samples)} samples found with distance > 1000 km.")
+    random_samples = unique_high_distance_samples
+    print(f"Only {len(unique_high_distance_samples)} unique samples found with distance > 1000 km.")
 
-# Create a dictionary from the random samples with 'sample_id' as keys and ['gpt_name', 'latlon_name'] as values
-random_samples_dict = random_samples.set_index('sample_id')[['gpt_name', 'latlon_name']].to_dict('index')
+# Create a dictionary from the random samples with 'sample_id' as keys and ['gpt_name', 'latlon_name', 'distance_km'] as values
+random_samples_dict = random_samples.set_index('sample_id')[['gpt_name', 'latlon_name', 'distance_km']].to_dict('index')
 
 # Print the dictionary to verify contents
 print(random_samples_dict)
+len(random_samples_dict)
 
+
+# Make a game (as a class outside of this script)
+# what game does: 
+# for each sample in dictionary, fetch its metadata and display it, 
+# show gpt_name and latlon_name
+# ask user is gpt (G), latlon (C), neither (N), or both (B) correct? 
+# then prompt user to add a comment: " "
+# Each time dictionary is updated with answer (G/C/N/B) as a value, and comment as another value of the dictionary. 
+# For example: 
+#     metadata for sample XXXXXX: 
+#     ........
+#     gpt location: .....
+#     coordinates from metadata: .....
+#     Who is right: 
+#         gpt
+#         coordinates
+#         both 
+#         neither
+
+
+game = LocationValidationGame(random_samples_dict, directory_with_split_metadata, work_dir)
+game.play()
+
+# Get the updated data with user responses
+updated_data = game.get_updated_data()
+print(updated_data)
+
+# Count keys with more than 2 values
+count = sum(1 for values in updated_data.values() if len(values) > 3)
+
+print(count) 
+
+
+
+
+# manually add 21 keys to the validation_game_progress.json. 
+# we should be able to find the keys corresponding  in ordered_filtered_dict
+# simply substitute whole key (with note pad)
+# they are here: ordered_filtered_dict
+# or in validation_game_progress_21.json
 
 
