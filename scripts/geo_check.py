@@ -360,17 +360,116 @@ updated_data = game.get_updated_data()
 print(updated_data)
 
 # Count keys with more than 2 values
-count = sum(1 for values in updated_data.values() if len(values) > 3)
-
+count = sum(1 for values in updated_data.values() if len(values) == 5)
 print(count) 
 
 
 
 
-# manually add 21 keys to the validation_game_progress.json. 
-# we should be able to find the keys corresponding  in ordered_filtered_dict
-# simply substitute whole key (with note pad)
-# they are here: ordered_filtered_dict
-# or in validation_game_progress_21.json
 
+
+# Extract the 5th value (assuming it's 'answer') from each entry that has 5 or more key-value pairs
+answer_counts = {}
+comments_by_answer = {}
+
+for key, value in updated_data.items():
+    if len(value) >= 5:  # Check if there are at least 5 key-value pairs
+        answer = value['answer']  # Extract the 'answer' based on your data structure
+        comment = value.get('comment', '').strip()  # Safely get the 'comment', strip whitespace, default to empty string
+
+        # Count the occurrences of each answer
+        if answer in answer_counts:
+            answer_counts[answer] += 1
+        else:
+            answer_counts[answer] = 1
+
+        # Collect comments by answer category and count them
+        if answer not in comments_by_answer:
+            comments_by_answer[answer] = {}
+        if comment in comments_by_answer[answer]:
+            comments_by_answer[answer][comment] += 1
+        else:
+            comments_by_answer[answer][comment] = 1
+
+# Print answer counts
+print("Answer Counts:", answer_counts)
+
+# Print comments for each answer category with counts
+for answer, comments in comments_by_answer.items():
+    print(f"\nComments for answer {answer}:")
+    for comment, count in comments.items():
+        print(f"{count} {comment}")
+
+
+
+
+
+# =============================================================================
+# # Define the replacement rules for comments under the 'B' category
+# comment_replacements = {
+#     "cooridnates more precise": "coordinates_more_precise"
+# }
+# 
+# # Process the data to replace comments only for entries under answer 'B'
+# for key, value in updated_data.items():
+#     if len(value) >= 5:  # Ensuring each entry has at least 5 key-value pairs
+#         answer = value.get('answer', '')  # Safely getting the 'answer' field
+#         if answer == 'B':  # Apply replacements only if the answer is 'B'
+#             original_comment = value.get('comment', '').strip()
+#             # Replace the comment if applicable
+#             if original_comment in comment_replacements:
+#                 value['comment'] = comment_replacements[original_comment]
+#                 
+# 
+# # After modifications, save the updated data back to a JSON file
+# output_file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/validation_game_progress.json'
+# with open(output_file_path, 'w') as file:
+#     json.dump(updated_data, file, indent=4)
+# 
+# print("Updated data has been saved to:", output_file_path)
+# =============================================================================
+
+
+import random
+from collections import defaultdict
+
+
+
+# Extract counts of each answer type
+answer_counts = defaultdict(int)
+for details in updated_data.values():
+    if 'answer' in details:  # Check if 'answer' key exists
+        answer_counts[details['answer']] += 1
+    else:
+        # Handle cases with no 'answer' key; you might want to log these or handle them separately
+        print(f"Missing 'answer' key for entry: {details}")
+
+# Total to subsample to
+target_size = 100
+
+# Calculate proportions and target subsample sizes
+total_answers = sum(answer_counts.values())
+proportions = {answer: count / total_answers for answer, count in answer_counts.items()}
+targets = {answer: int(round(proportions[answer] * target_size)) for answer in answer_counts}
+
+# Adjust targets to exactly match target_size (due to rounding issues)
+difference = target_size - sum(targets.values())
+if difference != 0:
+    # Adjust the category with the largest fraction leftover from rounding
+    max_key = max(proportions, key=lambda k: proportions[k] - targets[k])
+    targets[max_key] += difference
+
+# Collect samples
+sampled_data = {}
+for answer, count in targets.items():
+    # Filter entries by answer type and randomly pick the needed amount
+    filtered = {k: v for k, v in updated_data.items() if v.get('answer') == answer}
+    sampled = dict(random.sample(filtered.items(), count))
+    sampled_data.update(sampled)
+
+# Now `sampled_data` contains exactly 100 items with maintained proportions
+print(f"Total samples in subsampled data: {len(sampled_data)}")
+print("Answer distribution in subsampled data:")
+for answer in ['B', 'G', 'C', 'N']:
+    print(f"{answer}: {sum(1 for v in sampled_data.values() if v['answer'] == answer)}")
 
