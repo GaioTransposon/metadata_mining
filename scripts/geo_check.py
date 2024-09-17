@@ -6,6 +6,7 @@ Created on Wed Aug  7 17:17:28 2024
 @author: dgaio
 """
 
+
 import pandas as pd
 import glob
 import os
@@ -18,17 +19,26 @@ from call_googlemaps_get_coordinates import GoogleMapsLocationCache
 from location_validation import LocationValidationGame
 from math import radians, cos, sin, sqrt, atan2
 import folium
+import random
+from collections import defaultdict, Counter
+import json
 
+# paths:
+work_dir = os.path.join(os.path.expanduser('~'), 'cloudstor/Gaio/MicrobeAtlasProject')
+middle_dir = os.path.join(os.path.expanduser('~'), 'github/metadata_mining/middle_dir')
+out_dir = os.path.join(os.path.expanduser('~'), 'github/metadata_mining/out')
+directory_with_split_metadata = 'sample.info_split_dirs'
 
-# paths
-work_dir = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject'
+# files
 file_pattern = os.path.join(work_dir, 'production/gpt_clean_output*.csv')
 coordinates_file = 'sample.coordinates.reparsed.filtered'
-coordinates_file = os.path.join(work_dir, coordinates_file)
 translated_coordinates = 'geocoded_coordinates.csv'
-translated_coordinates = os.path.join(work_dir, translated_coordinates)
 api_key_file = os.path.join(os.path.expanduser('~'), 'google_maps_api_key')
-directory_with_split_metadata = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs'
+random_misclassified_samples_dict = 'random_misclassified_samples_dict.pkl'
+
+# output files: 
+map_all_matches = os.path.join(out_dir, 'map_with_color_coded_points_all.html')
+map_all_mismatches = os.path.join(out_dir, 'map_with_color_coded_points_mismatches.html')
 
 
 # 1. open gpt files and concatenate them: 
@@ -43,16 +53,17 @@ gpt_geo_text['geo_location'] = gpt_geo_text['geo_location'].str.replace('US', 'U
 gpt_geo_text['geo_location'] = gpt_geo_text['geo_location'].str.replace('USA', 'United States of America', regex=False)
 gpt_geo_text['geo_location'] = gpt_geo_text['geo_location'].str.replace('Viet Nam', 'Vietnam', regex=False)
 gpt_geo_text['geo_location'] = gpt_geo_text['geo_location'].str.replace('Czech Republic', 'Czechia', regex=False)
-
-
 gpt_geo_text.rename(columns={'geo_location':'gpt_name'}, inplace=True)
 
+
 # 2. open coordinates file
+coordinates_file = os.path.join(middle_dir, coordinates_file)
 df_coordinates_ori = pd.read_csv(coordinates_file, delimiter=' ', header=None, names=['label', 'sample_id', 'latitude', 'longitude'], na_values='None')
 df_coordinates_ori.drop(columns=['label'], inplace=True)  # Drop the label column as it's not needed
 
 
 # 3. open translated coordinates file: 
+translated_coordinates = os.path.join(middle_dir, translated_coordinates)
 df_translated_coordinates = pd.read_csv(translated_coordinates)
 df_translated_coordinates.rename(columns={'place_name':'latlon_name'}, inplace=True)
 
@@ -67,6 +78,8 @@ final_merge = pd.merge(filtered_coordinates, gpt_geo_text, on='sample_id', how='
 final_merge = final_merge.dropna(subset=['latitude'])
 
 
+
+#######################################################
 
 
 # Check if gpt locations match with Christian's extracted coordinates: 
@@ -84,135 +97,93 @@ def location_matches(place_name, geo_location):
 # Apply the comparison function
 final_merge['location_match'] = final_merge.apply(lambda row: location_matches(row['latlon_name'], row['gpt_name']), axis=1)
 
-# Visualize the count of True vs. False using a bar plot
+# Get the counts of True vs. False matches
 location_match_counts = final_merge['location_match'].value_counts()
-plt.figure(figsize=(8, 4))
-location_match_counts.plot(kind='bar', color=['green', 'red'])
-plt.title('Proportion of Location Match True vs. False')
-plt.xlabel('Location Match')
-plt.ylabel('Count')
-plt.xticks(rotation=0)
-plt.grid(True, linestyle='--', alpha=0.6)  # Optional: adds grid lines for better readability
-plt.show()
+total_samples = final_merge['location_match'].count()
+true_matches_percentage = (location_match_counts.get(True, 0) / total_samples) * 100
+false_matches_percentage = (location_match_counts.get(False, 0) / total_samples) * 100
+
+# Print the results
+print(f"Total Samples: {total_samples}")
+print(f"Matches: {location_match_counts.get(True, 0)} ({true_matches_percentage:.2f}%)")
+print(f"Non-matches: {location_match_counts.get(False, 0)} ({false_matches_percentage:.2f}%)")
 
 
-# 130689 samples
+#######################################################
 
 
-
-
+# Use google maps API to ask coordinates corresponding to gpt_name: 
 
 # Unique false matches including sample_id
 false_matches = final_merge[final_merge['location_match'] == False]
 columns_of_interest = ['sample_id', 'latitude', 'longitude', 'latlon_name', 'gpt_name', 'location_match']
 unique_false_matches_counts = false_matches.groupby(columns_of_interest).size().reset_index(name='count')
-print(unique_false_matches_counts)
-print(f"Total number of unique false matches: {len(unique_false_matches_counts)}")
 
 # Update cache with unique gpt_name to avoid redundant API calls
 unique_gpt_names = unique_false_matches_counts['gpt_name'].unique()
 
 # call class to retrieve coordinates from geo_location (uses google maps api)
 geo_cache = GoogleMapsLocationCache(work_dir, api_key_file, 'geolocation_cache.csv')
-
-maps_coordinates = geo_cache.update_cache(unique_gpt_names)  # This should update or write to 'geolocation_cache.csv'
-
+maps_coordinates = geo_cache.update_cache(unique_gpt_names)  
 updated_coordinates = pd.read_csv(os.path.join(work_dir, 'geolocation_cache.csv'))
 merged_false_matches = pd.merge(unique_false_matches_counts, updated_coordinates, on='gpt_name', how='left', suffixes=('_original', '_google'))
-print(merged_false_matches)
 
 
+#######################################################
 
 
-
+# Calculate distance between coordinate pairs: 
 
 # Haversine formula for calculating the distance between two lat/lon pairs
 def haversine(lat1, lon1, lat2, lon2):
-    # Radius of the Earth in kilometers
-    R = 6371.0
-
-    # Convert latitude and longitude from degrees to radians
-    lat1 = radians(lat1)
-    lon1 = radians(lon1)
-    lat2 = radians(lat2)
-    lon2 = radians(lon2)
-
-    # Differences
+    # Check if any of the inputs are NaN and return NaN if so
+    if np.isnan(lat1) or np.isnan(lon1) or np.isnan(lat2) or np.isnan(lon2):
+        return np.nan
+    R = 6371.0  # Earth radius in kilometers
+    lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])
     dlat = lat2 - lat1
     dlon = lon2 - lon1
+    a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
+    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+    return R * c
 
-    # Haversine formula
-    a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
-    c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    distance = R * c
-
-    return distance
-
-
-
-# Calculate the distance between the original lat/lon and the lat/lon from Google Maps
+# Apply Haversine formula to calculate distances
 merged_false_matches['distance_km'] = merged_false_matches.apply(
     lambda row: haversine(row['latitude_original'], row['longitude_original'], row['latitude_google'], row['longitude_google']), axis=1)
 
-# Display the result with distance
-print(merged_false_matches[['gpt_name', 'latitude_original', 'longitude_original', 'latitude_google', 'longitude_google', 'distance_km']])
+# Drop rows where the distance is NaN due to missing coordinates
+merged_false_matches = merged_false_matches.dropna(subset=['distance_km'])
 
 # Calculate weighted distance by repeating the distance based on the 'count' column
 weighted_distances = np.repeat(merged_false_matches['distance_km'], merged_false_matches['count'])
-len(weighted_distances)
 
-# Plot histogram using the weighted distances
-plt.figure(figsize=(10, 6))
-plt.hist(weighted_distances, bins=60, color='blue', alpha=0.7)
-plt.title('Distance between Original and Google Coordinates (km)')
-plt.xlabel('Distance (km)')
-plt.ylabel('Frequency (Weighted by Count)')
-plt.grid(True, linestyle='--', alpha=0.6)
-plt.show()
+# # Plot histogram using the weighted distances
+# plt.figure(figsize=(10, 6))
+# plt.hist(weighted_distances, bins=60, color='blue', alpha=0.7)
+# plt.title('Distance between Original and Google Coordinates (km) of misclassified samples')
+# plt.xlabel('Distance (km)')
+# plt.ylabel('Frequency (Weighted by Count)')
+# plt.grid(True, linestyle='--', alpha=0.6)
+# plt.show()
 
+# Compute summary statistics for the weighted distances
+mean_distance = np.nanmean(weighted_distances)
+median_distance = np.nanmedian(weighted_distances)
+std_dev_distance = np.nanstd(weighted_distances)
+min_distance = np.nanmin(weighted_distances)
+max_distance = np.nanmax(weighted_distances)
+percentile_25 = np.nanpercentile(weighted_distances, 25)
+percentile_75 = np.nanpercentile(weighted_distances, 75)
 
-
-
-# percentage of samples where gpt name matches with coordinates from metadata 
-total_samples = len(final_merge)
-matches_count = final_merge['location_match'].sum()
-non_matches_count = total_samples - matches_count
-matches_percentage = (matches_count / total_samples) * 100
-non_matches_percentage = (non_matches_count / total_samples) * 100
-
-print(f"Total samples: {total_samples}")
-print(f"Matches: {matches_count} ({matches_percentage:.2f}%)")
-print(f"Non-matches: {non_matches_count} ({non_matches_percentage:.2f}%)")
-
-
-
-# how many false matches are sea/oceans/etc?
-x = merged_false_matches[merged_false_matches['gpt_name'].str.contains('ocean|sea|lake', case=False, na=False)]
-len(merged_false_matches)
-len(x)
-
-
-
-
-# how many samples per distance-category 
-bins = [0, 100, 500, 1000, 4000, np.inf]
-merged_false_matches['contains_keyword'] = merged_false_matches['gpt_name'].str.contains('ocean|sea|lake', case=False, na=False)
-distance_category_counts = merged_false_matches['distance_category'].value_counts().sort_index()
-total_samples = merged_false_matches.shape[0]
-distance_category_percentages = (distance_category_counts / total_samples) * 100
-keyword_counts = merged_false_matches[merged_false_matches['contains_keyword']].groupby('distance_category').size()
-keyword_percentages = (keyword_counts / distance_category_counts) * 100
-keyword_counts = keyword_counts.reindex(distance_category_counts.index, fill_value=0)
-keyword_percentages = keyword_percentages.reindex(distance_category_counts.index, fill_value=0)
-results = pd.DataFrame({
-    'Total Count': distance_category_counts,
-    'Total Percentage': distance_category_percentages,
-    'Keyword Count': keyword_counts,
-    'Keyword Percentage': keyword_percentages
-})
-print(results)
-
-
+# Print the summary statistics
+print("Distance summary stats (km):")
+print(f"Mean Distance: {mean_distance:.2f} km")
+print(f"Median Distance: {median_distance:.2f} km")
+print(f"Standard Deviation: {std_dev_distance:.2f} km")
+print(f"Minimum Distance: {min_distance:.3f} km")
+print(f"Maximum Distance: {max_distance:.2f} km")
+print(f"25th Percentile: {percentile_25:.2f} km")
+print(f"75th Percentile: {percentile_75:.2f} km")
 
 
 
@@ -241,7 +212,7 @@ for idx, row in final_merge.iterrows():
     ).add_to(map)
 
 # Save the map as an HTML file
-map.save('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/map_with_color_coded_points.html')
+map.save(map_all_matches)
 
 #######################################################
 ###################### Visualization mismatches #######
@@ -289,55 +260,77 @@ for idx, row in mapped_data.iterrows():
     ).add_to(map)
 
 # Save the map as an HTML file
-map.save('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/map_with_color_coded_points_false.html')
-
-
+map.save(map_all_mismatches)
 
 #######################################################
 #######################################################
 
 
 
-# Pick 200 samples from the false matches (distance >100km): 
+# Pick 200 random samples from the false matches (distance >100km), 
+# unless this file had already been made (in case: load it). 
 
-# Filter the DataFrame for entries with a distance greater than 1000 km
-high_distance_samples = merged_false_matches[merged_false_matches['distance_km'] > 1000]
+# Function to save the dictionary to a file
+def save_samples_dict(samples_dict, filepath):
+    pd.to_pickle(samples_dict, filepath)
+    print(f"Sample dictionary saved to {filepath}")
 
-# List to keep track of unique (gpt_name, latlon_name) pairs
-unique_pairs = set()
+# Function to load the dictionary from a file
+def load_samples_dict(filepath):
+    return pd.read_pickle(filepath)
 
-# when picking random samples make sure the values are not identical to another sample.
-def is_unique_and_add(row):
-    pair = (row['gpt_name'], row['latlon_name'])
-    if pair not in unique_pairs:
-        unique_pairs.add(pair)
-        return True
-    return False
-
-# Filter the high_distance_samples for unique pairs
-unique_high_distance_samples = high_distance_samples[high_distance_samples.apply(is_unique_and_add, axis=1)]
-
-# Check if there are at least 200 samples
-if len(unique_high_distance_samples) >= 200:
-    random_samples = unique_high_distance_samples.sample(n=200, random_state=1)  # Using a fixed seed for reproducibility
+# Check if the dictionary file exists
+random_misclassified_samples_dict = os.path.join(middle_dir, random_misclassified_samples_dict)
+if os.path.exists(random_misclassified_samples_dict):
+    # Load the dictionary from the file
+    random_samples_dict = load_samples_dict(random_misclassified_samples_dict)
+    print("Loaded the sample dictionary from file.")
 else:
-    # If fewer than 200 samples meet the criteria, take all available samples
-    random_samples = unique_high_distance_samples
-    print(f"Only {len(unique_high_distance_samples)} unique samples found with distance > 1000 km.")
+    # Filter the DataFrame for entries with a distance greater than 1000 km
+    high_distance_samples = merged_false_matches[merged_false_matches['distance_km'] > 1000]
 
-# Create a dictionary from the random samples with 'sample_id' as keys and ['gpt_name', 'latlon_name', 'distance_km'] as values
-random_samples_dict = random_samples.set_index('sample_id')[['gpt_name', 'latlon_name', 'distance_km']].to_dict('index')
+    # List to keep track of unique (gpt_name, latlon_name) pairs
+    unique_pairs = set()
 
-# Print the dictionary to verify contents
-print(random_samples_dict)
-len(random_samples_dict)
+    # Function to ensure values are not identical to another sample
+    def is_unique_and_add(row):
+        pair = (row['gpt_name'], row['latlon_name'])
+        if pair not in unique_pairs:
+            unique_pairs.add(pair)
+            return True
+        return False
+
+    # Filter for unique pairs
+    unique_high_distance_samples = high_distance_samples[high_distance_samples.apply(is_unique_and_add, axis=1)]
+
+    # Check if there are at least 200 samples
+    if len(unique_high_distance_samples) >= 200:
+        random_samples = unique_high_distance_samples.sample(n=200, random_state=1)  # Using a fixed seed for reproducibility
+    else:
+        # If fewer than 200 samples meet the criteria, take all available samples
+        random_samples = unique_high_distance_samples
+        print(f"Only {len(unique_high_distance_samples)} unique samples found with distance > 1000 km.")
+
+    # Create a dictionary from the random samples with 'sample_id' as keys and ['gpt_name', 'latlon_name', 'distance_km'] as values
+    random_samples_dict = random_samples.set_index('sample_id')[['gpt_name', 'latlon_name', 'distance_km']].to_dict('index')
+    
+    # Save the dictionary to a file
+    save_samples_dict(random_samples_dict, random_misclassified_samples_dict)
+
+# Print the number of samples in the dictionary
+print(f"Number of samples in dictionary: {len(random_samples_dict)}")
 
 
-# Make a game (as a class outside of this script)
-# what game does: 
-# for each sample in dictionary, fetch its metadata and display it, 
-# show gpt_name and latlon_name
-# ask user is gpt (G), latlon (C), neither (N), or both (B) correct? 
+
+#######################################################
+#######################################################
+
+
+# Play a game (it's a class outside of this script)
+# what LocationValidationGame() does: 
+# for each sample in dictionary, fetch its metadata and displays it, 
+# shows gpt_name and latlon_name
+# asks user is gpt (G), latlon (C), neither (N), or both (B) correct? 
 # then prompt user to add a comment: " "
 # Each time dictionary is updated with answer (G/C/N/B) as a value, and comment as another value of the dictionary. 
 # For example: 
@@ -346,75 +339,38 @@ len(random_samples_dict)
 #     gpt location: .....
 #     coordinates from metadata: .....
 #     Who is right: 
-#         gpt
-#         coordinates
-#         both 
-#         neither
+#         gpt (G)
+#         coordinates (C)
+#         both (B)
+#         neither (N)
+#     Comment: 
+#     {fill out expalaining why mistake happened} 
 
-
+directory_with_split_metadata = os.path.join(work_dir, directory_with_split_metadata)
 game = LocationValidationGame(random_samples_dict, directory_with_split_metadata, work_dir)
 game.play()
 
 # Get the updated data with user responses
 updated_data = game.get_updated_data()
-print(updated_data)
+#print(updated_data)
 
 # Count keys with more than 2 values
 count = sum(1 for values in updated_data.values() if len(values) == 5)
-print(count) 
-
-
-
-
-
-
-# Extract the 5th value (assuming it's 'answer') from each entry that has 5 or more key-value pairs
-answer_counts = {}
-comments_by_answer = {}
-
-for key, value in updated_data.items():
-    if len(value) >= 5:  # Check if there are at least 5 key-value pairs
-        answer = value['answer']  # Extract the 'answer' based on your data structure
-        comment = value.get('comment', '').strip()  # Safely get the 'comment', strip whitespace, default to empty string
-
-        # Count the occurrences of each answer
-        if answer in answer_counts:
-            answer_counts[answer] += 1
-        else:
-            answer_counts[answer] = 1
-
-        # Collect comments by answer category and count them
-        if answer not in comments_by_answer:
-            comments_by_answer[answer] = {}
-        if comment in comments_by_answer[answer]:
-            comments_by_answer[answer][comment] += 1
-        else:
-            comments_by_answer[answer][comment] = 1
-
-# Print answer counts
-print("Answer Counts:", answer_counts)
-
-# Print comments for each answer category with counts
-for answer, comments in comments_by_answer.items():
-    print(f"\nComments for answer {answer}:")
-    for comment, count in comments.items():
-        print(f"{count} {comment}")
-
-
-
+print('Samples that have been manually validated: ',count) 
 
 
 # =============================================================================
-# # Define the replacement rules for comments under the 'B' category
+# # To edit comments once they are made: 
+# # Replacements for comments under a certain category (e.g.: 'B')
 # comment_replacements = {
-#     "cooridnates more precise": "coordinates_more_precise"
+#     "geo_loc_point_to_institute": "gpt_took_institute"
 # }
 # 
 # # Process the data to replace comments only for entries under answer 'B'
 # for key, value in updated_data.items():
 #     if len(value) >= 5:  # Ensuring each entry has at least 5 key-value pairs
 #         answer = value.get('answer', '')  # Safely getting the 'answer' field
-#         if answer == 'B':  # Apply replacements only if the answer is 'B'
+#         if answer == 'C':  # Apply replacements only if the answer is 'B'
 #             original_comment = value.get('comment', '').strip()
 #             # Replace the comment if applicable
 #             if original_comment in comment_replacements:
@@ -427,49 +383,59 @@ for answer, comments in comments_by_answer.items():
 #     json.dump(updated_data, file, indent=4)
 # 
 # print("Updated data has been saved to:", output_file_path)
+# 
 # =============================================================================
 
 
-import random
-from collections import defaultdict
 
 
 
-# Extract counts of each answer type
-answer_counts = defaultdict(int)
+
+#######################################################
+#######################################################
+
+
+# Stats of misclassified samples (i.e.: gpt_name doesn't match with extracted coordinates from metadata): 
+
+# Count each answer type and comments per answer
+answer_counts = Counter()
+comments_by_answer = defaultdict(Counter)
 for details in updated_data.values():
-    if 'answer' in details:  # Check if 'answer' key exists
-        answer_counts[details['answer']] += 1
-    else:
-        # Handle cases with no 'answer' key; you might want to log these or handle them separately
-        print(f"Missing 'answer' key for entry: {details}")
+    if 'answer' in details:
+        answer = details['answer']
+        comment = details.get('comment', 'No Comment')  # Use a default if no comment
+        answer_counts[answer] += 1
+        comments_by_answer[answer][comment] += 1
 
-# Total to subsample to
+# Desired total samples
 target_size = 100
 
-# Calculate proportions and target subsample sizes
+# Calculate target counts for sampling
 total_answers = sum(answer_counts.values())
-proportions = {answer: count / total_answers for answer, count in answer_counts.items()}
-targets = {answer: int(round(proportions[answer] * target_size)) for answer in answer_counts}
+targets = {answer: int(round((count / total_answers) * target_size)) for answer, count in answer_counts.items()}
 
-# Adjust targets to exactly match target_size (due to rounding issues)
-difference = target_size - sum(targets.values())
-if difference != 0:
-    # Adjust the category with the largest fraction leftover from rounding
-    max_key = max(proportions, key=lambda k: proportions[k] - targets[k])
-    targets[max_key] += difference
+# Adjust for rounding differences
+adjustment = target_size - sum(targets.values())
+targets[next(iter(targets))] += adjustment  # Adjust the first element
 
-# Collect samples
+# Sample data to maintain proportional distribution
 sampled_data = {}
-for answer, count in targets.items():
-    # Filter entries by answer type and randomly pick the needed amount
+for answer in targets:
     filtered = {k: v for k, v in updated_data.items() if v.get('answer') == answer}
-    sampled = dict(random.sample(filtered.items(), count))
+    sampled = dict(random.sample(filtered.items(), min(len(filtered), targets[answer])))
     sampled_data.update(sampled)
 
-# Now `sampled_data` contains exactly 100 items with maintained proportions
+# Output results
 print(f"Total samples in subsampled data: {len(sampled_data)}")
 print("Answer distribution in subsampled data:")
-for answer in ['B', 'G', 'C', 'N']:
-    print(f"{answer}: {sum(1 for v in sampled_data.values() if v['answer'] == answer)}")
+for answer, count in answer_counts.items():
+    percentage = (count / total_answers * 100)
+    print(f"{answer}: {count} ({percentage:.2f}%)")
 
+print("\nDetailed comments distribution per answer category:")
+for answer, comments in comments_by_answer.items():
+    total_comments = sum(comments.values())
+    print(f"\nAnswer {answer}:")
+    for comment, count in comments.items():
+        percentage = (count / total_comments * 100)
+        print(f"{comment}: {count} ({percentage:.2f}%)")
