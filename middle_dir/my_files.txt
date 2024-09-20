@@ -1,11 +1,11 @@
+# 1. sync - chunking y/n
+my_files = [
+    'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202407191713.txt',
+    'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API117_normal_dt202407191720.txt']
 
 
-# sync - chunking y/n
-my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202407191713.txt',           
-            'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API117_normal_dt202407191720.txt']
 
-
-# sync - chunksize
+# 2. sync - chunksize
 my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize5000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API51_normal_dt202407191744.txt',
             'gpt_clean_output_nspb100_chunkingyes_chunksize4000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API61_normal_dt202407191736.txt',
             'gpt_clean_output_nspb100_chunkingyes_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API78_normal_dt202407191729.txt',
@@ -14,7 +14,7 @@ my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize5000_modelgpt-3.5-tur
 
 
 
-# creativity params testing, synchronous requests, chunking: 
+# 3. creativity params testing, synchronous requests, chunking: 
 
 # sync - temp
 my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt',
@@ -46,7 +46,7 @@ my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-tur
 
 
 
-# creativity params testing, synchronous requests, when not chunking: 
+# 4. creativity params testing, synchronous requests, when not chunking: 
 
 # temp
 my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt',
@@ -77,7 +77,7 @@ my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turb
 
 
 
-# creativity params testing asynchronous requests: 
+# 5. creativity params testing asynchronous requests: 
 
 # async temp
 my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv',
@@ -108,7 +108,7 @@ my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turb
 
 
 
-# reproducibility (rs) - sync
+# 6. reproducibility (rs) - sync
 my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt',
  'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs42_API109_normal_dt202406051527.txt',
  'gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs32_API118_normal_dt202406051533.txt',
@@ -126,7 +126,7 @@ my_files = ['gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-tur
 # 
 # =============================================================================
 
-# reproducibility (rs) - async
+# 7. reproducibility (rs) - async
 my_files = ['gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs55_batch3o0hNkYn3qMIb6H3Eqa7ZVpr_dt202407231432.csv',
             'gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs55_batchn8C5mQeif6OV1LBhJ5fPd2jt_dt202407231425.csv', 
             'gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs66_batchZk8tZDOF5WsrqcAvYPewbLtS_dt202407231432.csv',
@@ -140,7 +140,7 @@ my_files = ['gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo
 
 
 
-# models - sync 
+# 8. models - sync 
 my_files = ['gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API60_normal_dt202407241527.txt',
             'gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API57_normal_dt202407241530.txt', 
             'gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-4-0613_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API58_normal_dt202407241543.txt',
@@ -157,12 +157,12 @@ my_files = ['gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turb
 
 
 
-# sync vs async
+# 9. sync vs async
 my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt',
             'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv']
 
 
-# sync - Robustness
+# 10. sync - Robustness
 my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API500_timeSat1600CEST_dt202407271555.txt',
             'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API500_timeMon1100CEST_dt202407291058.txt',
             'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API500_timeMon1600CEST_dt202407291559.txt',
@@ -176,7 +176,7 @@ my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turb
             'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue2100CESTrep_dt202407302129.txt']
 
 
-# async - Robustness: 
+# 11. async - Robustness: 
 
 my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch3UrsPni6Ue63YXRYwisZ5Ygz_dt202407311542.csv',
             'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch4V631Bmz2q8THhl5vWhjN7xL_dt202407311543.csv',
@@ -189,7 +189,6 @@ my_files = ['gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turb
             'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchkJkjHPS0P9LlbDlUOfaXwotC_dt202407311543.csv',
             'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchkeK2m8Hncyy2FaWDAJwvDyn3_dt202407311543.csv',
             'gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchkxeRGfXerVFAPjV6LvHDMDmu_dt202407311542.csv']
-
 
 
 
