@@ -47,7 +47,6 @@ embeddings_gd = load_embeddings(gold_dict_json_path)
 # Files processing
 # ----------------------------- 
     
-
 parser = argparse.ArgumentParser(description='Process files and labels.')
 
 # Add arguments for files and labels. Expecting a list for each.
