@@ -53,8 +53,36 @@ LABELS=(
 python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
+
 #####################################################################################################
-# 3. creativity params testing, synchronous requests, chunking: 
+# 3. sync - models
+#####################################################################################################
+
+FILES=(
+    "gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API60_normal_dt202407241527.txt"
+    "gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API57_normal_dt202407241530.txt"
+    "gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-4-0613_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API58_normal_dt202407241543.txt"
+    "gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API58_repeat_dt202407241550.txt"
+    "gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API58_repeat_dt202407241553.txt"
+    "gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-4-0613_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API57_repeat_dt202407241607.txt"
+)
+
+
+LABELS=(
+    "gpt3.5-turbo-1106"
+    "gpt3.5-turbo-0125"
+    "gpt4-0613"
+    "gpt3.5-turbo-1106_rep"
+    "gpt3.5-turbo-0125_rep"
+    "gpt4-0613_rep"
+)
+
+python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
+
+
+
+#####################################################################################################
+# 4. creativity params testing, synchronous requests, chunking: 
 #####################################################################################################
 
 # temp
@@ -145,7 +173,7 @@ python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
 #####################################################################################################
-# 4. creativity params testing, synchronous requests, not chunking: 
+# 5. creativity params testing, synchronous requests, not chunking: 
 #####################################################################################################
 
 # temp
@@ -239,7 +267,7 @@ python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
 #####################################################################################################
-# 5. creativity params testing, asynchronous requests:
+# 6. creativity params testing, asynchronous requests:
 #####################################################################################################
 
 # temp
@@ -333,8 +361,27 @@ LABELS=(
 python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
+
 #####################################################################################################
-# 6. sync - reproducibility
+# 7. sync vs async
+#####################################################################################################
+
+FILES=(
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt"
+)
+
+LABELS=(
+    "async"
+    "sync"
+)
+
+python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
+
+
+
+#####################################################################################################
+# 8. sync - reproducibility
 #####################################################################################################
 
 FILES=(
@@ -361,7 +408,7 @@ python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
 #####################################################################################################
-# 7. async - reproducibility
+# 9. async - reproducibility
 #####################################################################################################
 
 FILES=(
@@ -389,50 +436,6 @@ LABELS=(
     "async_rs88_rep"
     "async_rs99"
     "async_rs99_rep"
-)
-
-python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
-
-
-#####################################################################################################
-# 8. sync - models
-#####################################################################################################
-
-FILES=(
-    "gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API60_normal_dt202407241527.txt"
-    "gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API57_normal_dt202407241530.txt"
-    "gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-4-0613_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API58_normal_dt202407241543.txt"
-    "gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API58_repeat_dt202407241550.txt"
-    "gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API58_repeat_dt202407241553.txt"
-    "gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-4-0613_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API57_repeat_dt202407241607.txt"
-)
-
-
-LABELS=(
-    "gpt3.5-turbo-1106"
-    "gpt3.5-turbo-0125"
-    "gpt4-0613"
-    "gpt3.5-turbo-1106_rep"
-    "gpt3.5-turbo-0125_rep"
-    "gpt4-0613_rep"
-)
-
-python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
-
-
-#####################################################################################################
-# 9. sync vs async
-#####################################################################################################
-
-FILES=(
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv"
-)
-
-
-LABELS=(
-    "sync"
-    "async"
 )
 
 python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
