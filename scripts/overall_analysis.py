@@ -20,7 +20,12 @@ from plot_biome_agreement import lenient_match
 from features_process import extract_labels_from_filename, load_and_process_file, find_distinguishing_features 
 import numpy as np
 import scipy.stats as stats
-
+import pandas as pd
+import matplotlib.pyplot as plt
+import re
+import requests
+from bs4 import BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor
 
 # -----------------------------
 # Files and Paths
@@ -87,7 +92,6 @@ lenient_agreement_df['gpt_biome'] = lenient_agreement_df['gpt_biome'].str.strip(
 
 unique_labels = lenient_agreement_df['label'].unique()
 print('\nIs there as many labels as there are files? ', len(unique_labels) == len(my_files), '\n')
-
 
 
 
@@ -405,4 +409,116 @@ print(filtered_misclass_counts.describe())
 print("\nSkewness:", filtered_misclass_counts.skew())
 print("Kurtosis:", filtered_misclass_counts.kurt())
 
+
+
+
+
+
+
+# -----------------------------
+# Quick test: Is metadata getting better with time? Based on sample ID 
+# -----------------------------
+
+# Filter to include only samples starting with ...
+srs_df = lenient_agreement_df[lenient_agreement_df['sample'] .str.startswith('SRS')]
+
+# Step 1: Extract numeric part 
+srs_df['sample_id_numeric'] = srs_df['sample'].str.extract('(\d+)').astype(int)
+
+# Step 2: Calculate quartiles and filter for the bottom 25% and top 25%
+sorted_df = srs_df.sort_values(by='sample_id_numeric')
+first_quartile = sorted_df['sample_id_numeric'].quantile(0.25)
+third_quartile = sorted_df['sample_id_numeric'].quantile(0.75)
+filtered_df = sorted_df[(sorted_df['sample_id_numeric'] <= first_quartile) | (sorted_df['sample_id_numeric'] >= third_quartile)]
+
+# Assign bins based on quartiles
+filtered_df['bin'] = ['old' if x <= first_quartile else 'young' for x in filtered_df['sample_id_numeric']]
+
+# Count the number of samples in each bin and balance the bins
+bin_counts = filtered_df['bin'].value_counts()
+min_count = bin_counts.min()
+balanced_df = filtered_df.groupby('bin').sample(n=min_count, random_state=42)
+
+# Step 3: Analyze the agreement rates
+agreement_analysis = balanced_df.groupby('bin')['agreement'].value_counts(normalize=True).unstack().fillna(0)
+
+print("Number of samples in each bin:")
+print(balanced_df['bin'].value_counts())
+print("\nAgreement analysis:")
+print(agreement_analysis)
+
+
+# -------------------------------
+# Quick test: Is metadata getting better with time? Based on published date
+# -------------------------------
+
+def get_published_date(sample_id):
+    url = f"https://www.ncbi.nlm.nih.gov/sra/?term={sample_id}"
+    try:
+        response = requests.get(url, timeout=10)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        published_info = soup.find(text="Published")
+        if published_info:
+            print('looking for ', sample_id)
+            return published_info.find_next().text
+        return "Not found"
+    except requests.RequestException:
+        return "Error"
+
+def fetch_published_dates(sample_ids):
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        results = list(executor.map(get_published_date, sample_ids))
+    return dict(zip(sample_ids, results))
+
+def extract_dates(published_dates):
+    date_pattern = r'\d{4}-\d{2}-\d{2}'
+    dates = {}
+    for sample_id, value in published_dates.items():
+        match = re.search(date_pattern, value)
+        dates[sample_id] = match.group(0) if match else "Date not found"
+    return dates
+
+
+
+def get_consensus(agreements):
+    true_count = sum(agreements)
+    false_count = len(agreements) - true_count
+    return True if true_count > false_count else False if false_count > true_count else None
+
+def process_data(srs_df, extracted_dates):
+    srs_df['published_date'] = srs_df['sample'].map(extracted_dates)
+    srs_df = srs_df[srs_df['published_date'] != 'Date not found']
+    srs_df['published_date'] = pd.to_datetime(srs_df['published_date'], errors='coerce')
+    srs_df.dropna(subset=['published_date'], inplace=True)
+    srs_df['bin'] = pd.qcut(srs_df['published_date'], 4, labels=['youngest', 'young', 'old', 'oldest'])
+    bin_counts = srs_df['bin'].value_counts()
+    balanced_df = pd.concat([srs_df[srs_df['bin'] == label].sample(n=bin_counts.min(), random_state=42) for label in bin_counts.index])
+    agreement_analysis = balanced_df.pivot_table(index='bin', columns='agreement', aggfunc='size', fill_value=0)
+    return balanced_df, agreement_analysis
+
+
+def plot_agreement(yearly_data):
+    yearly_data['Proportion True'] = yearly_data[True] / yearly_data['total']
+    yearly_data['Proportion False'] = yearly_data[False] / yearly_data['total']
+    fig, ax = plt.subplots(figsize=(10, 6))
+    yearly_data[['Proportion False', 'Proportion True']].plot(kind='bar', stacked=True, color=['red', 'green'], ax=ax)
+    ax.set_title('Yearly Proportion of Agreement (True/False)')
+    ax.set_xlabel('Year')
+    ax.set_ylabel('Proportion')
+    plt.xticks(rotation=45)
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    for i, total in enumerate(yearly_data['total']):
+        ax.text(i, 1.05, f'Total: {int(total)}', ha='center', va='bottom', fontsize=9, color='black')
+    plt.show()
+
+
+unique_sample_ids = srs_df['sample'].unique().tolist()
+published_dates = fetch_published_dates(unique_sample_ids)
+extracted_dates = extract_dates(published_dates)
+balanced_df, agreement_analysis = process_data(srs_df, extracted_dates)
+print("Number of samples in each bin:")
+print(balanced_df['bin'].value_counts())
+print("\nAgreement analysis:")
+print(agreement_analysis)
+plot_agreement(balanced_df)
 
