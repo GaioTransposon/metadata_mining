@@ -20,12 +20,11 @@ from plot_biome_agreement import lenient_match
 from features_process import extract_labels_from_filename, load_and_process_file, find_distinguishing_features 
 import numpy as np
 import scipy.stats as stats
-import pandas as pd
-import matplotlib.pyplot as plt
 import re
 import requests
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
+from collections import defaultdict
 
 # -----------------------------
 # Files and Paths
@@ -75,24 +74,46 @@ file_label_map = {file: extract_labels_from_filename(file, distinguishing_tokens
 # Files processing and Agreement calculation
 # -----------------------------
 
-all_dfs = []
+def user_select_file(files):
+    print("\nMultiple files found for the same label. Choose which one to keep:")
+    for index, (file, _) in enumerate(files):
+        print(f"{index + 1}: {file}")
+    choice = int(input("Enter the number of the file to keep: ")) - 1
+    return files[choice]  # Return the tuple of the chosen file and its DataFrame
+
+# Initialize a dictionary to hold label to DataFrame mappings
+label_df_map = defaultdict(list)
+
+# Process each file, calculate agreement, and map to labels
 for file_path in my_files:
-    labels = file_label_map[file_path]
-    df = load_and_process_file(file_path, gold_dict_df, labels)
+    label = file_label_map[file_path]
+    df = load_and_process_file(file_path, gold_dict_df, label)
     df['agreement'] = df.apply(lambda row: lenient_match(row['biome'], row['gpt_biome']), axis=1)
-    all_dfs.append(df)
+    df['biome'] = df['biome'].str.strip()
+    df['gpt_biome'] = df['gpt_biome'].str.strip()
+    label_df_map[label].append((file_path, df))
 
+# Select DataFrames, handling duplicates where necessary
+selected_files = []
+selected_dfs = []
+for label, file_dfs in label_df_map.items():
+    if len(file_dfs) > 1:
+        chosen_file, chosen_df = user_select_file(file_dfs)
+        selected_files.append(chosen_file)
+        selected_dfs.append(chosen_df)
+    else:
+        selected_files.append(file_dfs[0][0])
+        selected_dfs.append(file_dfs[0][1])
 
-lenient_agreement_df = pd.concat(all_dfs, ignore_index=True)
+# Update my_files to reflect the actual files used in the final DataFrame
+my_files = selected_files
 
-# Strip whitespace from biome labels in the DataFrame
-lenient_agreement_df['biome'] = lenient_agreement_df['biome'].str.strip()
-lenient_agreement_df['gpt_biome'] = lenient_agreement_df['gpt_biome'].str.strip()
-
-
+# Concatenate all chosen DataFrames into a single DataFrame
+lenient_agreement_df = pd.concat(selected_dfs, ignore_index=True)
 unique_labels = lenient_agreement_df['label'].unique()
-print('\nIs there as many labels as there are files? ', len(unique_labels) == len(my_files), '\n')
 
+# Print results
+print(f"\nIs there as many labels as there are files? {len(unique_labels) == len(my_files)}\n")
 
 
 
@@ -123,94 +144,99 @@ print(f"Kurtosis: {kurtosis:.2f}")
 
 
 
-
-
-
 ################## Old (Joao's) vs new (GPT) biome agreements conf matrices: 
 ###
 # GPT vs ground truth:
-    
-# Filter for specific 'gpt_biome' categories
 selected_biomes = ['animal', 'plant', 'soil', 'water', 'other']
-lenient_agreement_df_filt = lenient_agreement_df[lenient_agreement_df['gpt_biome'].isin(selected_biomes)]
+lenient_agreement_df_filt = lenient_agreement_df[lenient_agreement_df['gpt_biome'].isin(selected_biomes)].copy()
+lenient_agreement_df_filt.rename(columns={'gpt_biome': 'predicted_biome', 'biome': 'gd_biome'}, inplace=True)
 
-conf_matrix = pd.crosstab(lenient_agreement_df_filt['biome'], lenient_agreement_df_filt['gpt_biome'], rownames=['Actual Biome'], colnames=['Predicted Biome'])
+conf_matrix_gpt = pd.crosstab(lenient_agreement_df_filt['gd_biome'], lenient_agreement_df_filt['predicted_biome'], rownames=['benchmark biome'], colnames=['predicted biome'])
 
-# reorder
-cols = [col for col in conf_matrix.columns if col != 'other'] + ['other'] if 'other' in conf_matrix.columns else conf_matrix.columns
-rows = [row for row in conf_matrix.index if row != 'other'] + ['other'] if 'other' in conf_matrix.index else conf_matrix.index
-conf_matrix = conf_matrix.loc[rows, cols]
-
-# normalize
-row_totals = conf_matrix.sum(axis=1)
-normalized_conf_matrix = conf_matrix.div(row_totals, axis=0)
-plt.figure(figsize=(12, 10))
-sns.heatmap(normalized_conf_matrix, annot=True, fmt=".3f", cmap='viridis')
-plt.xticks(rotation=45, ha='right')
-plt.yticks(rotation=0)
-plt.title('Normalized Confusion Matrix for Selected GPT Biomes')
-plt.show()
 ###
 ###
-# Joao's vs ground truth:
-    
-# merge
+# Joao's vs ground truth:  
 merged_df = pd.merge(joao_biomes_df, gold_dict_df, on='sample', how='inner')
+merged_df.rename(columns={'biome_x': 'predicted_biome', 'biome_y': 'gd_biome'}, inplace=True)
 
-conf_matrix = pd.crosstab(merged_df['gd_biome'], merged_df['biome'], rownames=['Actual Biome'], colnames=['Predicted Biome'])
+conf_matrix_joao = pd.crosstab(merged_df['gd_biome'], merged_df['predicted_biome'], rownames=['benchmark biome'], colnames=['predicted biome'])
 
-# reorder
-cols = [col for col in conf_matrix.columns if col != 'other'] + ['other'] if 'other' in conf_matrix.columns else conf_matrix.columns
-rows = [row for row in conf_matrix.index if row != 'other'] + ['other'] if 'other' in conf_matrix.index else conf_matrix.index
-conf_matrix = conf_matrix.loc[rows, cols]
 
-# normalize
-row_totals = conf_matrix.sum(axis=1)
-normalized_conf_matrix = conf_matrix.div(row_totals, axis=0)
-plt.figure(figsize=(12, 10))
-sns.heatmap(normalized_conf_matrix, annot=True, fmt=".3f", cmap='viridis')
-plt.xticks(rotation=45, ha='right')
-plt.yticks(rotation=0)
-plt.title('Normalized Confusion Matrix for Selected GPT Biomes')
+# Normalize the GPT matrix
+row_totals_gpt = conf_matrix_gpt.sum(axis=1)
+normalized_conf_matrix_gpt = conf_matrix_gpt.div(row_totals_gpt, axis=0)
+
+# Normalize Joao's matrix and rename 'other' to 'unknown'
+row_totals_joao = conf_matrix_joao.sum(axis=1)
+normalized_conf_matrix_joao = conf_matrix_joao.div(row_totals_joao, axis=0)
+normalized_conf_matrix_joao.rename(columns={'other': 'unknown'}, index={'other': 'unknown'}, inplace=True)
+
+# Define the desired order with 'unknown' for Joao and 'other' for GPT
+order = ['animal', 'plant', 'soil', 'water', 'other']
+order_joao = ['animal', 'plant', 'soil', 'water', 'unknown']
+
+# Reorder the matrices
+normalized_conf_matrix_gpt = normalized_conf_matrix_gpt.reindex(index=order, columns=order)
+normalized_conf_matrix_joao = normalized_conf_matrix_joao.reindex(index=order_joao, columns=order_joao)
+
+# Determine the global min and max for consistent coloring
+vmin = min(normalized_conf_matrix_gpt.min().min(), normalized_conf_matrix_joao.min().min())
+vmax = max(normalized_conf_matrix_gpt.max().max(), normalized_conf_matrix_joao.max().max())
+
+# Set up the matplotlib figure with subplots
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(24, 10), sharey=True)  # sharey to have same y-axis labels
+
+# Plotting the first heatmap
+sns.heatmap(normalized_conf_matrix_gpt, annot=True, fmt=".3f", cmap='viridis', ax=axes[0], vmin=vmin, vmax=vmax, cbar=False)  # No color bar here
+axes[0].set_title('Benchmark biomes vs GPT biomes')
+axes[0].set_xticklabels(order, rotation=45, ha='right')
+axes[0].set_yticklabels(order, rotation=0)
+
+# Plotting the second heatmap with renamed labels
+sns.heatmap(normalized_conf_matrix_joao, annot=True, fmt=".3f", cmap='viridis', ax=axes[1], vmin=vmin, vmax=vmax, cbar_ax=fig.add_axes([0.91, 0.3, 0.03, 0.4]))  # Shared color bar
+axes[1].set_title('Benchmark biomes vs previous biome predictions')
+axes[1].set_xticklabels(order_joao, rotation=45, ha='right')
+axes[1].set_yticklabels(order_joao, rotation=0)
+
+plt.tight_layout(rect=[0, 0, 0.9, 1])  # Adjust the rect to leave space for color bar
 plt.show()
-###
 
-# =============================================================================
-# 
-# 
-# from scipy.stats import chi2_contingency
-# 
-# # Chi-squared test for GPT vs. ground truth
-# gpt_chi2, gpt_p, _, _ = chi2_contingency(conf_matrix_gpt)
-# # Chi-squared test for Joao's vs. ground truth
-# joao_chi2, joao_p, _, _ = chi2_contingency(conf_matrix_joao)
-# 
-# print(f"GPT Chi-squared: {gpt_chi2}, p-value: {gpt_p}")
-# print(f"Joao Chi-squared: {joao_chi2}, p-value: {joao_p}")
-# 
-# 
-# # Interpretation:
-# # A low p-value (typically < .05) indicates strong evidence against the null hypothesis, 
-# # suggesting a significant difference in distribution compared to the expected frequencies.
-# # Higher chi-squared values suggest greater divergence from expected frequencies.
-# 
-# 
-# # Calculate accuracy from the confusion matrices
-# gpt_accuracy = (np.diag(conf_matrix_gpt).sum() / conf_matrix_gpt.values.sum()) * 100
-# joao_accuracy = (np.diag(conf_matrix_joao).sum() / conf_matrix_joao.values.sum()) * 100
-# 
-# print(f"GPT Accuracy: {gpt_accuracy:.2f}%")
-# print(f"João Accuracy: {joao_accuracy:.2f}%")
-# 
-# =============================================================================
+
+
+
+################## Comparison GPT matrix vs Joao matrix: 
+
+# Chi-squared test for GPT vs. ground truth
+gpt_chi2, gpt_p, _, _ = chi2_contingency(conf_matrix_gpt)
+# Chi-squared test for Joao's vs. ground truth
+joao_chi2, joao_p, _, _ = chi2_contingency(conf_matrix_joao)
+
+print(f"GPT Chi-squared: {gpt_chi2}, p-value: {gpt_p}")   # low: significant difference in distribution compared to the expected frequencies.
+print(f"Joao Chi-squared: {joao_chi2}, p-value: {joao_p}")   # high: greater divergence from expected frequencies
+
+# Calculate accuracy from the confusion matrices
+gpt_accuracy = (np.diag(conf_matrix_gpt).sum() / conf_matrix_gpt.values.sum()) * 100
+joao_accuracy = (np.diag(conf_matrix_joao).sum() / conf_matrix_joao.values.sum()) * 100
+
+print(f"GPT Accuracy: {gpt_accuracy:.2f}%")
+print(f"João Accuracy: {joao_accuracy:.2f}%")
 
 
 
 
 
 
+
+
+
+
+
+
+
+################################################################################
+################################################################################
 ################## Are some biomes harder to predict than others? 
-agreement_by_biome = lenient_agreement_df.groupby('biome')['agreement'].mean().sort_values()
+agreement_by_biome = lenient_agreement_df.groupby('biome')['agreement'].mean().sort_values()*100
 
 print('\nAgreement by biome: ', agreement_by_biome, '\n')
 
@@ -219,7 +245,7 @@ ax = agreement_by_biome.plot(kind='bar', color='skyblue')
 plt.title('Agreement by biome')
 plt.xlabel('biome')
 plt.ylabel('agreement (%)')
-plt.ylim(0, 1)
+plt.ylim(0, 100)
 # add text labels on bars
 for p in ax.patches:
     ax.annotate(f"{p.get_height():.2f}", (p.get_x() + p.get_width() / 2., p.get_height()),
@@ -229,6 +255,7 @@ plt.show()
 
 # We are interested about False agreement samples, so filter to keep: 
 false_agreements = lenient_agreement_df[lenient_agreement_df['agreement'] == False]
+
 
 
 ################## And where is this biome-bias? Confusion matrices: 
@@ -313,15 +340,14 @@ for index, value in sorted_significant_residuals.iteritems():
         print(f"Actual Biome: {actual_biome}, Predicted Biome: {predicted_biome}, Residual: {original_value:.2f}")
     except KeyError:
         print(f"KeyError encountered for Biome: {actual_biome} or {predicted_biome}")
+################################################################################
+################################################################################
 
 
 
 
 
-
-
-
-################## Misclassified samples: 
+################## Misclassified samples (more in detail): 
 
 # Count misclassifications per sample
 misclass_counts = false_agreements.groupby('sample')['agreement'].count()
