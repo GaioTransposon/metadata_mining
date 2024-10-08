@@ -55,21 +55,27 @@ def plot_data(df, plot_title):
 
     # plot
     fig, ax = plt.subplots(figsize=(14, 8))
-    df.plot(kind='bar', ax=ax, width=1)
-
+    width = 0.8  # space between bars 
+    n = len(df.columns) 
+    indices = np.arange(len(df))  
+    
+    for i, column in enumerate(df.columns):
+        ax.bar(indices - width/2. + i/float(n)*width, df[column], width=width/float(n), label=column)
+    
+    ax.set_xticks(indices)
     ax.set_xticklabels(['' if str(label) == 'nan' else label for label in df.index], rotation=90)
-
+    
     plt.xlabel('')
     plt.ylabel('values')
     plt.title(plot_title)
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
-    ax.tick_params(axis='x', labelsize=8)  # Smaller font size for x-axis labels
-
-    # legend outside  plot area
+    ax.tick_params(axis='x', labelsize=8) 
+    
     plt.legend(title='Metrics', bbox_to_anchor=(1.05, 1), loc='upper left')
-
+    
     plt.tight_layout(rect=[0, 0, 0.85, 1])
     plt.show()
+
 
 
 
@@ -77,8 +83,11 @@ file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/biome_subbiome_resu
 df_full = pd.read_csv(file_path)
 
 
-df_subset = df_full[0:14] 
-plot_data(df_subset, 'chunking y/n + chunk sizes + models')  
+df_subset = df_full[0:7] 
+plot_data(df_subset, 'chunking y/n + chunk sizes')  
+
+df_subset = df_full[8:14] 
+plot_data(df_subset, 'models')  
 
 
 df_subset = df_full[15:74] 

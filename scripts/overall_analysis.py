@@ -184,19 +184,23 @@ vmin = min(normalized_conf_matrix_gpt.min().min(), normalized_conf_matrix_joao.m
 vmax = max(normalized_conf_matrix_gpt.max().max(), normalized_conf_matrix_joao.max().max())
 
 # Set up the matplotlib figure with subplots
-fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(24, 10), sharey=True)  # sharey to have same y-axis labels
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(11, 4), sharey=True)  # sharey to have same y-axis labels
 
 # Plotting the first heatmap
 sns.heatmap(normalized_conf_matrix_gpt, annot=True, fmt=".3f", cmap='viridis', ax=axes[0], vmin=vmin, vmax=vmax, cbar=False)  # No color bar here
 axes[0].set_title('Benchmark biomes vs GPT biomes')
-axes[0].set_xticklabels(order, rotation=45, ha='right')
-axes[0].set_yticklabels(order, rotation=0)
+axes[0].set_xlabel('predicted biome', fontsize=11) 
+axes[0].set_ylabel('benchmark biome', fontsize=11)  
+axes[0].set_xticklabels(order, rotation=0, ha='center', fontsize=12)
+axes[0].set_yticklabels(order, rotation=0, fontsize=12)
 
 # Plotting the second heatmap with renamed labels
 sns.heatmap(normalized_conf_matrix_joao, annot=True, fmt=".3f", cmap='viridis', ax=axes[1], vmin=vmin, vmax=vmax, cbar_ax=fig.add_axes([0.91, 0.3, 0.03, 0.4]))  # Shared color bar
 axes[1].set_title('Benchmark biomes vs previous biome predictions')
-axes[1].set_xticklabels(order_joao, rotation=45, ha='right')
-axes[1].set_yticklabels(order_joao, rotation=0)
+axes[1].set_xlabel('predicted biome', fontsize=11) 
+axes[1].set_ylabel('benchmark biome', fontsize=11)  
+axes[1].set_xticklabels(order, rotation=0, ha='center', fontsize=12)
+axes[1].set_yticklabels(order, rotation=0, fontsize=12)
 
 plt.tight_layout(rect=[0, 0, 0.9, 1])  # Adjust the rect to leave space for color bar
 plt.show()
