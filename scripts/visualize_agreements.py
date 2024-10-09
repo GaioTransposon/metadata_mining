@@ -14,8 +14,6 @@ import seaborn as sns
 
 
 # Results:
-    
-    
 
 def plot_data(df, plot_title):
     
@@ -108,8 +106,6 @@ plot_data(df_subset, 'sync vs async + reproducibility + robustness')
 
 # Stats:
 
-
-
 def process_and_visualize(df, my_title, cell_font_size, labels_font):
     df = df.dropna()
 
@@ -134,18 +130,20 @@ def process_and_visualize(df, my_title, cell_font_size, labels_font):
         validation_type = row['validation']
         annotation = f"{p_value:.2f};\n{adj_p_value:.2f}"
 
+
         if validation_type == 'biome':
-            biome_matrix.at[label1, label2] = p_value
-            biome_matrix.at[label2, label1] = p_value  # mirroring for biome
+            biome_matrix.at[label1, label2] = adj_p_value
+            biome_matrix.at[label2, label1] = adj_p_value  # mirroring for biome
             biome_annot.at[label1, label2] = annotation
             biome_annot.at[label2, label1] = annotation
 
         elif validation_type == 'sub-biome':
-            subbiome_matrix.at[label1, label2] = p_value
-            subbiome_matrix.at[label2, label1] = p_value  # mirroring for sub-biome
+            subbiome_matrix.at[label1, label2] = adj_p_value
+            subbiome_matrix.at[label2, label1] = adj_p_value  # mirroring for sub-biome
             subbiome_annot.at[label1, label2] = annotation
             subbiome_annot.at[label2, label1] = annotation
-
+         
+                        
     # Merge matrices: biome in the lower triangle, sub-biome in the upper triangle
     combined_matrix = pd.DataFrame(np.nan, index=labels, columns=labels)
     combined_annotations = pd.DataFrame("", index=labels, columns=labels)
@@ -160,6 +158,7 @@ def process_and_visualize(df, my_title, cell_font_size, labels_font):
             else:
                 combined_matrix.at[label1, label2] = '-'  # for diagonal
                 combined_annotations.at[label1, label2] = '-'
+
 
     # Plotting
     numeric_combined_matrix = combined_matrix.replace('-', np.nan).astype(float)
@@ -186,8 +185,12 @@ file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/biome_subbiome_stat
 df_full = pd.read_csv(file_path)
 
 
-df_subset = df_full[0:47] 
-process_and_visualize(df_subset, 'p-values and adjusted p-values - chunking y/n + chunk sizes + models', 7, 8)  
+df_subset = df_full[0:16] 
+process_and_visualize(df_subset, 'p-values and adjusted p-values - chunking y/n + chunk sizes', 7, 8)  
+
+
+df_subset = df_full[17:47] 
+process_and_visualize(df_subset, 'p-values and adjusted p-values - models', 7, 8)  
 
 
 df_subset = df_full[48:203] 
@@ -199,7 +202,10 @@ process_and_visualize(df_subset, 'p-values and adjusted p-values - sync vs async
 
 
 
-
+# color scheme based on adj p-values rather than p-values
+# change to dark:low light:high
+# change to bins: 0-0.05; 0.05-0.2; 0.2-0.6; 0.6-0.1
+# one legend 
 
 
 

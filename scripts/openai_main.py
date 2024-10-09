@@ -100,6 +100,7 @@ def main():
     start_time = time.time()
     gpt_interactor = GPTInteractor(work_dir, system_prompt_file, api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.max_requests_per_minute)
     responses = gpt_interactor.get_gpt_responses()
+    #print('######################################################################')
     #print(responses)
     gpt_interactor.save_gpt_responses_to_file(responses)
     end_time = time.time() 
@@ -110,6 +111,7 @@ def main():
     start_time = time.time()
     parser = GPTOutputParsing(work_dir)
     main_parsed_df = parser.run(responses)
+    
     parsed_sample_ids = set(main_parsed_df['col_0'].unique())
     missing_samples = list(complete_sample_ids - parsed_sample_ids)
     end_time = time.time() 
@@ -300,6 +302,11 @@ if __name__ == "__main__":
 # testing if it still works (after gold dict is now no longer a tuple) 
 # nspb 2, 20, 
 
+
+# 20241008 
+# running using openai_system_prompt_batch.txt 
+
+
 # python /Users/dgaio/github/metadata_mining/scripts/openai_main.py \
 #     --work_dir "MicrobeAtlasProject" \
 #     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
@@ -308,7 +315,7 @@ if __name__ == "__main__":
 #     --chunk_size 2000 \
 #     --seed 22 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_batch.txt" \
 #     --encoding_name "cl100k_base" \
 #     --api_key_path "my_api_key" \
 #     --model "gpt-3.5-turbo-1106" \
@@ -321,7 +328,24 @@ if __name__ == "__main__":
 #     --opt_text "normal"
 
 
-
+# #####################################################################################################
+# # 7. sync vs async
+# #####################################################################################################
+# 
+# FILES=(
+#     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv"
+#     "gpt_raw_20241008_1722_parsed.csv"
+# )
+# 
+# LABELS=(
+#     "async"
+#     "sync"
+# )
+# 
+# python /Users/dgaio/github/metadata_mining/scripts/validate_biomes_subbiomes.py --files "${FILES[@]}" --labels "${LABELS[@]}"
+# 
+# 
+# =============================================================================
 
 
 
