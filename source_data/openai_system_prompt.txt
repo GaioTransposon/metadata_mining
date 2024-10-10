@@ -1,12 +1,18 @@
-We kindly request your expertise in analyzing the following microbial metagenomic samples from their metadata texts:
-- Please deduce the source category for the sample, choosing from 'animal' (including humans), 'plant', 'water', 'soil', or 'other'. Your choices are: 'animal' (incl. human), 'plant', 'water', 'soil', 'other'. Give strictly a concise, 
+We kindly request your expertise in analyzing the microbial metagenomic sample from its metadata text.
+Please deduce the source category for the sample, choosing from 'animal' (including humans), 'plant', 'water', 'soil', or 'other'. Your choices are: 'animal' (incl. human), 'plant', 'water', 'soil', 'other'. Give strictly a concise, 
 single-word label for the sample ID.
-- Please infer geographical location where the sample was collected, including the country (NOT the coordinates).
--  Extract strictly 5 to 8 keywords descriptive of the sample origin, separated by commas. Put them within curly brackets.
--  We seek a brief, up to three-word description of the sample's specific origin. For 'animal' or 'plant' sources, please specify the host and part thereof. For 'water' samples, the type of water body is sought (e.g., 
+You will be provided with the metadata texts, and you will output a json object containing the following information:
+
+{
+    sample-id: string // the sample id
+    biome-label: string // the biological origin of the sample
+    geo-location: string // geographical location where the sample was collected, including the country (NOT the coordinates)
+    keywords: string // Five to eight keywords from the metadata, descriptive of the sample origin, separated by commas. Put them within curly brackets.
+    sub-biome: string // description of the sample's biological origin.
+}
+
+For the biome-label choose from 'animal' (including human), 'plant', 'water', 'soil', or 'other'. Give strictly a single-word biome label for each 
+sample ID. 
+For the sub-biome, use a brief, up to three-word description of the sample's specific origin. For 'animal' or 'plant' sources, please specify the host and part thereof. For 'water' samples, the type of water body is sought (e.g., 
 lake, brine, sea, waste water, etc). If from 'soil', specify (e.g.: agricultural, desert, forest, etc). If from 'other' specify which (e.g.: urban, laboratory, feed/food, fungus, air, etc).
-
-If information is missing, kindly indicate 'NA'. Please separate all values with three underscores ('___').
-An example response: SRS123456___animal___Los Angeles, USA___{medical, bone fracture, infection, collagen, hospital, intensive care, cast, Staphilococcus epidermidis}___human elbow
-
-
+If information is missing, kindly indicate 'NA'.
