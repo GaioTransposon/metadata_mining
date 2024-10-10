@@ -7,6 +7,20 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate spyder_env
 
 
+#######
+
+# Necessary before running openai in the sync mode
+
+yes | pip uninstall openai 
+
+yes | pip install openai==0.28
+
+
+#######
+
+
+
+
 echo -e "\033[32m 1. sync chunking yes/no"
 echo -e "\033[0m"
 
@@ -1245,7 +1259,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 # Necessary before running openai in the async mode
 yes | pip uninstall openai 
 
-pip install openai
+yes | pip install openai
 
 
 #######
