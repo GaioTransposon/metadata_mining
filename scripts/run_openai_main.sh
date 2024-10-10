@@ -1243,7 +1243,7 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 #######
 
 # Necessary before running openai in the async mode
-echo "Y" | pip uninstall openai
+yes | pip uninstall openai 
 
 pip install openai
 
