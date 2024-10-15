@@ -68,7 +68,7 @@ def plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map
     unique_parts = set(sum((label.split(', ') for label in file_label_map.values()), []))
     feature_description = "_".join(sorted(unique_parts))
     plot_filename = os.path.join(work_dir, f'biome_agreement_{feature_description}.png')
-    plt.savefig(plot_filename)
+    #plt.savefig(plot_filename)
     #plt.show()
     print(f"Plot saved as: {plot_filename}")
     

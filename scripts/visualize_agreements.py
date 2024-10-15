@@ -81,19 +81,27 @@ file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/biome_subbiome_resu
 df_full = pd.read_csv(file_path)
 
 
-df_subset = df_full[0:7] 
+df_subset = df_full[0:8] 
 plot_data(df_subset, 'chunking y/n + chunk sizes')  
 
-df_subset = df_full[8:14] 
+df_subset = df_full[9:15] 
 plot_data(df_subset, 'models')  
 
 
-df_subset = df_full[15:74] 
-plot_data(df_subset, 'creativity params')  
+df_subset = df_full[16:55]  
+plot_data(df_subset, 'creativity params sync')  
 
 
-df_subset = df_full[75:] 
-plot_data(df_subset, 'sync vs async + reproducibility + robustness')  
+df_subset = df_full[55:75] 
+plot_data(df_subset, 'creativity params async')  
+
+
+df_subset = df_full[75:115] 
+plot_data(df_subset, 'sync and async reproducibility')  
+
+df_subset = df_full[115:] 
+plot_data(df_subset, 'sync vs async')  
+
 
 
 
@@ -185,27 +193,39 @@ file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/biome_subbiome_stat
 df_full = pd.read_csv(file_path)
 
 
-df_subset = df_full[0:16] 
+df_subset = df_full[0:17] 
 process_and_visualize(df_subset, 'p-values and adjusted p-values - chunking y/n + chunk sizes', 7, 8)  
 
 
-df_subset = df_full[17:47] 
+df_subset = df_full[18:49] 
 process_and_visualize(df_subset, 'p-values and adjusted p-values - models', 7, 8)  
 
 
-df_subset = df_full[48:203] 
-process_and_visualize(df_subset, 'p-values and adjusted p-values - creativity params', 3, 6)  
+df_subset = df_full[59:159] 
+process_and_visualize(df_subset, 'p-values and adjusted p-values - creativity params sync', 3, 6) 
+
+df_subset = df_full[159:210] 
+process_and_visualize(df_subset, 'p-values and adjusted p-values - creativity params async', 3, 6)  
 
 
-df_subset = df_full[203:] 
-process_and_visualize(df_subset, 'p-values and adjusted p-values - sync vs async + reproducibility + robustness', 4, 8)  
 
+
+df_subset = df_full[210:483] 
+process_and_visualize(df_subset, 'p-values and adjusted p-values - sync reproducibility', 4, 8)  
+
+df_subset = df_full[484:904] 
+process_and_visualize(df_subset, 'p-values and adjusted p-values - async reproducibility', 4, 8)  
+
+
+df_subset = df_full[904:] 
+process_and_visualize(df_subset, 'p-values and adjusted p-values - sync vs async', 4, 8)  
 
 
 # color scheme based on adj p-values rather than p-values
 # change to dark:low light:high
 # change to bins: 0-0.05; 0.05-0.2; 0.2-0.6; 0.6-0.1
 # one legend 
+
 
 
 
