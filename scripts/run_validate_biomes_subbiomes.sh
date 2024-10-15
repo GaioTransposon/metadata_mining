@@ -37,13 +37,16 @@ python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 #####################################################################################################
 
 FILES=(
+    "gpt_clean_output_nspb100_chunkingyes_chunksize6000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API47_normal_dt202410151045.txt"
     "gpt_clean_output_nspb100_chunkingyes_chunksize5000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API51_normal_dt202407191744.txt"
     "gpt_clean_output_nspb100_chunkingyes_chunksize4000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API61_normal_dt202407191736.txt"
     "gpt_clean_output_nspb100_chunkingyes_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API78_normal_dt202407191729.txt"
     "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API117_normal_dt202407191720.txt"
 )
 
+
 LABELS=(
+    "sync_chunkY_size6000"
     "sync_chunkY_size5000"
     "sync_chunkY_size4000"
     "sync_chunkY_size3000"
@@ -363,89 +366,12 @@ python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
 #####################################################################################################
-# 7. sync vs async
-#####################################################################################################
-
-FILES=(
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt"
-)
-
-LABELS=(
-    "async"
-    "sync"
-)
-
-python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
-
-
-
-#####################################################################################################
-# 8. sync - reproducibility
+# 7. sync - reproducibility
 #####################################################################################################
 
 FILES=(
     "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt"
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs42_API109_normal_dt202406051527.txt"
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs32_API118_normal_dt202406051533.txt"
     "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API119_repeat_dt202406061246.txt"
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs42_API110_repeat_dt202406061252.txt"
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs32_API120_repeat_dt202406061258.txt"
-)
-
-
-LABELS=(
-    "sync_rs22"
-    "sync_rs42"
-    "sync_rs32"
-    "sync_rs22_rep"
-    "sync_rs42_rep"
-    "sync_rs32_rep"
-)
-
-python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
-
-
-
-#####################################################################################################
-# 9. async - reproducibility
-#####################################################################################################
-
-FILES=(
-    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs55_batch3o0hNkYn3qMIb6H3Eqa7ZVpr_dt202407231432.csv"
-    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs55_batchn8C5mQeif6OV1LBhJ5fPd2jt_dt202407231425.csv"
-    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs66_batchZk8tZDOF5WsrqcAvYPewbLtS_dt202407231432.csv"
-    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs66_batchluBKAqRedUv3mOgkmjcJ6Ebq_dt202407231426.csv"
-    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs77_batch8yuPSurBvuXCp8m7AAzpOYMZ_dt202407231427.csv"
-    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs77_batchl8fGIwSNBj0DXJfBHtArnz8n_dt202407231432.csv"
-    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs88_batchNZrsNsi10rMTWPyZUocTHv6r_dt202407231427.csv"
-    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs88_batchVuGTjZgtQSotdEoAWrBVk3cd_dt202407231433.csv"
-    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs99_batchFH19lIBQYqjKQ0shEGRVpqhi_dt202407231427.csv"
-    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs99_batchFZgD75ev26VujM8LYnIt8pFg_dt202407231433.csv"
-)
-
-
-LABELS=(
-    "async_rs55"
-    "async_rs55_rep"
-    "async_rs66"
-    "async_rs66_rep"
-    "async_rs77"
-    "async_rs77_rep"
-    "async_rs88"
-    "async_rs88_rep"
-    "async_rs99"
-    "async_rs99_rep"
-)
-
-python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
-
-
-#####################################################################################################
-# 10. sync robustness
-#####################################################################################################
-
-FILES=(
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API500_timeSat1600CEST_dt202407271555.txt"
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API500_timeMon1100CEST_dt202407291058.txt"
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API500_timeMon1600CEST_dt202407291559.txt"
@@ -457,31 +383,40 @@ FILES=(
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API503_timeTue1800CESTrep_dt202407301808.txt"
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue2100CEST_dt202407302116.txt"
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue2100CESTrep_dt202407302129.txt"
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs32_API118_normal_dt202406051533.txt"
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs32_API120_repeat_dt202406061258.txt"
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs42_API109_normal_dt202406051527.txt"
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs42_API110_repeat_dt202406061252.txt"
 )
 
 
 LABELS=(
-    "sync_rep1"
-    "sync_rep2"
-    "sync_rep3"
-    "sync_rep4"
-    "sync_rep5"
-    "sync_rep6"
-    "sync_rep7"
-    "sync_rep8"
-    "sync_rep9"
-    "sync_rep10"
-    "sync_rep11"
+    "sync_inline_rs22"
+    "sync_inline_rs22_rep1"
+    "sync_inline_rs22_rep2"
+    "sync_inline_rs22_rep3"
+    "sync_inline_rs22_rep4"
+    "sync_inline_rs22_rep5"
+    "sync_inline_rs22_rep6"
+    "sync_inline_rs22_rep7"
+    "sync_inline_rs22_rep8"
+    "sync_inline_rs22_rep9"
+    "sync_inline_rs22_rep10"
+    "sync_inline_rs22_rep11"
+    "sync_inline_rs22_rep12"
+    "sync_inline_rs32"
+    "sync_inline_rs32_rep"
+    "sync_inline_rs42"
+    "sync_inline_rs42_rep"
 )
-
 
 python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
-#####################################################################################################
-# 11. async robustness
-#####################################################################################################
 
+#####################################################################################################
+# 8. async - reproducibility 
+#####################################################################################################
 
 FILES=(
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch3UrsPni6Ue63YXRYwisZ5Ygz_dt202407311542.csv"
@@ -495,25 +430,89 @@ FILES=(
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchkJkjHPS0P9LlbDlUOfaXwotC_dt202407311543.csv"
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchkeK2m8Hncyy2FaWDAJwvDyn3_dt202407311543.csv"
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchkxeRGfXerVFAPjV6LvHDMDmu_dt202407311542.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs55_batch3o0hNkYn3qMIb6H3Eqa7ZVpr_dt202407231432.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs55_batchn8C5mQeif6OV1LBhJ5fPd2jt_dt202407231425.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs66_batchZk8tZDOF5WsrqcAvYPewbLtS_dt202407231432.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs66_batchluBKAqRedUv3mOgkmjcJ6Ebq_dt202407231426.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs77_batch8yuPSurBvuXCp8m7AAzpOYMZ_dt202407231427.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs77_batchl8fGIwSNBj0DXJfBHtArnz8n_dt202407231432.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs88_batchNZrsNsi10rMTWPyZUocTHv6r_dt202407231427.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs88_batchVuGTjZgtQSotdEoAWrBVk3cd_dt202407231433.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs99_batchFH19lIBQYqjKQ0shEGRVpqhi_dt202407231427.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs99_batchFZgD75ev26VujM8LYnIt8pFg_dt202407231433.csv"
+)
+
+
+    
+LABELS=(
+    "async_json_rs22_rep1"
+    "async_json_rs22_rep2"
+    "async_json_rs22_rep3"
+    "async_json_rs22_rep4"
+    "async_json_rs22_rep5"
+    "async_json_rs22_rep6"
+    "async_json_rs22_rep7"
+    "async_json_rs22_rep8"
+    "async_json_rs22_rep9"
+    "async_json_rs22_rep10"
+    "async_json_rs22_rep11"
+    "async_json_rs55"
+    "async_json_rs55_rep"
+    "async_json_rs66"
+    "async_json_rs66_rep"
+    "async_json_rs77"
+    "async_json_rs77_rep"
+    "async_json_rs88"
+    "async_json_rs88_rep"
+    "async_json_rs99"
+    "async_json_rs99_rep"   
+)
+
+
+    
+python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
+
+
+
+#####################################################################################################
+# 9. sync vs async
+#####################################################################################################
+
+FILES=(
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e493dbacc8190a39bd001c1f72d6b_dt202410151251.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API250_normal_dt202410151053.txt"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API250_rep1_dt202410151059.txt"
+	"gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API250_rep2_dt202410151106.txt"
+	"gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API250_rep3_dt202410151112.txt"
+	"gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API250_rep4_dt202410151118.txt"
+	"gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API250_rep5_dt202410151124.txt"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e49446d888190a86e428fb46406c5_dt202410151251.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e4949656881908d97b5142449b51f_dt202410151251.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e494e783081909e34f78775804f08_dt202410151251.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e49543298819085d1b0b2325ca876_dt202410151252.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e4bc1b1cc8190a3eeff102b680361_dt202410151302.csv"
+
 )
 
 
 LABELS=(
-    "async_rep1"
-    "async_rep2"
-    "async_rep3"
-    "async_rep4"
-    "async_rep5"
-    "async_rep6"
-    "async_rep7"
-    "async_rep8"
-    "async_rep9"
-    "async_rep10"
-    "async_rep11"
+    "async_json"
+    "sync_json"
+    "sync_json_rep1"
+    "sync_json_rep2"
+    "sync_json_rep3"
+    "sync_json_rep4"
+    "sync_json_rep5"
+    "async_json_rep1"
+    "async_json_rep2"
+    "async_json_rep3"
+    "async_json_rep4"
+    "async_json_rep5"  
 )
 
-
 python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
+
+
 
 
 

@@ -231,51 +231,175 @@ python ~/github/metadata_mining/scripts/openai_main.py \
 
 
 
-# =============================================================================
-# #######
-# 
-# # Necessary before running openai in the async mode
-# yes | pip uninstall openai 
-# 
-# yes | pip install openai
-# 
-# 
-# #######
-# 
-# 
-# echo -e "\033[32m metadata prep"
-# echo -e "\033[0m"
-# 
-# python github/metadata_mining/scripts/metadata_preparation.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 100 \
-#     --chunking "no" \
-#     --chunk_size 3000 \
-#     --seed 22 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-#     --encoding_name "cl100k_base"
-# 
-# 
-# sleep 1m
-# echo -e "\033[32m 47. async temp"
-# echo -e "\033[0m"
-# 
-# python github/metadata_mining/scripts/gpt_async_batch.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-#     --api_key_path "my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
-#     --temperature 1.00 \
-#     --max_tokens 4096 \
-#     --top_p 0.75 \
-#     --frequency_penalty 0.25 \
-#     --presence_penalty 1.5 
-# 
-# 
-# =============================================================================
+#######
+
+# Necessary before running openai in the async mode
+yes | pip uninstall openai 
+
+yes | pip install openai
+
+
+#######
+
+
+echo -e "\033[32m metadata prep"
+echo -e "\033[0m"
+
+python github/metadata_mining/scripts/metadata_preparation.py \
+    --work_dir "MicrobeAtlasProject" \
+    --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+    --n_samples_per_biome 50 \
+    --chunking "no" \
+    --chunk_size 3000 \
+    --seed 22 \
+    --directory_with_split_metadata "sample.info_split_dirs" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json.txt" \
+    --encoding_name "cl100k_base"
+
+
+sleep 1m
+echo -e "\033[32m 47. 1. robustness"
+echo -e "\033[0m"
+
+python github/metadata_mining/scripts/gpt_async_batch.py \
+    --work_dir "MicrobeAtlasProject" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json.txt" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 1.5 
+
+
+
+sleep 1m
+echo -e "\033[32m 47. 2. robustness"
+echo -e "\033[0m"
+
+python github/metadata_mining/scripts/gpt_async_batch.py \
+    --work_dir "MicrobeAtlasProject" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json.txt" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 1.5 
+    
+    
+sleep 1m
+echo -e "\033[32m 47. 3. robustness"
+echo -e "\033[0m"
+
+python github/metadata_mining/scripts/gpt_async_batch.py \
+    --work_dir "MicrobeAtlasProject" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json.txt" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 1.5 
+    
+    
+sleep 1m
+echo -e "\033[32m 47. 4. robustness"
+echo -e "\033[0m"
+
+python github/metadata_mining/scripts/gpt_async_batch.py \
+    --work_dir "MicrobeAtlasProject" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json.txt" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 1.5 
+    
+    
+sleep 1m
+echo -e "\033[32m 47. 5. robustness"
+echo -e "\033[0m"
+
+python github/metadata_mining/scripts/gpt_async_batch.py \
+    --work_dir "MicrobeAtlasProject" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json.txt" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 1.5 
+    
+    
+sleep 1m
+echo -e "\033[32m 47. 6. robustness"
+echo -e "\033[0m"
+
+python github/metadata_mining/scripts/gpt_async_batch.py \
+    --work_dir "MicrobeAtlasProject" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json.txt" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 1.5 
 
 
 
 
+echo -e "\033[32m metadata prep"
+echo -e "\033[0m"
+
+python github/metadata_mining/scripts/metadata_preparation.py \
+    --work_dir "MicrobeAtlasProject" \
+    --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+    --n_samples_per_biome 50 \
+    --chunking "no" \
+    --chunk_size 3000 \
+    --seed 22 \
+    --directory_with_split_metadata "sample.info_split_dirs" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json_please.txt" \
+    --encoding_name "cl100k_base"
+    
+    
+
+sleep 1m
+echo -e "\033[32m 47. 7. please"
+echo -e "\033[0m"
+
+python github/metadata_mining/scripts/gpt_async_batch.py \
+    --work_dir "MicrobeAtlasProject" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json_please.txt" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 1.5 
+
+
+
+sleep 1m
+echo -e "\033[32m 47. 8. please"
+echo -e "\033[0m"
+
+python github/metadata_mining/scripts/gpt_async_batch.py \
+    --work_dir "MicrobeAtlasProject" \
+    --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json_please.txt" \
+    --api_key_path "my_api_key" \
+    --model "gpt-3.5-turbo-1106" \
+    --temperature 1.00 \
+    --max_tokens 4096 \
+    --top_p 0.75 \
+    --frequency_penalty 0.25 \
+    --presence_penalty 1.5 
