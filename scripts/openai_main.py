@@ -20,8 +20,7 @@ from openai_01_setup_and_args import setup_logging
 from openai_02_metadata_fetching import MetadataFetching
 from openai_02_metadata_processing import MetadataProcessor
 from openai_03_gpt_interaction import GPTInteractor
-from openai_04_gpt_parsing import GPTOutputParsing
-
+#from openai_04_gpt_parsing import GPTOutputParsing
 
 
 
@@ -39,7 +38,7 @@ def parse_arguments():
     parser.add_argument('--chunk_size', type=int, required=True, help='Number of tokens per chunk.')
     parser.add_argument('--seed', type=int, required=True, help='choose a seed for the random shuffling of the samples e.g.: 42')
     parser.add_argument('--directory_with_split_metadata', type=str, required=True, help='Directory with split metadata')
-    parser.add_argument('--system_prompt_file', type=str, required=True, help='it should be named openai_system_prompt.txt')
+    parser.add_argument('--system_prompt_file', type=str, required=True, help='it should be named openai_system_prompt.txt. Remember to change the input prompt based on the output_format')
     parser.add_argument('--encoding_name', type=str, required=True, help='name of encoder (for tokenizer) e.g.: cl100k_base')
     parser.add_argument('--api_key_path', type=str, required=True, help='Path to the OpenAI API key')
     parser.add_argument('--model', type=str, required=True, help='GPT model to use')
@@ -49,7 +48,8 @@ def parse_arguments():
     parser.add_argument('--frequency_penalty', type=float, required=True, help='Frequency penalty setting for the GPT model')
     parser.add_argument('--presence_penalty', type=float, required=True, help='Presence penalty setting for the GPT model')
     parser.add_argument('--max_requests_per_minute', type=float, required=True, help='set the max RPM')
-    parser.add_argument('--opt_text', type=str, required=False, help='extra text to indicate special run deets')    
+    parser.add_argument('--opt_text', type=str, required=False, help='extra text to indicate special run deets')   
+    parser.add_argument('--output_format', type=str, choices=['inline', 'json'], required=True, help='output format for GPT responses. Remember to change the input prompt based on this')
     
     return parser.parse_args()
 
@@ -100,19 +100,30 @@ def main():
     start_time = time.time()
     gpt_interactor = GPTInteractor(work_dir, system_prompt_file, api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.max_requests_per_minute)
     responses = gpt_interactor.get_gpt_responses()
-    #print('######################################################################')
-    #print(responses)
+    print('####### responses ###############################################################')
+    print(responses)
+ 
     gpt_interactor.save_gpt_responses_to_file(responses)
     end_time = time.time() 
     print(f"GPT Interaction time: {end_time - start_time} seconds")
     logging.info(f"GPT Interaction time: {end_time - start_time} seconds")
 
+
     # Phase 4: Parsing GPT Output
+    if args.output_format == 'json':
+        from openai_04_gpt_parsing_json import GPTOutputParsing as GPTOutputParsingJSON
+        parser = GPTOutputParsingJSON(work_dir)
+    else:
+        from openai_04_gpt_parsing_inline import GPTOutputParsing as GPTOutputParsingInline
+        parser = GPTOutputParsingInline(work_dir)
+        
     start_time = time.time()
-    parser = GPTOutputParsing(work_dir)
     main_parsed_df = parser.run(responses)
+    print('========================================================== ')
+    print(main_parsed_df)
     
     parsed_sample_ids = set(main_parsed_df['col_0'].unique())
+
     missing_samples = list(complete_sample_ids - parsed_sample_ids)
     end_time = time.time() 
     print(f"Parsing GPT Output time: {end_time - start_time} seconds")
@@ -145,8 +156,7 @@ def main():
         responses = gpt_interactor.get_gpt_responses()
         #print(responses)
         gpt_interactor.save_gpt_responses_to_file(responses)
-
-        parser = GPTOutputParsing(work_dir)
+            
         new_parsed_df = parser.run(responses)
         
         new_parsed_sample_ids = set(new_parsed_df['col_0'].unique()) if 'col_0' in new_parsed_df.columns else set()
@@ -305,6 +315,36 @@ if __name__ == "__main__":
 
 # 20241008 
 # running using openai_system_prompt_batch.txt 
+
+# 20241014
+# running testing new param --format 
+
+# python ~/github/metadata_mining/scripts/openai_main.py \
+#     --work_dir "MicrobeAtlasProject" \
+#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+#     --n_samples_per_biome 2 \
+#     --chunking "yes" \
+#     --chunk_size 3000 \
+#     --seed 22 \
+#     --directory_with_split_metadata "sample.info_split_dirs" \
+#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json.txt" \
+#     --encoding_name "cl100k_base" \
+#     --api_key_path "my_api_key" \
+#     --model "gpt-3.5-turbo-1106" \
+#     --temperature 1.00 \
+#     --max_tokens 4096 \
+#     --top_p 0.75 \
+#     --frequency_penalty 0.25 \
+#     --presence_penalty 1.5 \
+#     --max_requests_per_minute 3500 \
+#     --opt_text "normal" \
+#     --output_format 'json' 
+
+
+
+
+
+
 
 
 

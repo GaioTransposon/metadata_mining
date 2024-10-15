@@ -139,7 +139,7 @@ class GPTInteractor:
             print("####################")
             print('Api request count: ', self.api_request_count)
             print("####################")
-    
+        
             return response
     
         except openai.error.RateLimitError:

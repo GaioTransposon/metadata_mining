@@ -98,9 +98,6 @@ class GPTOutputParsing:
 # =============================================================================
 
 
-
-
-
 # =============================================================================
 # # Replace 'path_to_your_file.txt' with the path to your raw file
 # myfile = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/gpt_raw_output_nspb200_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_dt20231221_1420.txt'
