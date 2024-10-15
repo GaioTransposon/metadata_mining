@@ -67,17 +67,8 @@ class GPTOutputParsing:
             df.columns = [f'col_{i}' for i in range(len(df.columns))]
 
         return df
-
-    def run(self, gpt_responses):
-        # Parse the content and store the DataFrame
-        self.parsed_data = self.parse_my_json_like(gpt_responses)
-        
-        # Save any unparsed lines to a file
-        #self.save_unparsed_to_file()
-        
-        # Return the parsed DataFrame
-        return self.parsed_data
-
+    
+    
     def save_unparsed_to_file(self):
         if self.unparsed_lines:
             current_time = datetime.now()
@@ -89,6 +80,20 @@ class GPTOutputParsing:
             logging.info("Saved unparsed lines.")
         else:
             logging.info("No unparsed lines to save.")
+            
+            
+
+    def run(self, gpt_responses):
+        # Parse the content and store the DataFrame
+        self.parsed_data = self.parse_my_json_like(gpt_responses)
+        
+        # Save any unparsed lines to a file
+        self.save_unparsed_to_file()
+        
+        # Return the parsed DataFrame
+        return self.parsed_data
+
+    
 
 
 
