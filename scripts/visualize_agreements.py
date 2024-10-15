@@ -99,9 +99,12 @@ plot_data(df_subset, 'creativity params async')
 df_subset = df_full[75:115] 
 plot_data(df_subset, 'sync and async reproducibility')  
 
-df_subset = df_full[115:] 
+df_subset = df_full[115:128] 
 plot_data(df_subset, 'sync vs async')  
 
+
+df_subset = df_full[128:] 
+plot_data(df_subset, 'async please')  
 
 
 
@@ -217,8 +220,12 @@ df_subset = df_full[484:904]
 process_and_visualize(df_subset, 'p-values and adjusted p-values - async reproducibility', 4, 8)  
 
 
-df_subset = df_full[904:] 
+df_subset = df_full[904:1037] 
 process_and_visualize(df_subset, 'p-values and adjusted p-values - sync vs async', 4, 8)  
+
+
+df_subset = df_full[1037:] 
+process_and_visualize(df_subset, 'async please', 4, 8)  
 
 
 # color scheme based on adj p-values rather than p-values

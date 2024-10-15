@@ -516,6 +516,36 @@ python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
 
+#####################################################################################################
+# 10. please
+#####################################################################################################
+
+FILES=(
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e493dbacc8190a39bd001c1f72d6b_dt202410151251.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e49446d888190a86e428fb46406c5_dt202410151251.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e4949656881908d97b5142449b51f_dt202410151251.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e494e783081909e34f78775804f08_dt202410151251.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e49543298819085d1b0b2325ca876_dt202410151252.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e4bc1b1cc8190a3eeff102b680361_dt202410151302.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e49abc8ac81908590f00a2e248014_dt202410151253.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e49b07d388190b3cd6f619f824a3b_dt202410151253.csv"
+)
+
+
+LABELS=(
+    "async_js"
+    "async_js_rep1"
+    "async_js_rep2"
+    "async_js_rep3"
+    "async_js_rep4"
+    "async_js_rep5"  
+    "async_js_please"
+    "async_js_please_rep"
+)
+
+python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
+
+
 
 
 
