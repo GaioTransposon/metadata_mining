@@ -11,6 +11,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.legend_handler import HandlerTuple
 
 
 # Results:
@@ -117,6 +119,7 @@ plot_data(df_subset, 'async please')
 
 # Stats:
 
+
 def process_and_visualize(df, my_title, cell_font_size, labels_font):
     df = df.dropna()
 
@@ -136,26 +139,23 @@ def process_and_visualize(df, my_title, cell_font_size, labels_font):
     # Populate the matrices
     for _, row in df.iterrows():
         label1, label2 = row['Label1'], row['Label2']
-        p_value = row['P-value']
         adj_p_value = row['Adjusted P-value']
         validation_type = row['validation']
-        annotation = f"{p_value:.2f};\n{adj_p_value:.2f}"
-
+        annotation = f"{row['P-value']:.2f};\n{adj_p_value:.2f}"
 
         if validation_type == 'biome':
             biome_matrix.at[label1, label2] = adj_p_value
-            biome_matrix.at[label2, label1] = adj_p_value  # mirroring for biome
+            biome_matrix.at[label2, label1] = adj_p_value
             biome_annot.at[label1, label2] = annotation
             biome_annot.at[label2, label1] = annotation
 
         elif validation_type == 'sub-biome':
             subbiome_matrix.at[label1, label2] = adj_p_value
-            subbiome_matrix.at[label2, label1] = adj_p_value  # mirroring for sub-biome
+            subbiome_matrix.at[label2, label1] = adj_p_value
             subbiome_annot.at[label1, label2] = annotation
             subbiome_annot.at[label2, label1] = annotation
-         
-                        
-    # Merge matrices: biome in the lower triangle, sub-biome in the upper triangle
+
+    # Merge matrices
     combined_matrix = pd.DataFrame(np.nan, index=labels, columns=labels)
     combined_annotations = pd.DataFrame("", index=labels, columns=labels)
     for label1 in labels:
@@ -170,26 +170,36 @@ def process_and_visualize(df, my_title, cell_font_size, labels_font):
                 combined_matrix.at[label1, label2] = '-'  # for diagonal
                 combined_annotations.at[label1, label2] = '-'
 
-
     # Plotting
     numeric_combined_matrix = combined_matrix.replace('-', np.nan).astype(float)
     mask_upper = np.triu(np.ones_like(numeric_combined_matrix, dtype=bool), k=1)
     mask_lower = np.tril(np.ones_like(numeric_combined_matrix, dtype=bool), k=-1)
+
+    # Define bins and colormap
+    #bins = [0, 0.01, 0.05, 0.2, 0.5, 0.8, 1]
+    bins = [0, 0.01, 0.05, 0.2, 1.0]
+    colors = sns.color_palette("Blues_r", n_colors=len(bins))  # Colors for biome
+    colors_sub = sns.color_palette("Greens_r", n_colors=len(bins))  # Colors for sub-biome
+    cmap_biome = LinearSegmentedColormap.from_list("custom_blues", colors, N=256)
+    cmap_subbiome = LinearSegmentedColormap.from_list("custom_greens", colors_sub, N=256)
+    norm = BoundaryNorm(bins, ncolors=256, clip=True)
+
     plt.figure(figsize=(10, 8))
-    sns.heatmap(numeric_combined_matrix, mask=mask_upper, cmap='Greens', annot=combined_annotations, fmt="s", cbar=False,
+    sns.heatmap(numeric_combined_matrix, mask=mask_upper, cmap=cmap_subbiome, annot=combined_annotations, fmt="s", cbar=False,
                 linewidths=.2, linecolor='black', xticklabels=labels, yticklabels=labels, square=True,
-                annot_kws={"size": cell_font_size})
-    sns.heatmap(numeric_combined_matrix, mask=mask_lower, cmap='Blues', annot=combined_annotations, fmt="s", cbar=False,
+                annot_kws={"size": cell_font_size}, norm=norm)
+    sns.heatmap(numeric_combined_matrix, mask=mask_lower, cmap=cmap_biome, annot=combined_annotations, fmt="s", cbar=False,
                 linewidths=.2, linecolor='black', xticklabels=labels, yticklabels=labels, square=True,
-                annot_kws={"size": cell_font_size})
+                annot_kws={"size": cell_font_size}, norm=norm)
     plt.title(my_title)
     plt.subplots_adjust(bottom=0.2)
 
     plt.xticks(rotation=45, fontsize=labels_font, ha='right')
     plt.yticks(rotation=0, fontsize=labels_font)
     plt.show()
+    
 
-
+    
 
 
 file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/biome_subbiome_stats.csv'
@@ -200,7 +210,7 @@ df_subset = df_full[0:17]
 process_and_visualize(df_subset, 'p-values and adjusted p-values - chunking y/n + chunk sizes', 7, 8)  
 
 
-df_subset = df_full[18:49] 
+df_subset = df_full[23:54] 
 process_and_visualize(df_subset, 'p-values and adjusted p-values - models', 7, 8)  
 
 
@@ -211,13 +221,8 @@ df_subset = df_full[159:210]
 process_and_visualize(df_subset, 'p-values and adjusted p-values - creativity params async', 3, 6)  
 
 
-
-
-df_subset = df_full[210:483] 
-process_and_visualize(df_subset, 'p-values and adjusted p-values - sync reproducibility', 4, 8)  
-
-df_subset = df_full[484:904] 
-process_and_visualize(df_subset, 'p-values and adjusted p-values - async reproducibility', 4, 8)  
+df_subset = df_full[210:904] 
+process_and_visualize(df_subset, 'p-values and adjusted p-values - sync & async reproducibility', 4, 8)  
 
 
 df_subset = df_full[904:1037] 
@@ -228,10 +233,39 @@ df_subset = df_full[1037:]
 process_and_visualize(df_subset, 'async please', 4, 8)  
 
 
-# color scheme based on adj p-values rather than p-values
-# change to dark:low light:high
-# change to bins: 0-0.05; 0.05-0.2; 0.2-0.6; 0.6-0.1
-# one legend 
+
+
+# Legend:
+def create_pvalue_legend_with_ranges(bins, color_palette_1, color_palette_2, title):
+    
+    # create single subplot
+    fig, ax = plt.subplots(figsize=(6, 2))
+
+    colors_1 = sns.color_palette(color_palette_1, n_colors=len(bins))
+    colors_2 = sns.color_palette(color_palette_2, n_colors=len(bins))
+
+    # define bins and corresponding labels
+    bin_labels = [f"{bins[i]}-{bins[i+1]}" for i in range(len(bins)-1)]
+
+    handles = []
+    for i, label in enumerate(bin_labels):
+        patch1 = plt.Rectangle((0,0), 1, 1, facecolor=colors_1[i])
+        patch2 = plt.Rectangle((0,0), 1, 1, facecolor=colors_2[i])
+        handle = (patch1, patch2)
+        handles.append((handle, label))
+
+    ax.legend([handle for handle, label in handles], [label for handle, label in handles],
+                       handler_map={tuple: HandlerTuple(ndivide=None, pad=0)}, title=title, loc='upper center', 
+                       frameon=True, bbox_to_anchor=(0.5, 1), handlelength=3, handletextpad=1)
+    
+    ax.set_title(title, pad=15)
+    ax.axis('off')  
+
+    plt.subplots_adjust(left=0.05, right=0.95, top=0.9, bottom=0.1)
+    plt.show()
+
+bins = [0, 0.01, 0.05, 0.2, 1.0]
+create_pvalue_legend_with_ranges(bins, 'Greens_r', 'Blues_r', 'Adjusted p-values ranges')
 
 
 
