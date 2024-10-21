@@ -35,7 +35,7 @@ def load_system_prompt(system_prompt_file):
         return file.read().strip()
     
 
-def prepare_batch_tasks(df, system_prompt, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty):
+def prepare_batch_tasks(df, system_prompt, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty, output_format):
     tasks = []
     for _, row in df.iterrows():
         user_content = f"Sample ID: {row['sample_id']}, Metadata: {row['metadata']}"
@@ -50,13 +50,20 @@ def prepare_batch_tasks(df, system_prompt, model, temperature, max_tokens, top_p
                 "top_p": top_p,
                 "frequency_penalty": frequency_penalty,
                 "presence_penalty": presence_penalty,
-                "response_format": {"type": "json_object"},
+                #"response_format": {"type": "json_object"},
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_content}
                 ],
             }
         }
+        
+        if output_format == 'json':
+            task["body"]["response_format"] = {"type": "json_object"}
+        elif output_format == 'inline':
+            print('I know you know it s an online format')
+        
+        
         tasks.append(task)
     return tasks
 
@@ -96,6 +103,7 @@ def parse_args():
     parser.add_argument("--top_p", type=float, required=True, help="Top p for nucleus sampling")
     parser.add_argument("--frequency_penalty", type=float, required=True, help="Frequency penalty")
     parser.add_argument("--presence_penalty", type=float, required=True, help="Presence penalty")
+    parser.add_argument("--output_format", required=True, help="can be inline or json")
     return parser.parse_args()
 
 
@@ -116,7 +124,7 @@ def main():
     df = pd.DataFrame(list(metadata_dict.items()), columns=['sample_id', 'metadata'])
     
     # Assuming metadata has 'sample_id' and 'metadata' information
-    tasks = prepare_batch_tasks(df, system_prompt, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty)
+    tasks = prepare_batch_tasks(df, system_prompt, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.output_format)
     
     # convert tasks to JSONL format (one JSON object per line)
     tasks_jsonl = "\n".join(json.dumps(task) for task in tasks)
@@ -146,6 +154,7 @@ def main():
     "top_p": args.top_p,
     "frequency_penalty": args.frequency_penalty,
     "presence_penalty": args.presence_penalty,
+    "output_format": args.output_format,
     "datetime": datetime.now().strftime('%Y%m%d%H%M')
     }
 
@@ -168,17 +177,58 @@ if __name__ == "__main__":
 
 
 
+# test with json: 
+
+# python github/metadata_mining/scripts/metadata_preparation.py \
+#     --work_dir "MicrobeAtlasProject" \
+#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+#     --n_samples_per_biome 2 \
+#     --chunking "no" \
+#     --chunk_size 3000 \
+#     --seed 22 \
+#     --directory_with_split_metadata "sample.info_split_dirs" \
+#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json.txt" \
+#     --encoding_name "cl100k_base"
+    
+    
 
 # python /Users/dgaio/github/metadata_mining/scripts/gpt_async_batch.py \
 #     --work_dir "MicrobeAtlasProject" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_batch.txt" \
-#     --api_key_path "my_api_key_production_run" \
-#     --model "gpt-3.5-turbo-0125" \
+#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json.txt" \
+#     --api_key_path "my_api_key" \
+#     --model "gpt-3.5-turbo-1106" \
 #     --temperature 1.00 \
 #     --max_tokens 4096 \
 #     --top_p 0.75 \
 #     --frequency_penalty 0.25 \
-#     --presence_penalty 1.5 
+#     --presence_penalty 1.5 \
+#     --output_format 'json'
 
 
 
+# test with inline: 
+
+
+# python github/metadata_mining/scripts/metadata_preparation.py \
+#     --work_dir "MicrobeAtlasProject" \
+#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+#     --n_samples_per_biome 2 \
+#     --chunking "no" \
+#     --chunk_size 3000 \
+#     --seed 22 \
+#     --directory_with_split_metadata "sample.info_split_dirs" \
+#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+#     --encoding_name "cl100k_base"
+    
+
+# python /Users/dgaio/github/metadata_mining/scripts/gpt_async_batch.py \
+#     --work_dir "MicrobeAtlasProject" \
+#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
+#     --api_key_path "my_api_key" \
+#     --model "gpt-3.5-turbo-1106" \
+#     --temperature 1.00 \
+#     --max_tokens 4096 \
+#     --top_p 0.75 \
+#     --frequency_penalty 0.25 \
+#     --presence_penalty 1.5 \
+#     --output_format 'inline'

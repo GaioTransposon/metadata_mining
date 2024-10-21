@@ -17,7 +17,7 @@ from matplotlib.legend_handler import HandlerTuple
 
 # Results:
 
-def plot_data(df, plot_title):
+def plot_data(df, plot_title, labels_font):
     
     
     df = df.copy()
@@ -67,7 +67,8 @@ def plot_data(df, plot_title):
     
     plt.xlabel('')
     plt.ylabel('values')
-    plt.title(plot_title)
+    plt.title(plot_title,fontsize=12)
+    plt.xticks(rotation=45, fontsize=labels_font, ha='right')
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
     ax.tick_params(axis='x', labelsize=8) 
     
@@ -84,29 +85,32 @@ df_full = pd.read_csv(file_path)
 
 
 df_subset = df_full[0:8] 
-plot_data(df_subset, 'chunking y/n + chunk sizes')  
+plot_data(df_subset, 'Chunking (y/n) and chunk sizes (sync requests)', 9)  
 
 df_subset = df_full[9:15] 
-plot_data(df_subset, 'models')  
+plot_data(df_subset, 'Models (sync requests)', 9)  
 
 
-df_subset = df_full[16:55]  
-plot_data(df_subset, 'creativity params sync')  
 
+df_subset = df_full[16:35]  
+plot_data(df_subset, 'Creativity parameters (sync requests chunking)', 9)  
+
+df_subset = df_full[35:55]  
+plot_data(df_subset, 'Creativity parameters (sync requests not chuking)', 9)  
 
 df_subset = df_full[55:75] 
-plot_data(df_subset, 'creativity params async')  
+plot_data(df_subset, 'Creativity parameters (async requests)', 9)  
 
 
 df_subset = df_full[75:115] 
-plot_data(df_subset, 'sync and async reproducibility')  
+plot_data(df_subset, 'Sync and async requests: different sample groups (rs)', 9)  
 
 df_subset = df_full[115:128] 
-plot_data(df_subset, 'sync vs async')  
+plot_data(df_subset, 'Sync and async requests: same sample groups (rs)', 9)  
 
 
 df_subset = df_full[128:] 
-plot_data(df_subset, 'async please')  
+plot_data(df_subset, 'Async requests: different prompts', 9)  
 
 
 
@@ -136,6 +140,7 @@ def process_and_visualize(df, my_title, cell_font_size, labels_font):
     biome_annot = pd.DataFrame("", index=labels, columns=labels)
     subbiome_annot = pd.DataFrame("", index=labels, columns=labels)
 
+
     # Populate the matrices
     for _, row in df.iterrows():
         label1, label2 = row['Label1'], row['Label2']
@@ -155,6 +160,8 @@ def process_and_visualize(df, my_title, cell_font_size, labels_font):
             subbiome_annot.at[label1, label2] = annotation
             subbiome_annot.at[label2, label1] = annotation
 
+    
+    
     # Merge matrices
     combined_matrix = pd.DataFrame(np.nan, index=labels, columns=labels)
     combined_annotations = pd.DataFrame("", index=labels, columns=labels)
@@ -175,28 +182,27 @@ def process_and_visualize(df, my_title, cell_font_size, labels_font):
     mask_upper = np.triu(np.ones_like(numeric_combined_matrix, dtype=bool), k=1)
     mask_lower = np.tril(np.ones_like(numeric_combined_matrix, dtype=bool), k=-1)
 
-    # Define bins and colormap
-    #bins = [0, 0.01, 0.05, 0.2, 0.5, 0.8, 1]
     bins = [0, 0.01, 0.05, 0.2, 1.0]
     colors = sns.color_palette("Blues_r", n_colors=len(bins))  # Colors for biome
     colors_sub = sns.color_palette("Greens_r", n_colors=len(bins))  # Colors for sub-biome
     cmap_biome = LinearSegmentedColormap.from_list("custom_blues", colors, N=256)
     cmap_subbiome = LinearSegmentedColormap.from_list("custom_greens", colors_sub, N=256)
-    norm = BoundaryNorm(bins, ncolors=256, clip=True)
+    #norm = BoundaryNorm(bins, ncolors=256, clip=True)
 
-    plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(12, 10))
     sns.heatmap(numeric_combined_matrix, mask=mask_upper, cmap=cmap_subbiome, annot=combined_annotations, fmt="s", cbar=False,
                 linewidths=.2, linecolor='black', xticklabels=labels, yticklabels=labels, square=True,
-                annot_kws={"size": cell_font_size}, norm=norm)
+                annot_kws={"size": cell_font_size})
     sns.heatmap(numeric_combined_matrix, mask=mask_lower, cmap=cmap_biome, annot=combined_annotations, fmt="s", cbar=False,
                 linewidths=.2, linecolor='black', xticklabels=labels, yticklabels=labels, square=True,
-                annot_kws={"size": cell_font_size}, norm=norm)
-    plt.title(my_title)
+                annot_kws={"size": cell_font_size})
+    plt.title(my_title, fontsize=9)
     plt.subplots_adjust(bottom=0.2)
 
     plt.xticks(rotation=45, fontsize=labels_font, ha='right')
     plt.yticks(rotation=0, fontsize=labels_font)
     plt.show()
+
     
 
     
@@ -205,32 +211,35 @@ def process_and_visualize(df, my_title, cell_font_size, labels_font):
 file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/biome_subbiome_stats.csv'
 df_full = pd.read_csv(file_path)
 
-
-df_subset = df_full[0:17] 
-process_and_visualize(df_subset, 'p-values and adjusted p-values - chunking y/n + chunk sizes', 7, 8)  
+df_subset = df_full[0:24] 
+process_and_visualize(df_subset, 'Chunking (y/n) and chunk sizes (sync requests)', 8, 9)  
 
 
 df_subset = df_full[23:54] 
-process_and_visualize(df_subset, 'p-values and adjusted p-values - models', 7, 8)  
+process_and_visualize(df_subset, 'Models (sync requests)', 8, 9)  
 
+df_subset = df_full[59:106] 
+process_and_visualize(df_subset, 'Creativity parameters (sync requests chunking)', 8, 9) 
 
-df_subset = df_full[59:159] 
-process_and_visualize(df_subset, 'p-values and adjusted p-values - creativity params sync', 3, 6) 
+df_subset = df_full[106:159] 
+process_and_visualize(df_subset, 'Creativity parameters (sync requests no chunking)', 8, 9) 
 
 df_subset = df_full[159:210] 
-process_and_visualize(df_subset, 'p-values and adjusted p-values - creativity params async', 3, 6)  
+process_and_visualize(df_subset, 'Creativity parameters (async requests)', 8, 9)  
 
 
 df_subset = df_full[210:904] 
-process_and_visualize(df_subset, 'p-values and adjusted p-values - sync & async reproducibility', 4, 8)  
+process_and_visualize(df_subset, 'Sync and async requests: different sample groups (rs)', 4, 8)  
 
 
 df_subset = df_full[904:1037] 
-process_and_visualize(df_subset, 'p-values and adjusted p-values - sync vs async', 4, 8)  
+process_and_visualize(df_subset, 'Sync and async requests: same sample groups (rs)', 4, 8)  
 
 
-df_subset = df_full[1037:] 
-process_and_visualize(df_subset, 'async please', 4, 8)  
+# df_subset = df_full[1037:] 
+# process_and_visualize(df_subset, 'Async requests: different prompts', 4, 8)  
+
+
 
 
 

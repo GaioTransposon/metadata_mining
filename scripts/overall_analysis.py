@@ -25,6 +25,8 @@ import requests
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
+import os
+
 
 # -----------------------------
 # Files and Paths
@@ -32,6 +34,8 @@ from collections import defaultdict
 
 home_dir = os.getenv('HOME')
 work_dir = os.path.join(home_dir, "MicrobeAtlasProject")
+METADATA_DIRECTORY = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs"  
+
 
 # Find all 'gpt_clean_output' files that end with .csv or .txt
 file_patterns = ['gpt_clean_output*.csv', 'gpt_clean_output*.txt']
@@ -196,7 +200,7 @@ axes[0].set_yticklabels(order, rotation=0, fontsize=12)
 
 # Plotting the second heatmap with renamed labels
 sns.heatmap(normalized_conf_matrix_joao, annot=True, fmt=".3f", cmap='viridis', ax=axes[1], vmin=vmin, vmax=vmax, cbar_ax=fig.add_axes([0.91, 0.3, 0.03, 0.4]))  # Shared color bar
-axes[1].set_title('Benchmark biomes vs previous biome predictions')
+axes[1].set_title('Benchmark biomes vs keyword-based classifier')
 axes[1].set_xlabel('predicted biome', fontsize=11) 
 axes[1].set_ylabel('benchmark biome', fontsize=11)  
 axes[1].set_xticklabels(order, rotation=0, ha='center', fontsize=12)
@@ -267,14 +271,14 @@ false_agreements = lenient_agreement_df[lenient_agreement_df['agreement'] == Fal
 ########## 1. Overall confusion matrix
 conf_matrix_false = pd.crosstab(false_agreements['biome'], false_agreements['gpt_biome'], rownames=['Actual Biome'], colnames=['Predicted Biome'])
 
-# # Visualize the confusion matrix using a heatmap without annotations
-# plt.figure(figsize=(12, 10))
-# sns.heatmap(conf_matrix_false, cmap='Blues')
-# plt.xticks(rotation=45, ha='right')  # Rotate x labels for better visibility
-# plt.yticks(rotation=0)  # Ensure y labels are horizontal
-# plt.title('Overall confusion matrix (False agreements only)')
-# plt.show()
-# ##
+# Visualize the confusion matrix using a heatmap without annotations
+plt.figure(figsize=(12, 10))
+sns.heatmap(conf_matrix_false, cmap='Blues')
+plt.xticks(rotation=45, ha='right')  # Rotate x labels for better visibility
+plt.yticks(rotation=0)  # Ensure y labels are horizontal
+plt.title('Overall confusion matrix (False agreements only)')
+plt.show()
+##
 
 ########## 2. Filtered confusion matrix:
 # remove if seen less than twice (irrelevant to this purpose)
@@ -311,134 +315,101 @@ plt.show()
 
 ##################
 
+
+
+
 ################## Are certain biomes consistently misclassified more often than what would occur by random chance? ##################
 
-# Create a contingency table from the false agreements data
+# Data loading and initial processing
 contingency_table = pd.crosstab(false_agreements['biome'], false_agreements['gpt_biome'])
-
-# Perform the Chi-squared test for independence
-chi2, p_value, dof, expected = chi2_contingency(contingency_table)
-print(f"Chi-squared: {chi2}, p-value: {p_value}")
-
-# Convert the expected array to a DataFrame with similar indexing as the contingency_table
+expected = chi2_contingency(contingency_table)[3]
 expected_df = pd.DataFrame(expected, index=contingency_table.index, columns=contingency_table.columns)
 
-# Calculate residuals (Observed - Expected)
-residuals = contingency_table - expected_df
+# Helper functions for repeated calculations
+def calculate_residuals(contingency, expected):
+    residuals = contingency - expected
+    return residuals / np.sqrt(expected)
 
-# Calculate standardized residuals ((Observed - Expected) / sqrt(Expected))
-standardized_residuals = residuals / np.sqrt(expected_df)
+def descriptive_stats(data, label):
+    print(f"\nDescriptive Statistics for {label}:")
+    print(data.describe())
+    print(f"\nSkewness for {label}:", data.skew())
+    print(f"Kurtosis for {label}:", data.kurt())
 
-# More insights into residuals: 
+# Analysis of Biomes
+print(f"Chi-squared: {chi2_contingency(contingency_table)[:2]}")
+standardized_residuals = calculate_residuals(contingency_table, expected_df)
+misclassification_percentages = (contingency_table.div(contingency_table.sum(axis=1), axis=0) * 100)
 
-# Identify and isolate significant residuals
-significant_residuals = standardized_residuals[(standardized_residuals > 5) | (standardized_residuals < -5)]
-
-# Highlight the most extreme cases
-sorted_significant_residuals = significant_residuals.unstack().dropna().abs().sort_values(ascending=False)
-
-for index, value in sorted_significant_residuals.iteritems():
-    actual_biome, predicted_biome = index
-    try:
-        original_value = standardized_residuals.at[actual_biome, predicted_biome]
-        print(f"Actual Biome: {actual_biome}, Predicted Biome: {predicted_biome}, Residual: {original_value:.2f}")
-    except KeyError:
-        print(f"KeyError encountered for Biome: {actual_biome} or {predicted_biome}")
-################################################################################
-################################################################################
-
-
-
+print("\nPercentages of Misclassifications (Top 6 Percentages per Biome):")
+for biome in misclassification_percentages.index:
+    top_percentages = misclassification_percentages.loc[biome].nlargest(6)
+    if not top_percentages.empty:
+        print(f"\n{biome}:")
+        for gpt_biome, percentage in top_percentages.items():
+            residual = standardized_residuals.at[biome, gpt_biome]
+            print(f"{gpt_biome:10} {percentage:.2f}% residual {residual:.2f}")
 
 
-################## Misclassified samples (more in detail): 
 
-# Count misclassifications per sample
-misclass_counts = false_agreements.groupby('sample')['agreement'].count()
 
-# Find the most common incorrect biome predicted for each sample
-common_misclassifications = false_agreements.groupby('sample')['gpt_biome'].agg(pd.Series.mode)
-
-# Combine these into a single DataFrame for analysis
-misclassification_summary = pd.DataFrame({
+# Misclassified samples analysis
+misclass_counts = lenient_agreement_df[lenient_agreement_df['agreement'] == False].groupby('sample')['agreement'].count()
+common_misclassifications = lenient_agreement_df.groupby('sample')['gpt_biome'].agg(pd.Series.mode)
+summary = pd.DataFrame({
     'misclass_count': misclass_counts,
     'most_common_misclass': common_misclassifications
 })
 
-# Samples vcs frequency of misclassifications
-top_misclassified_samples = misclassification_summary.sort_values(by='misclass_count', ascending=False)
-# ax = top_misclassified_samples['misclass_count'].plot(kind='bar', color='red', figsize=(10, 6))
-# plt.title('misclassified samples')
-# plt.xlabel('sample id')
-# plt.ylabel('Misclassifications counts')
-# ax.set_xticklabels([]) 
-# plt.show()
-
-top_20_misclassified = top_misclassified_samples.head(20)
-print("Top 20 misclassified samples:")
-print(top_20_misclassified)
 
 plt.figure(figsize=(10, 6))
-plt.hist(misclassification_summary['misclass_count'], bins=30, color='blue', alpha=0.7)
-plt.title('Distribution of misclassifications per sample')
-plt.xlabel('misclassifications count')
-plt.ylabel('frequency')
+plt.hist(summary['misclass_count'], bins=30, color='blue', alpha=0.7)
+plt.title('Distribution of Misclassifications per Sample (All Data)')
+plt.xlabel('Misclassifications Count')
+plt.ylabel('Frequency')
 plt.grid(True)
 plt.show()
 
-# Stats of misclassifications
-print("\nDescriptive Statistics:")
-print(misclass_counts.describe())
-print("\nSkewness:", misclass_counts.skew())
-print("Kurtosis:", misclass_counts.kurt())
+
+descriptive_stats(misclass_counts, 'All Misclassifications')
 
 
 
 
-################## Misclassified samples: 
+################## Misclassified samples in detail 
 
-# Count misclassifications per sample
-misclass_counts = false_agreements.groupby('sample')['agreement'].count()
 
-# Filter out samples misclassified only once
-filtered_misclass_counts = misclass_counts[misclass_counts > 1]
+# Display top misclassified samples 
+top_misclassified = summary.sort_values(by='misclass_count', ascending=False).head(30)
+print("\nTop 30 misclassified samples from the full dataset:")
+print(top_misclassified)
 
-# Find the most common incorrect biome predicted for each sample
-common_misclassifications = false_agreements[false_agreements['sample'].isin(filtered_misclass_counts.index)].groupby('sample')['gpt_biome'].agg(pd.Series.mode)
 
-# Combine these into a single DataFrame for analysis
-misclassification_summary = pd.DataFrame({
-    'misclass_count': filtered_misclass_counts,
-    'most_common_misclass': common_misclassifications
-})
+def fetch_metadata_from_sample(sample):
+    """Fetch and return metadata from a sample file based on the sample ID."""
+    folder_name = f"dir_{sample[-3:]}"  # Derives folder name from the last three characters of the sample ID
+    folder_path = os.path.join(METADATA_DIRECTORY, folder_name)
+    metadata_file_path = os.path.join(folder_path, f"{sample}_clean.txt")
+    with open(metadata_file_path, 'r') as file:
+        return file.read()
 
-# Samples vs frequency of misclassifications
-top_misclassified_samples = misclassification_summary.sort_values(by='misclass_count', ascending=False)
-# ax = top_misclassified_samples['misclass_count'].plot(kind='bar', color='red', figsize=(10, 6))
-# plt.title('misclassified samples')
-# plt.xlabel('sample id')
-# plt.ylabel('Misclassifications counts')
-# ax.set_xticklabels([]) 
-# plt.show()
 
-top_20_misclassified = top_misclassified_samples.head(20)
-print("Top 20 misclassified samples:")
-print(top_20_misclassified)
+sample_key = input("Enter the sample key to fetch metadata and misclassification count: ")
 
-plt.figure(figsize=(10, 6))
-plt.hist(misclassification_summary['misclass_count'], bins=30, color='blue', alpha=0.7)
-plt.title('Distribution of misclassifications per sample')
-plt.xlabel('misclassifications count')
-plt.ylabel('frequency')
-plt.grid(True)
-plt.show()
+sample_data = lenient_agreement_df[lenient_agreement_df['sample'] == sample_key]
+misclassifications = (~sample_data['agreement']).sum() 
+print(f"Sample '{sample_key}' was misclassified {misclassifications} times out of {len(sample_data)}.")
 
-# Stats of misclassifications
-print("\nDescriptive Statistics:")
-print(filtered_misclass_counts.describe())
-print("\nSkewness:", filtered_misclass_counts.skew())
-print("Kurtosis:", filtered_misclass_counts.kurt())
+metadata = fetch_metadata_from_sample(sample_key)
+print(f"\nMetadata for '{sample_key}':\n{metadata}")
 
+
+
+
+# SRS994677              water # anaerobic sludge ; should have gone to other 105/113
+# SRS2217033             animal # mock community 105/108
+# SRS5304049             soil # rhizosphere 111/111
+# SRS942824              soil # rhizosphere 109/110
 
 
 
@@ -455,8 +426,7 @@ srs_df = lenient_agreement_df[lenient_agreement_df['sample'] .str.startswith('SR
 # Step 1: Extract numeric part 
 srs_df['sample_id_numeric'] = srs_df['sample'].str.extract('(\d+)').astype(int)
 
-# Step 2: Calculate quartiles and filter for the bottom 25% and top 25%
-sorted_df = srs_df.sort_values(by='sample_id_numeric')
+# Step 2: Calculate quartiles and filter for the bottom 25% and top 25%sorted_df = srs_df.sort_values(by='sample_id_numeric')
 first_quartile = sorted_df['sample_id_numeric'].quantile(0.25)
 third_quartile = sorted_df['sample_id_numeric'].quantile(0.75)
 filtered_df = sorted_df[(sorted_df['sample_id_numeric'] <= first_quartile) | (sorted_df['sample_id_numeric'] >= third_quartile)]
