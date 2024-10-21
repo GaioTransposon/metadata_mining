@@ -66,9 +66,17 @@ def edit_features(file_label_map):
     return file_label_map
 
 
-def load_and_process_file(file_name, gold_standard_df, label):
-    dfr = pd.read_csv(file_name, header=None) # without headers, as the number of columns can vary
 
+def handle_malformed_lines(lines, filepath):
+    with open(filepath, 'a') as f:
+        for line in lines:
+            f.write(line + '\n')  # write each malformed line to file
+
+def load_and_process_file(file_name, gold_standard_df, label, malformed_filepath):
+    # read and handle malformed lines
+    dfr = pd.read_csv(file_name, header=None, engine='python', on_bad_lines=lambda lines: handle_malformed_lines(lines, malformed_filepath))
+    
+    # Proceed with your usual processing
     dfr = dfr.iloc[:, [0, 1]]
     dfr.columns = ['sample', 'gpt_biome']
     dfr['label'] = label
@@ -76,6 +84,9 @@ def load_and_process_file(file_name, gold_standard_df, label):
     merged_df = pd.merge(dfr, gold_standard_df, on='sample', how='inner')
 
     return merged_df
+
+
+
 
 
 # vuoi veram che te lo spieghi vermanete? in realtaa e' abbstanza semplice...'

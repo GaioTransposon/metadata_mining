@@ -544,6 +544,28 @@ python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
 
+#####################################################################################################
+# 11. output formats
+#####################################################################################################
+
+FILES=(
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_formatjson_batch67164d8ded048190badb01069142cbda_dt202410211448.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_formatjson_batch67164da1e4ac81909991913126e9eecb_dt202410211448.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_formatinline_batch67164db65fd0819097f31ac6c55e8caf_dt202410211448.csv"
+    "gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_formatinline_batch67164dbbe8b081908bf02a4d2b6e2f65_dt202410211449.csv"
+)
+
+
+LABELS=(
+    "json"
+    "json_rep"
+    "inline"
+    "inline_rep"
+)
+
+python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
+
+
 
 
 

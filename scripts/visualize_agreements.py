@@ -109,9 +109,12 @@ df_subset = df_full[115:128]
 plot_data(df_subset, 'Sync and async requests: same sample groups (rs)', 9)  
 
 
-df_subset = df_full[128:] 
-plot_data(df_subset, 'Async requests: different prompts', 9)  
+df_subset = df_full[128:137] 
+plot_data(df_subset, 'Please', 9)  
 
+
+df_subset = df_full[137:] 
+plot_data(df_subset, 'Output formats', 9)  
 
 
 
@@ -236,9 +239,11 @@ df_subset = df_full[904:1037]
 process_and_visualize(df_subset, 'Sync and async requests: same sample groups (rs)', 4, 8)  
 
 
-# df_subset = df_full[1037:] 
-# process_and_visualize(df_subset, 'Async requests: different prompts', 4, 8)  
+df_subset = df_full[1037:1094] 
+process_and_visualize(df_subset, 'Please', 4, 8)  
 
+df_subset = df_full[1094:] 
+process_and_visualize(df_subset, 'Output format', 4, 8)  
 
 
 

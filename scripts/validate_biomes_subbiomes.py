@@ -17,7 +17,7 @@ import sys
 import re
 from itertools import combinations
 sys.path.append('/Users/dgaio/github/metadata_mining/scripts')
-from features_process import find_distinguishing_features, extract_labels_from_filename, edit_features, load_and_process_file, filter_common_keys
+from features_process import find_distinguishing_features, extract_labels_from_filename, edit_features, load_and_process_file, handle_malformed_lines, filter_common_keys
 from embeddings_functions import (load_embeddings, compare_embeddings, create_shuffled_background_distribution, sample_by_category)
 from stats_module import calculate_overlap_and_run_tests_biomes, compare_based_on_overlap_subbiomes, print_statistics, test_similarity_separation
 from output_writing import plot_biome_agreement, plot_actual_vs_background, plot_heatmap, save_figures_to_pdf, output_to_csv
@@ -72,7 +72,7 @@ for file, label in file_label_map.items():
 # ----------------------------- 
 
 # Load, process, and calculate agreements for data files
-full_dfs = [load_and_process_file(os.path.join(work_dir, f), gold_dict_df, label) for f, label in file_label_map.items()]
+full_dfs = [load_and_process_file(os.path.join(work_dir, f), gold_dict_df, label, os.path.join(work_dir, 'malformed_lines.txt')) for f, label in file_label_map.items()]
 full_agreement_df = pd.concat(full_dfs, ignore_index=True)
 full_agreement_df['agreement'] = full_agreement_df['gpt_biome'] == full_agreement_df['biome']
 lenient_agreement_df = pd.concat(full_dfs, ignore_index=True)
