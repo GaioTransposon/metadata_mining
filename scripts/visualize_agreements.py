@@ -243,7 +243,7 @@ df_subset = df_full[1037:1094]
 process_and_visualize(df_subset, 'Please', 4, 8)  
 
 df_subset = df_full[1094:] 
-process_and_visualize(df_subset, 'Output format', 4, 8)  
+process_and_visualize(df_subset, 'Output formats', 8, 9)  
 
 
 
