@@ -186,21 +186,28 @@ for field, counts in word_counts.items():
 
 
 # Plot
-plt.figure(figsize=(12, 8))
-bar_width = 0.35  
-index = range(len(match_count_df))
+# Filter out rows where PartialMatches are 20 or less
+filtered_df = match_count_df[match_count_df['PartialMatches'] > 5]
 
-plt.bar(index, match_count_df['FullMatches'], bar_width, label='Full matches', color='b')
-plt.bar(index, match_count_df['PartialMatches'], bar_width, bottom=match_count_df['FullMatches'], label='Partial matches', color='r')
+# Plot if there are any rows left after filtering
+if not filtered_df.empty:
+    plt.figure(figsize=(12, 8))
+    bar_width = 0.35  
+    index = range(len(filtered_df))
 
-title_biome = specified_biome if specified_biome else "all biomes"
-plt.xlabel('Metadata Fields')
-plt.ylabel('Count of Matches')
-plt.title(f'Frequency of Metadata Fields Matching Sub-biome (Metadata Informative Fields of Sample Origin) - Biome: "{title_biome}"')
-plt.xticks(ticks=index, labels=match_count_df['Field'], rotation=90, ha="right")
-plt.legend()
-plt.tight_layout()
-plt.show()
+    plt.bar(index, filtered_df['FullMatches'], bar_width, label='Full matches', color='b')
+    plt.bar(index, filtered_df['PartialMatches'], bar_width, bottom=filtered_df['FullMatches'], label='Partial matches', color='r')
+
+    title_biome = specified_biome if specified_biome else "all biomes"
+    plt.xlabel('metadata fields')
+    plt.ylabel('count of mtches')
+    plt.title(f'Frequency of metadata fields matching benchmark sub-biome - Biome: "{title_biome}"')
+    plt.xticks(ticks=index, labels=filtered_df['Field'], rotation=90, ha="right")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+else:
+    print("No field has more than 20 partial matches. Skipping plot.")
 
 
 
@@ -208,6 +215,9 @@ plt.show()
 # # save to csv:
 # most_popular_full.to_csv('most_popular_full_matches.csv', index=False)
 # most_popular_partial.to_csv('most_popular_partial_matches.csv', index=False)
+
+
+
 
 
 
