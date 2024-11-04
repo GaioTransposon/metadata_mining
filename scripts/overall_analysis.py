@@ -26,6 +26,8 @@ from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
 import os
+import numpy as np
+from sklearn.metrics import cohen_kappa_score
 
 
 # -----------------------------
@@ -91,6 +93,7 @@ label_df_map = defaultdict(list)
 # Process each file, calculate agreement, and map to labels
 for file_path in my_files:
     label = file_label_map[file_path]
+    print(file_path)
     df = load_and_process_file(file_path, gold_dict_df, label)
     df['agreement'] = df.apply(lambda row: lenient_match(row['biome'], row['gpt_biome']), axis=1)
     df['biome'] = df['biome'].str.strip()
@@ -166,70 +169,124 @@ merged_df.rename(columns={'biome_x': 'predicted_biome', 'biome_y': 'gd_biome'}, 
 conf_matrix_joao = pd.crosstab(merged_df['gd_biome'], merged_df['predicted_biome'], rownames=['benchmark biome'], colnames=['predicted biome'])
 
 
-# Normalize the GPT matrix
-row_totals_gpt = conf_matrix_gpt.sum(axis=1)
-normalized_conf_matrix_gpt = conf_matrix_gpt.div(row_totals_gpt, axis=0)
 
-# Normalize Joao's matrix and rename 'other' to 'unknown'
-row_totals_joao = conf_matrix_joao.sum(axis=1)
-normalized_conf_matrix_joao = conf_matrix_joao.div(row_totals_joao, axis=0)
-normalized_conf_matrix_joao.rename(columns={'other': 'unknown'}, index={'other': 'unknown'}, inplace=True)
+# Define a function to compute precision for easier reuse
+def compute_precision(transposed_conf_matrix):
+    true_positives = transposed_conf_matrix.values.diagonal()
+    predicted_positives = transposed_conf_matrix.sum(axis=1).values  # Sum over rows because the matrix is transposed
+    precision_scores = true_positives / predicted_positives
+    return dict(zip(transposed_conf_matrix.index, precision_scores))
 
-# Define the desired order with 'unknown' for Joao and 'other' for GPT
-order = ['animal', 'plant', 'soil', 'water', 'other']
-order_joao = ['animal', 'plant', 'soil', 'water', 'unknown']
+# Normalize the confusion matrices
+normalized_conf_matrix_gpt = conf_matrix_gpt.div(conf_matrix_gpt.sum(axis=1), axis=0).T  # Normalize and transpose
+normalized_conf_matrix_joao = conf_matrix_joao.div(conf_matrix_joao.sum(axis=1), axis=0).T
 
-# Reorder the matrices
-normalized_conf_matrix_gpt = normalized_conf_matrix_gpt.reindex(index=order, columns=order)
-normalized_conf_matrix_joao = normalized_conf_matrix_joao.reindex(index=order_joao, columns=order_joao)
+# Compute precision for each model
+precision_gpt = compute_precision(normalized_conf_matrix_gpt)
+precision_joao = compute_precision(normalized_conf_matrix_joao)
 
-# Determine the global min and max for consistent coloring
-vmin = min(normalized_conf_matrix_gpt.min().min(), normalized_conf_matrix_joao.min().min())
-vmax = max(normalized_conf_matrix_gpt.max().max(), normalized_conf_matrix_joao.max().max())
+# Custom order of biomes for precision
+biome_order = ['animal', 'plant', 'soil', 'water', 'other']
+
+normalized_conf_matrix_gpt = normalized_conf_matrix_gpt.reindex(index=biome_order, columns=biome_order)
+normalized_conf_matrix_joao = normalized_conf_matrix_joao.reindex(index=biome_order, columns=biome_order)
+
+
+# Compute precision for each model (transpose first as before if needed)
+precision_gpt = compute_precision(normalized_conf_matrix_gpt.T)
+precision_joao = compute_precision(normalized_conf_matrix_joao.T)
+
+# Print precision scores for each biome
+print("GPT Precision Scores:")
+for biome, score in precision_gpt.items():
+    print(f"{biome}: {score:.3f}")
+print("\nKeyword-based Classifier Precision Scores:")
+for biome, score in precision_joao.items():
+    print(f"{biome}: {score:.3f}")
 
 # Set up the matplotlib figure with subplots
-fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(11, 4), sharey=True)  # sharey to have same y-axis labels
+fig, axes = plt.subplots(nrows=1, ncols=5, figsize=(24, 5),
+                         gridspec_kw={'width_ratios': [4, 4, 0.2, 1, 1], 'wspace': 0.3, 'hspace': 0.5},
+                         constrained_layout=True)  # Use constrained layout to manage space automatically
 
-# Plotting the first heatmap
-sns.heatmap(normalized_conf_matrix_gpt, annot=True, fmt=".3f", cmap='viridis', ax=axes[0], vmin=vmin, vmax=vmax, cbar=False)  # No color bar here
-axes[0].set_title('Benchmark biomes vs GPT biomes')
-axes[0].set_xlabel('predicted biome', fontsize=11) 
-axes[0].set_ylabel('benchmark biome', fontsize=11)  
-axes[0].set_xticklabels(order, rotation=0, ha='center', fontsize=12)
-axes[0].set_yticklabels(order, rotation=0, fontsize=12)
+# Heatmap for GPT predictions
+sns.heatmap(normalized_conf_matrix_gpt, annot=True, fmt=".3f", cmap='viridis', ax=axes[0], cbar=False, vmin=0, vmax=1)
+axes[0].set_title('GPT biomes vs benchmark biomes')
+axes[0].set_xlabel('benchmark biome')
+axes[0].set_ylabel('predicted biome')
 
-# Plotting the second heatmap with renamed labels
-sns.heatmap(normalized_conf_matrix_joao, annot=True, fmt=".3f", cmap='viridis', ax=axes[1], vmin=vmin, vmax=vmax, cbar_ax=fig.add_axes([0.91, 0.3, 0.03, 0.4]))  # Shared color bar
-axes[1].set_title('Benchmark biomes vs keyword-based classifier')
-axes[1].set_xlabel('predicted biome', fontsize=11) 
-axes[1].set_ylabel('benchmark biome', fontsize=11)  
-axes[1].set_xticklabels(order, rotation=0, ha='center', fontsize=12)
-axes[1].set_yticklabels(order, rotation=0, fontsize=12)
+# Heatmap for João's predictions
+sns.heatmap(normalized_conf_matrix_joao, annot=True, fmt=".3f", cmap='viridis', ax=axes[1], cbar=False, vmin=0, vmax=1)
+axes[1].set_title('Keyword-based classifier vs benchmark biomes')
+axes[1].set_xlabel('benchmark biome')
+axes[1].set_yticklabels([])  # Ensure y-axis labels are not repeated
 
-plt.tight_layout(rect=[0, 0, 0.9, 1])  # Adjust the rect to leave space for color bar
+# Color bar for the heatmaps with range 0 to 1
+cbar = plt.colorbar(axes[1].collections[0], cax=axes[2], orientation='vertical')
+cbar.set_label('Accuracy')
+cbar.set_ticks(np.linspace(0, 1, 11))  # Setting ticks from 0 to 1 at intervals of 0.1
+
+# Reverse both labels and precision values to match the heatmap's top-to-bottom order
+biome_order_reversed = biome_order[::-1]
+precision_gpt_values = [precision_gpt[biome] for biome in biome_order_reversed]
+precision_joao_values = [precision_joao[biome] for biome in biome_order_reversed]
+
+# Horizontal bar plot for precision scores
+bar_width = 0.35  # Width of the bars
+indices = np.arange(len(biome_order_reversed))  # Locations for the reversed groups
+
+# Plot the precision bars with the reversed order
+axes[3].barh(indices - bar_width/2, precision_gpt_values, height=bar_width, color='blue', alpha=0.6, label='GPT')
+axes[3].barh(indices + bar_width/2, precision_joao_values, height=bar_width, color='green', alpha=0.6, label='Keyword-based\nclassifier')
+
+# Set y-axis with reversed biomes
+axes[3].set_yticks(indices)
+axes[3].set_yticklabels(biome_order_reversed)
+axes[3].set_xlabel('Precision')
+
+# Adjust the legend position
+legend = axes[3].legend(loc='center left', bbox_to_anchor=(1.2, 0.5))
+axes[3].set_title('')
+
+
+# This additional subplot for symmetry or future use
+axes[4].axis('off')
+
+# plt.tight_layout() is not needed because constrained_layout is used
 plt.show()
+
+
+
+
 
 
 
 
 ################## Comparison GPT matrix vs Joao matrix: 
 
-# Chi-squared test for GPT vs. ground truth
-gpt_chi2, gpt_p, _, _ = chi2_contingency(conf_matrix_gpt)
-# Chi-squared test for Joao's vs. ground truth
-joao_chi2, joao_p, _, _ = chi2_contingency(conf_matrix_joao)
+def extract_labels_from_conf_matrix(conf_matrix):
+    actual = []
+    predicted = []
+    for index, row in conf_matrix.iterrows():
+        for col, count in row.iteritems():
+            actual.extend([index] * count)
+            predicted.extend([col] * count)
+    return actual, predicted
 
-print(f"GPT Chi-squared: {gpt_chi2}, p-value: {gpt_p}")   # low: significant difference in distribution compared to the expected frequencies.
-print(f"Joao Chi-squared: {joao_chi2}, p-value: {joao_p}")   # high: greater divergence from expected frequencies
+gpt_actual, gpt_predicted = extract_labels_from_conf_matrix(conf_matrix_gpt)
+joao_actual, joao_predicted = extract_labels_from_conf_matrix(conf_matrix_joao)
 
-# Calculate accuracy from the confusion matrices
+gpt_kappa = cohen_kappa_score(gpt_actual, gpt_predicted)
+joao_kappa = cohen_kappa_score(joao_actual, joao_predicted)
+
+print(f"GPT Kappa: {gpt_kappa:.3f}")   # -1 to 1: 1 is perfect agreement
+print(f"João Kappa: {joao_kappa:.3f}")
+
 gpt_accuracy = (np.diag(conf_matrix_gpt).sum() / conf_matrix_gpt.values.sum()) * 100
 joao_accuracy = (np.diag(conf_matrix_joao).sum() / conf_matrix_joao.values.sum()) * 100
 
 print(f"GPT Accuracy: {gpt_accuracy:.2f}%")
 print(f"João Accuracy: {joao_accuracy:.2f}%")
-
-
 
 
 

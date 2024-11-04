@@ -68,13 +68,18 @@ def edit_features(file_label_map):
 
 
 def handle_malformed_lines(lines, filepath):
+    
     with open(filepath, 'a') as f:
         for line in lines:
             f.write(line + '\n')  # write each malformed line to file
 
-def load_and_process_file(file_name, gold_standard_df, label, malformed_filepath):
+def load_and_process_file(file_name, gold_standard_df, label):
+    
+    mypath = os.path.dirname(file_name)
+    malformed_file = os.path.join(mypath, 'malformed_lines.txt')
+    
     # read and handle malformed lines
-    dfr = pd.read_csv(file_name, header=None, engine='python', on_bad_lines=lambda lines: handle_malformed_lines(lines, malformed_filepath))
+    dfr = pd.read_csv(file_name, header=None, engine='python', on_bad_lines=lambda lines: handle_malformed_lines(lines, malformed_file))
     
     # Proceed with your usual processing
     dfr = dfr.iloc[:, [0, 1]]
