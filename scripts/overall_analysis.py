@@ -28,7 +28,10 @@ from collections import defaultdict
 import os
 import numpy as np
 from sklearn.metrics import cohen_kappa_score
-
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import matplotlib.gridspec as gridspec
 
 # -----------------------------
 # Files and Paths
@@ -158,102 +161,160 @@ selected_biomes = ['animal', 'plant', 'soil', 'water', 'other']
 lenient_agreement_df_filt = lenient_agreement_df[lenient_agreement_df['gpt_biome'].isin(selected_biomes)].copy()
 lenient_agreement_df_filt.rename(columns={'gpt_biome': 'predicted_biome', 'biome': 'gd_biome'}, inplace=True)
 
-conf_matrix_gpt = pd.crosstab(lenient_agreement_df_filt['gd_biome'], lenient_agreement_df_filt['predicted_biome'], rownames=['benchmark biome'], colnames=['predicted biome'])
-
 ###
 ###
 # Joao's vs ground truth:  
 merged_df = pd.merge(joao_biomes_df, gold_dict_df, on='sample', how='inner')
 merged_df.rename(columns={'biome_x': 'predicted_biome', 'biome_y': 'gd_biome'}, inplace=True)
 
-conf_matrix_joao = pd.crosstab(merged_df['gd_biome'], merged_df['predicted_biome'], rownames=['benchmark biome'], colnames=['predicted biome'])
+
+# Find common sample IDs between GPT and João's datasets
+common_samples = set(lenient_agreement_df_filt['sample']).intersection(set(merged_df['sample']))
+len(common_samples)
 
 
+# Subset both DataFrames to include only the common samples
+lenient_agreement_df_common = lenient_agreement_df_filt[lenient_agreement_df_filt['sample'].isin(common_samples)]
+merged_df_common = merged_df[merged_df['sample'].isin(common_samples)]
 
-# Define a function to compute precision for easier reuse
-def compute_precision(transposed_conf_matrix):
-    true_positives = transposed_conf_matrix.values.diagonal()
-    predicted_positives = transposed_conf_matrix.sum(axis=1).values  # Sum over rows because the matrix is transposed
-    precision_scores = true_positives / predicted_positives
-    return dict(zip(transposed_conf_matrix.index, precision_scores))
+# Create a confusion matrix for GPT predictions on the common samples
+conf_matrix_gpt_common = pd.crosstab(lenient_agreement_df_common['gd_biome'], lenient_agreement_df_common['predicted_biome'], rownames=['benchmark biome'], colnames=['predicted biome'])
+normalized_conf_matrix_gpt_common = conf_matrix_gpt_common.div(conf_matrix_gpt_common.sum(axis=1), axis=0)
 
-# Normalize the confusion matrices
-normalized_conf_matrix_gpt = conf_matrix_gpt.div(conf_matrix_gpt.sum(axis=1), axis=0).T  # Normalize and transpose
-normalized_conf_matrix_joao = conf_matrix_joao.div(conf_matrix_joao.sum(axis=1), axis=0).T
+# Create a confusion matrix for João's predictions on the common samples
+conf_matrix_joao_common = pd.crosstab(merged_df_common['gd_biome'], merged_df_common['predicted_biome'], rownames=['benchmark biome'], colnames=['predicted biome'])
+normalized_conf_matrix_joao_common = conf_matrix_joao_common.div(conf_matrix_joao_common.sum(axis=1), axis=0)
 
-# Compute precision for each model
-precision_gpt = compute_precision(normalized_conf_matrix_gpt)
-precision_joao = compute_precision(normalized_conf_matrix_joao)
 
-# Custom order of biomes for precision
+# Define the order of the biomes (labels)
 biome_order = ['animal', 'plant', 'soil', 'water', 'other']
 
-normalized_conf_matrix_gpt = normalized_conf_matrix_gpt.reindex(index=biome_order, columns=biome_order)
-normalized_conf_matrix_joao = normalized_conf_matrix_joao.reindex(index=biome_order, columns=biome_order)
+# Reindex the heatmap DataFrames to set the order of labels
+normalized_conf_matrix_gpt_common = normalized_conf_matrix_gpt_common.reindex(index=biome_order, columns=biome_order)
+normalized_conf_matrix_joao_common = normalized_conf_matrix_joao_common.reindex(index=biome_order, columns=biome_order)
 
 
-# Compute precision for each model (transpose first as before if needed)
-precision_gpt = compute_precision(normalized_conf_matrix_gpt.T)
-precision_joao = compute_precision(normalized_conf_matrix_joao.T)
 
-# Print precision scores for each biome
-print("GPT Precision Scores:")
-for biome, score in precision_gpt.items():
-    print(f"{biome}: {score:.3f}")
-print("\nKeyword-based Classifier Precision Scores:")
-for biome, score in precision_joao.items():
-    print(f"{biome}: {score:.3f}")
 
-# Set up the matplotlib figure with subplots
-fig, axes = plt.subplots(nrows=1, ncols=5, figsize=(24, 5),
-                         gridspec_kw={'width_ratios': [4, 4, 0.2, 1, 1], 'wspace': 0.3, 'hspace': 0.5},
-                         constrained_layout=True)  # Use constrained layout to manage space automatically
+#####
+
+# Function to calculate precision and F1-score, with overall accuracy
+def compute_scores(conf_matrix):
+    true_positives = conf_matrix.values.diagonal()
+    total_predicted = conf_matrix.sum(axis=0).values  # Sum per predicted class (for precision)
+    total_actual = conf_matrix.sum(axis=1).values  # Sum per actual class (for recall)
+    total_true = conf_matrix.values.sum()  # Total number of samples
+
+    precision = true_positives / total_predicted
+    recall = true_positives / total_actual
+    overall_accuracy = true_positives.sum() / total_true  # Overall accuracy for the matrix
+    f1_scores = 2 * (precision * recall) / (precision + recall)
+    return precision, overall_accuracy, f1_scores
+
+# Calculate scores for GPT
+precision_gpt, overall_accuracy_gpt, f1_scores_gpt = compute_scores(conf_matrix_gpt_common)
+
+# Calculate scores for João
+precision_joao, overall_accuracy_joao, f1_scores_joao = compute_scores(conf_matrix_joao_common)
+
+# Print precision, overall accuracy, and F1-score
+print("\nGPT Model Overall Accuracy: {:.3f}".format(overall_accuracy_gpt))
+print("João's Model Overall Accuracy: {:.3f}".format(overall_accuracy_joao))
+print("\nGPT Model Biome-Specific Metrics:")
+for i, biome in enumerate(biome_order):
+    print(f"{biome} - Precision: {precision_gpt[i]:.3f}, F1-Score: {f1_scores_gpt[i]:.3f}")
+
+print("\nJoão's Model Biome-Specific Metrics:")
+for i, biome in enumerate(biome_order):
+    print(f"{biome} - Precision: {precision_joao[i]:.3f}, F1-Score: {f1_scores_joao[i]:.3f}")
+
+#####
+
+
+# Define font properties for heatmap annotations
+annot_font = {
+    'size': 10,
+    'weight': 'normal',
+    'color': 'white',
+    'family': 'times'
+}
+
+# Create the figure with GridSpec for better control, adjusting for A4 width and spacing
+fig = plt.figure(figsize=(13, 5))  # Aiming for A4 width
+gs = gridspec.GridSpec(2, 7, height_ratios=[4, 0.5], width_ratios=[3, 3, 0.25, 0.5, 1.3, 1.3, 0.4], hspace=0.3)
 
 # Heatmap for GPT predictions
-sns.heatmap(normalized_conf_matrix_gpt, annot=True, fmt=".3f", cmap='viridis', ax=axes[0], cbar=False, vmin=0, vmax=1)
-axes[0].set_title('GPT biomes vs benchmark biomes')
-axes[0].set_xlabel('benchmark biome')
-axes[0].set_ylabel('predicted biome')
+ax1 = fig.add_subplot(gs[0, 0])
+sns.heatmap(normalized_conf_matrix_gpt_common, annot=True, fmt=".3f", cmap='viridis', ax=ax1, cbar=False, 
+            vmin=0, vmax=1, annot_kws=annot_font)
+ax1.set_title('GPT vs benchmark', fontsize=10)
+ax1.set_xlabel('Predicted biome', fontsize=10)
+ax1.set_ylabel('Benchmark biome', fontsize=10)
+ax1.tick_params(axis='both', which='major', labelsize=10)
 
 # Heatmap for João's predictions
-sns.heatmap(normalized_conf_matrix_joao, annot=True, fmt=".3f", cmap='viridis', ax=axes[1], cbar=False, vmin=0, vmax=1)
-axes[1].set_title('Keyword-based classifier vs benchmark biomes')
-axes[1].set_xlabel('benchmark biome')
-axes[1].set_yticklabels([])  # Ensure y-axis labels are not repeated
+ax2 = fig.add_subplot(gs[0, 1])
+sns.heatmap(normalized_conf_matrix_joao_common, annot=True, fmt=".3f", cmap='viridis', ax=ax2, cbar=False, 
+            vmin=0, vmax=1, annot_kws=annot_font)
+ax2.set_title('Keyword-based classifier vs benchmark', fontsize=9)
+ax2.set_xlabel('Predicted biome', fontsize=10)
+ax2.set_ylabel('')
+ax2.set_yticklabels([])  # Hide y-axis labels to avoid repetition
+ax2.tick_params(axis='x', which='major', labelsize=10)
 
-# Color bar for the heatmaps with range 0 to 1
-cbar = plt.colorbar(axes[1].collections[0], cax=axes[2], orientation='vertical')
-cbar.set_label('Accuracy')
-cbar.set_ticks(np.linspace(0, 1, 11))  # Setting ticks from 0 to 1 at intervals of 0.1
+# Color bar in its own dedicated GridSpec cell with more width
+cbar_ax = fig.add_subplot(gs[0, 2])
+cbar = fig.colorbar(ax1.collections[0], cax=cbar_ax, orientation='vertical')
+cbar.set_label('Accuracy', fontsize=9)  # Set the label font size
+cbar.ax.tick_params(labelsize=9)  # Set the tick label font size
 
-# Reverse both labels and precision values to match the heatmap's top-to-bottom order
-biome_order_reversed = biome_order[::-1]
-precision_gpt_values = [precision_gpt[biome] for biome in biome_order_reversed]
-precision_joao_values = [precision_joao[biome] for biome in biome_order_reversed]
+# Spacer (empty) column to create additional space between color bar and bar plots
+spacer_ax = fig.add_subplot(gs[0, 3])
+spacer_ax.axis("off")  # Hide this axis
 
-# Horizontal bar plot for precision scores
-bar_width = 0.35  # Width of the bars
-indices = np.arange(len(biome_order_reversed))  # Locations for the reversed groups
+# Precision bar plot with increased spacing on the right
+ax3 = fig.add_subplot(gs[0, 4])
+bar_width = 0.35
+y = np.arange(len(biome_order))  # Label locations
+ax3.barh(y - bar_width/2, precision_gpt, height=bar_width, label='GPT', color='#6f38ca')
+ax3.barh(y + bar_width/2, precision_joao, height=bar_width, label='Keyword-based', color='#12c15e')
+ax3.set_title('Precision', fontsize=10)
+ax3.set_yticks(y)
+ax3.set_yticklabels(biome_order)
+ax3.invert_yaxis()  # Keep y-axis inverted to match the layout
+ax3.tick_params(axis='both', which='major', labelsize=9)
 
-# Plot the precision bars with the reversed order
-axes[3].barh(indices - bar_width/2, precision_gpt_values, height=bar_width, color='blue', alpha=0.6, label='GPT')
-axes[3].barh(indices + bar_width/2, precision_joao_values, height=bar_width, color='green', alpha=0.6, label='Keyword-based\nclassifier')
+# F1 Score bar plot
+ax4 = fig.add_subplot(gs[0, 5])
+ax4.barh(y - bar_width/2, f1_scores_gpt, height=bar_width, label='GPT', color='#6f38ca')
+ax4.barh(y + bar_width/2, f1_scores_joao, height=bar_width, label='Keyword-based\nclassifier', color='#12c15e')
+ax4.set_title('F1 Score', fontsize=10)
+ax4.set_yticks(y)
+ax4.set_yticklabels([])  # Hide y-axis labels to save space
+ax4.invert_yaxis()  # Maintain alignment with other bar plot
+ax4.tick_params(axis='both', which='major', labelsize=9)
 
-# Set y-axis with reversed biomes
-axes[3].set_yticks(indices)
-axes[3].set_yticklabels(biome_order_reversed)
-axes[3].set_xlabel('Precision')
+# Add the legend in the bottom row, centered under the bar plots
+legend_ax = fig.add_subplot(gs[1, 4:6])  # Span across columns for better centering
+legend = legend_ax.legend(*ax4.get_legend_handles_labels(), loc='center', fontsize=9)
+legend_ax.axis('off')  # Hide the axis box for the legend
 
-# Adjust the legend position
-legend = axes[3].legend(loc='center left', bbox_to_anchor=(1.2, 0.5))
-axes[3].set_title('')
-
-
-# This additional subplot for symmetry or future use
-axes[4].axis('off')
-
-# plt.tight_layout() is not needed because constrained_layout is used
 plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
