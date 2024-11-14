@@ -16,24 +16,7 @@ activate_conda
 
 
 #####################################################################################################
-# 1. sync - chunking y/n
-#####################################################################################################
-
-FILES=(
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202407191713.txt"
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API117_normal_dt202407191720.txt"
-)
-
-LABELS=(
-    "sync_chunkN"
-    "sync_chunkY"
-)
-
-python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
-
-
-#####################################################################################################
-# 2. sync - chunksizes
+# 1. sync - chunking no + chunksizes
 #####################################################################################################
 
 FILES=(
@@ -42,15 +25,17 @@ FILES=(
     "gpt_clean_output_nspb100_chunkingyes_chunksize4000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API61_normal_dt202407191736.txt"
     "gpt_clean_output_nspb100_chunkingyes_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API78_normal_dt202407191729.txt"
     "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API117_normal_dt202407191720.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202407191713.txt"
 )
 
 
 LABELS=(
-    "sync_chunkY_size6000"
-    "sync_chunkY_size5000"
-    "sync_chunkY_size4000"
-    "sync_chunkY_size3000"
-    "sync_chunkY_size2000"
+    "chunk_size6000"
+    "chunk_size5000"
+    "chunk_size4000"
+    "chunk_size3000"
+    "chunk_size2000"
+    "chunk_no"
 )
 
 python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
@@ -58,7 +43,7 @@ python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
 #####################################################################################################
-# 3. sync - models
+# 2. sync - models
 #####################################################################################################
 
 FILES=(
@@ -85,7 +70,7 @@ python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
 #####################################################################################################
-# 4. creativity params testing, synchronous requests, chunking: 
+# 3. creativity params testing, synchronous requests, chunking: 
 #####################################################################################################
 
 # temp
@@ -176,7 +161,7 @@ python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
 #####################################################################################################
-# 5. creativity params testing, synchronous requests, not chunking: 
+# 4. creativity params testing, synchronous requests, not chunking: 
 #####################################################################################################
 
 # temp
@@ -270,7 +255,7 @@ python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
 #####################################################################################################
-# 6. creativity params testing, asynchronous requests:
+# 5. creativity params testing, asynchronous requests:
 #####################################################################################################
 
 # temp
@@ -362,6 +347,12 @@ LABELS=(
 )
 
 python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
+
+
+
+
+
+
 
 
 

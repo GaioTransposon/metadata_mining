@@ -15,106 +15,174 @@ from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.legend_handler import HandlerTuple
 
 
-# Results:
-
-def plot_data(df, plot_title, labels_font):
-    
-    
+def prepare_data(df):
     df = df.copy()
-    
-    columns_to_keep = [
-        'Label', 
-        'Agreement biome (exact match)', 
-        'Agreement biome (lenient match)', 
-        'Average Similarity', 
-        'Median Similarity', 
-        'Standard Deviation', 
-    ]
-    df = df[columns_to_keep]
-
-    # cols new names
     column_rename_map = {
-        'Agreement biome (exact match)': 'agreement_exact',
-        'Agreement biome (lenient match)': 'agreement_lenient',
+        'biome_exact_match_mean': 'exact_match',
+        'biome_exact_match_sd': 'exact_match_sd',
+        'biome_lenient_match_mean': 'lenient_match',
+        'biome_lenient_match_sd': 'lenient_match_sd',
         'Average Similarity': 'avg_sim',
-        'Median Similarity': 'med_sim',
         'Standard Deviation': 'SD',
+        'subbiome_sample_size': 'subbiome_size',
+        'sample_size': 'biome_size'
     }
     df.rename(columns=column_rename_map, inplace=True)
 
-    # extract percentages
-    df['agreement_exact'] = df['agreement_exact'].str.extract(r'(\d+\.\d+)%').astype(float)
-    df['agreement_lenient'] = df['agreement_lenient'].str.extract(r'(\d+\.\d+)%').astype(float)
-    
-    df.set_index('Label', inplace=True)
+    df['avg_sim'] *= 100
+    df['SD'] *= 100
 
-    # convert to percentages
-    df['avg_sim'] = df['avg_sim'] * 100
-    df['med_sim'] = df['med_sim'] * 100
-    df['SD'] = df['SD'] * 100  
+    df['exact_match_err'] = (df['exact_match_sd'] / np.sqrt(df['biome_size'])) 
+    df['lenient_match_err'] = (df['lenient_match_sd'] / np.sqrt(df['biome_size']))
+    df['avg_sim_err'] = df['SD'] / np.sqrt(df['subbiome_size'])
+    return df
 
-    # plot
-    fig, ax = plt.subplots(figsize=(14, 8))
-    width = 0.8  # space between bars 
-    n = len(df.columns) 
-    indices = np.arange(len(df))  
+def plot_bars(df, plot_title, labels_font):
+    df = prepare_data(df)
     
-    for i, column in enumerate(df.columns):
-        ax.bar(indices - width/2. + i/float(n)*width, df[column], width=width/float(n), label=column)
+    n_points = len(df)
+    width = max(0.15, 0.6 - 0.05 * n_points)  # Adjust bar width
+    capsize = max(2, 10 - 0.8 * n_points)  # Adjust capsize
     
+    fig, ax = plt.subplots(figsize=(4, 4))
+    indices = np.arange(n_points)
+    
+    ax.bar(indices - width, df['exact_match'], yerr=df['exact_match_err'], width=width, capsize=capsize, label='Exact Match')
+    ax.bar(indices, df['lenient_match'], yerr=df['lenient_match_err'], width=width, capsize=capsize, label='Lenient Match')
+    ax.bar(indices + width, df['avg_sim'], yerr=df['avg_sim_err'], width=width, capsize=capsize, label='Average Similarity')
+
     ax.set_xticks(indices)
-    ax.set_xticklabels(['' if str(label) == 'nan' else label for label in df.index], rotation=90)
-    
+    ax.set_xticklabels(df['Label'], rotation=90)
     plt.xlabel('')
-    plt.ylabel('values')
-    plt.title(plot_title,fontsize=12)
+    plt.ylabel('Scores (%)', fontsize=labels_font)
+    plt.title(plot_title, fontsize=labels_font)
     plt.xticks(rotation=45, fontsize=labels_font, ha='right')
+    
+    ax.tick_params(axis='y', labelsize=labels_font) 
+
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
-    ax.tick_params(axis='x', labelsize=8) 
-    
-    plt.legend(title='Metrics', bbox_to_anchor=(1.05, 1), loc='upper left')
-    
     plt.tight_layout(rect=[0, 0, 0.85, 1])
     plt.show()
 
+
+def plot_lines(df, plot_title, labels_font):
+    df = prepare_data(df)
+    
+    fig, ax = plt.subplots(figsize=(4, 4))
+    indices = np.arange(len(df))
+
+    ax.errorbar(indices, df['exact_match'], yerr=df['exact_match_err'], fmt='o-', capsize=5, label='Exact Match')
+    ax.errorbar(indices, df['lenient_match'], yerr=df['lenient_match_err'], fmt='s-', capsize=5, label='Lenient Match')
+    ax.errorbar(indices, df['avg_sim'], yerr=df['avg_sim_err'], fmt='^-', capsize=5, label='Average Similarity')
+
+    ax.set_xticks(indices)
+    ax.set_xticklabels(df['Label'], rotation=0)  # Set initial rotation to 0 for clarity
+
+    plt.xlabel('')
+    plt.ylabel('Scores (%)', fontsize=labels_font)
+    plt.title(plot_title, fontsize=labels_font)
+
+    # Use plt.xticks to set rotation, font size, and horizontal alignment
+    plt.xticks(indices, df['Label'], rotation=45, fontsize=labels_font, ha='right')
+
+    ax.tick_params(axis='y', labelsize=labels_font)  # Set y-axis font size without rotation
+
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    plt.tight_layout(rect=[0, 0, 0.85, 1])
+    plt.show()
+
+
+
+def plot_lines_legend(df, labels_font):
+    df = prepare_data(df)
+    
+    fig, ax = plt.subplots(figsize=(4, 4))
+    indices = np.arange(len(df))
+
+    ax.errorbar(indices, df['exact_match'], yerr=df['exact_match_err'], fmt='o-', capsize=5, label='Exact Match')
+    ax.errorbar(indices, df['lenient_match'], yerr=df['lenient_match_err'], fmt='s-', capsize=5, label='Lenient Match')
+    ax.errorbar(indices, df['avg_sim'], yerr=df['avg_sim_err'], fmt='^-', capsize=5, label='Average Similarity')
+
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    plt.legend(title='Metrics', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize = labels_font)
+    plt.tight_layout(rect=[0, 0, 0.85, 1])
+    plt.show()
+    
+    
+def plot_bars_legend(df, labels_font):
+    df = prepare_data(df)
+    
+    n_points = len(df)
+    width = max(0.15, 0.6 - 0.05 * n_points)  # Adjust bar width
+    capsize = max(2, 10 - 0.8 * n_points)  # Adjust capsize
+    
+    fig, ax = plt.subplots(figsize=(4, 4))
+    indices = np.arange(n_points)
+    
+    ax.bar(indices - width, df['exact_match'], yerr=df['exact_match_err'], width=width, capsize=capsize, label='Exact Match')
+    ax.bar(indices, df['lenient_match'], yerr=df['lenient_match_err'], width=width, capsize=capsize, label='Lenient Match')
+    ax.bar(indices + width, df['avg_sim'], yerr=df['avg_sim_err'], width=width, capsize=capsize, label='Average Similarity')
+    
+    plt.legend(title='Metrics', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize = labels_font)
+    
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    plt.tight_layout(rect=[0, 0, 0.85, 1])
+    plt.show()
 
 
 
 file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/biome_subbiome_results.csv'
 df_full = pd.read_csv(file_path)
 
+df_subset = df_full[0:6] 
+plot_lines(df_subset, 'Chunking (y/n) and chunk sizes (sync requests)', 9)
 
-df_subset = df_full[0:8] 
-plot_data(df_subset, 'Chunking (y/n) and chunk sizes (sync requests)', 9)  
-
-df_subset = df_full[9:15] 
-plot_data(df_subset, 'Models (sync requests)', 9)  
-
-
-
-df_subset = df_full[16:35]  
-plot_data(df_subset, 'Creativity parameters (sync requests chunking)', 9)  
-
-df_subset = df_full[35:55]  
-plot_data(df_subset, 'Creativity parameters (sync requests not chuking)', 9)  
-
-df_subset = df_full[55:75] 
-plot_data(df_subset, 'Creativity parameters (async requests)', 9)  
+# Legends 
+plot_bars_legend(df_subset, 9)
+plot_lines_legend(df_subset, 9)
 
 
-df_subset = df_full[75:115] 
-plot_data(df_subset, 'Sync and async requests: different sample groups (rs)', 9)  
-
-df_subset = df_full[115:128] 
-plot_data(df_subset, 'Sync and async requests: same sample groups (rs)', 9)  
+df_subset = df_full[7:13] 
+plot_bars(df_subset, 'Models (sync requests)', 9)  
 
 
-df_subset = df_full[128:137] 
-plot_data(df_subset, 'Please', 9)  
 
 
-df_subset = df_full[137:] 
-plot_data(df_subset, 'Output formats', 9)  
+
+
+
+
+
+
+df_subset = df_full[14:33]  
+plot_lines(df_subset, 'Creativity parameters (sync requests chunking)', 9)  
+
+df_subset = df_full[34:53]  
+plot_lines(df_subset, 'Creativity parameters (sync requests not chuking)', 9)  
+
+df_subset = df_full[54:73] 
+plot_lines(df_subset, 'Creativity parameters (async requests)', 9)  
+
+
+
+# =============================================================================
+# 
+# df_subset = df_full[66:] 
+# plot_lines(df_subset, 'Sync and async requests: different sample groups (rs)', 9)  
+# 
+# df_subset = df_full[115:128] 
+# plot_bars(df_subset, 'Sync and async requests: same sample groups (rs)', 9)  
+# 
+# 
+# df_subset = df_full[128:137] 
+# plot_bars(df_subset, 'Please', 9)  
+# 
+# 
+# df_subset = df_full[137:] 
+# plot_bars(df_subset, 'Output formats', 9)  
+# =============================================================================
+
+
 
 
 
@@ -186,13 +254,13 @@ def process_and_visualize(df, my_title, cell_font_size, labels_font):
     mask_lower = np.tril(np.ones_like(numeric_combined_matrix, dtype=bool), k=-1)
 
     bins = [0, 0.01, 0.05, 0.2, 1.0]
-    colors = sns.color_palette("Blues_r", n_colors=len(bins))  # Colors for biome
-    colors_sub = sns.color_palette("Greens_r", n_colors=len(bins))  # Colors for sub-biome
-    cmap_biome = LinearSegmentedColormap.from_list("custom_blues", colors, N=256)
-    cmap_subbiome = LinearSegmentedColormap.from_list("custom_greens", colors_sub, N=256)
+    colors = sns.color_palette("Greens_r", n_colors=len(bins))  # Colors for biome
+    colors_sub = sns.color_palette("Blues_r", n_colors=len(bins))  # Colors for sub-biome
+    cmap_biome = LinearSegmentedColormap.from_list("custom_greens", colors, N=256)
+    cmap_subbiome = LinearSegmentedColormap.from_list("custom_blues", colors_sub, N=256)
     #norm = BoundaryNorm(bins, ncolors=256, clip=True)
 
-    plt.figure(figsize=(12, 10))
+    plt.figure(figsize=(5, 4))
     sns.heatmap(numeric_combined_matrix, mask=mask_upper, cmap=cmap_subbiome, annot=combined_annotations, fmt="s", cbar=False,
                 linewidths=.2, linecolor='black', xticklabels=labels, yticklabels=labels, square=True,
                 annot_kws={"size": cell_font_size})
@@ -215,7 +283,7 @@ file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/biome_subbiome_stat
 df_full = pd.read_csv(file_path)
 
 df_subset = df_full[0:24] 
-process_and_visualize(df_subset, 'Chunking (y/n) and chunk sizes (sync requests)', 8, 9)  
+process_and_visualize(df_subset, 'Chunking (y/n) and chunk sizes (sync requests)', 7, 8)  
 
 
 df_subset = df_full[23:54] 
