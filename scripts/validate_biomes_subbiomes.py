@@ -7,6 +7,7 @@ Created on Mon Jul 22 17:50:30 2024
 """
 
 
+
 # this script is run by run_validate_biomes_subbiomes.sh 
 
 import os
@@ -72,11 +73,10 @@ for file, label in file_label_map.items():
 # ----------------------------- 
 
 # Load, process, and calculate agreements for data files
-full_dfs = [load_and_process_file(os.path.join(work_dir, f), gold_dict_df, label, os.path.join(work_dir, 'malformed_lines.txt')) for f, label in file_label_map.items()]
+full_dfs = [load_and_process_file(os.path.join(work_dir, f), gold_dict_df, label) for f, label in file_label_map.items()]
 full_agreement_df = pd.concat(full_dfs, ignore_index=True)
 full_agreement_df['agreement'] = full_agreement_df['gpt_biome'] == full_agreement_df['biome']
 lenient_agreement_df = pd.concat(full_dfs, ignore_index=True)
-#lenient_agreement_df['agreement'] = lenient_agreement_df.apply(lambda row: lenient_match(row['biome'], row['gpt_biome']), axis=1)
 
 lenient_agreement_df['agreement'] = lenient_agreement_df.apply(
     lambda row: ((str(row['biome']).strip().lower() in str(row['gpt_biome']).strip().lower() or
@@ -89,8 +89,18 @@ lenient_agreement_df['agreement'] = lenient_agreement_df.apply(
 full_result, lenient_result = plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map, work_dir)
 
 results_biome = pd.concat([
+    # full match 
     full_result[['full match label']].rename(columns={'full match label': 'Agreement biome (exact match)'}),
-    lenient_result[['full+partial match label']].rename(columns={'full+partial match label': 'Agreement biome (lenient match)'})
+    full_result[['mean']].rename(columns={'mean': 'biome_exact_match_mean'}),
+    full_result[['sd']].rename(columns={'sd': 'biome_exact_match_sd'}),
+    
+    # lenient match
+    lenient_result[['full+partial match label']].rename(columns={'full+partial match label': 'Agreement biome (lenient match)'}),
+    lenient_result[['mean']].rename(columns={'mean': 'biome_lenient_match_mean'}),
+    lenient_result[['sd']].rename(columns={'sd': 'biome_lenient_match_sd'}),
+    
+    # in common
+    full_result[['Full Total Counts']].rename(columns={'Full Total Counts': 'sample_size'})
 ], axis=1)
 
 filename_label_map = {label: os.path.basename(file) for file, label in file_label_map.items()}
@@ -124,7 +134,7 @@ for gpt_file in my_files:
     ########################################
     # Calculate and print statistics
     actual_similarities = [result['cosine'] for result in compare_results.values()]
-    avg_sim, median_sim, std_dev, percentiles = print_statistics(actual_similarities)
+    avg_sim, median_sim, std_dev, percentiles, subbiome_sample_size = print_statistics(actual_similarities)
     
     results[gpt_file_ori] = compare_results
 
@@ -145,6 +155,7 @@ for gpt_file in my_files:
         'Average Similarity': avg_sim,
         'Median Similarity': median_sim,
         'Standard Deviation': std_dev,
+        'subbiome_sample_size': subbiome_sample_size,
         '95th Percentile': percentiles,  
         'MWU Statistic': MWU_stat,
         'MWU P-value': MWU_p_value,
@@ -238,9 +249,6 @@ print(results_df_stats.columns)
 
 
 
-
-
-
 # Combine biome and sub-biome results: 
 biomes_subbiomes = pd.merge(results_biome, results_subbiome, on='Filename', how='inner')
 biomes_subbiomes['Label'] = biomes_subbiomes['Filename'].map(file_label_map)
@@ -266,7 +274,9 @@ output_to_csv(biomes_subbiomes_stats, filename)
 
 
 
-
+# -----------------------------
+# version below before 20241114
+# ----------------------------- 
 # =============================================================================
 # import os
 # import pandas as pd
@@ -276,13 +286,11 @@ output_to_csv(biomes_subbiomes_stats, filename)
 # import re
 # from itertools import combinations
 # sys.path.append('/Users/dgaio/github/metadata_mining/scripts')
-# from features_process import find_distinguishing_features, extract_labels_from_filename, edit_features, load_and_process_file, filter_common_keys
+# from features_process import find_distinguishing_features, extract_labels_from_filename, edit_features, load_and_process_file, handle_malformed_lines, filter_common_keys
 # from embeddings_functions import (load_embeddings, compare_embeddings, create_shuffled_background_distribution, sample_by_category)
 # from stats_module import calculate_overlap_and_run_tests_biomes, compare_based_on_overlap_subbiomes, print_statistics, test_similarity_separation
 # from output_writing import plot_biome_agreement, plot_actual_vs_background, plot_heatmap, save_figures_to_pdf, output_to_csv
-# 
-# 
-# 
+# import argparse
 # 
 # # -----------------------------
 # # Files and Paths
@@ -307,16 +315,26 @@ output_to_csv(biomes_subbiomes_stats, filename)
 # # -----------------------------
 # # Files processing
 # # ----------------------------- 
+#     
+# parser = argparse.ArgumentParser(description='Process files and labels.')
 # 
-# features = find_distinguishing_features(my_files)
-# file_label_map = {file: extract_labels_from_filename(file, features) for file in my_files}
-# file_label_map = edit_features(file_label_map)
+# # Add arguments for files and labels. Expecting a list for each.
+# parser.add_argument('--files', nargs='+', help='List of files', required=True)
+# parser.add_argument('--labels', nargs='+', help='List of labels for the files', required=True)
+# 
+# # Parse the arguments
+# args = parser.parse_args()
+# 
+# # Assign files and labels from arguments
+# my_files = args.files
+# my_labels = args.labels
+# 
+# file_label_map = dict(zip(my_files, my_labels))
 # 
 # print("\nFile and its label name:\n")
 # for file, label in file_label_map.items():
 #     print(f"{os.path.basename(file)} - {label}\n")
-#     
-#     
+# 
 #     
 # # -----------------------------
 # # 1. Biome agreement calculation & plotting 
@@ -512,4 +530,7 @@ output_to_csv(biomes_subbiomes_stats, filename)
 # 
 # filename = os.path.join(work_dir, 'biome_subbiome_stats.csv')
 # output_to_csv(biomes_subbiomes_stats, filename)
+# 
+# 
+# 
 # =============================================================================

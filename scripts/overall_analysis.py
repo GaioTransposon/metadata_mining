@@ -247,7 +247,7 @@ gs = gridspec.GridSpec(2, 7, height_ratios=[4, 0.5], width_ratios=[3, 3, 0.25, 0
 ax1 = fig.add_subplot(gs[0, 0])
 sns.heatmap(normalized_conf_matrix_gpt_common, annot=True, fmt=".3f", cmap='viridis', ax=ax1, cbar=False, 
             vmin=0, vmax=1, annot_kws=annot_font)
-ax1.set_title('GPT vs benchmark', fontsize=10)
+ax1.set_title('GPT\npredictions accuracy', fontsize=10)
 ax1.set_xlabel('Predicted biome', fontsize=10)
 ax1.set_ylabel('Benchmark biome', fontsize=10)
 ax1.tick_params(axis='both', which='major', labelsize=10)
@@ -256,16 +256,16 @@ ax1.tick_params(axis='both', which='major', labelsize=10)
 ax2 = fig.add_subplot(gs[0, 1])
 sns.heatmap(normalized_conf_matrix_joao_common, annot=True, fmt=".3f", cmap='viridis', ax=ax2, cbar=False, 
             vmin=0, vmax=1, annot_kws=annot_font)
-ax2.set_title('Keyword-based classifier vs benchmark', fontsize=9)
+ax2.set_title('Keyword-based classifier\nprediction accuracy', fontsize=10)
 ax2.set_xlabel('Predicted biome', fontsize=10)
-ax2.set_ylabel('')
+ax2.set_ylabel(' \n \n  ')
 ax2.set_yticklabels([])  # Hide y-axis labels to avoid repetition
 ax2.tick_params(axis='x', which='major', labelsize=10)
 
 # Color bar in its own dedicated GridSpec cell with more width
 cbar_ax = fig.add_subplot(gs[0, 2])
 cbar = fig.colorbar(ax1.collections[0], cax=cbar_ax, orientation='vertical')
-cbar.set_label('Accuracy', fontsize=9)  # Set the label font size
+cbar.set_label(' ', fontsize=9)  # Set the label font size
 cbar.ax.tick_params(labelsize=9)  # Set the tick label font size
 
 # Spacer (empty) column to create additional space between color bar and bar plots
@@ -276,8 +276,8 @@ spacer_ax.axis("off")  # Hide this axis
 ax3 = fig.add_subplot(gs[0, 4])
 bar_width = 0.35
 y = np.arange(len(biome_order))  # Label locations
-ax3.barh(y - bar_width/2, precision_gpt, height=bar_width, label='GPT', color='#6f38ca')
-ax3.barh(y + bar_width/2, precision_joao, height=bar_width, label='Keyword-based', color='#12c15e')
+ax3.barh(y - bar_width/2, precision_gpt, height=bar_width, label='GPT', color='#b204f8')
+ax3.barh(y + bar_width/2, precision_joao, height=bar_width, label='Keyword-based', color='#fab406')
 ax3.set_title('Precision', fontsize=10)
 ax3.set_yticks(y)
 ax3.set_yticklabels(biome_order)
@@ -286,8 +286,8 @@ ax3.tick_params(axis='both', which='major', labelsize=9)
 
 # F1 Score bar plot
 ax4 = fig.add_subplot(gs[0, 5])
-ax4.barh(y - bar_width/2, f1_scores_gpt, height=bar_width, label='GPT', color='#6f38ca')
-ax4.barh(y + bar_width/2, f1_scores_joao, height=bar_width, label='Keyword-based\nclassifier', color='#12c15e')
+ax4.barh(y - bar_width/2, f1_scores_gpt, height=bar_width, label='GPT', color='#b204f8')
+ax4.barh(y + bar_width/2, f1_scores_joao, height=bar_width, label='Keyword-based\nclassifier', color='#fab406')
 ax4.set_title('F1 Score', fontsize=10)
 ax4.set_yticks(y)
 ax4.set_yticklabels([])  # Hide y-axis labels to save space
@@ -306,23 +306,6 @@ plt.show()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ################## Comparison GPT matrix vs Joao matrix: 
 
 def extract_labels_from_conf_matrix(conf_matrix):
@@ -334,8 +317,8 @@ def extract_labels_from_conf_matrix(conf_matrix):
             predicted.extend([col] * count)
     return actual, predicted
 
-gpt_actual, gpt_predicted = extract_labels_from_conf_matrix(conf_matrix_gpt)
-joao_actual, joao_predicted = extract_labels_from_conf_matrix(conf_matrix_joao)
+gpt_actual, gpt_predicted = extract_labels_from_conf_matrix(conf_matrix_gpt_common)
+joao_actual, joao_predicted = extract_labels_from_conf_matrix(conf_matrix_joao_common)
 
 gpt_kappa = cohen_kappa_score(gpt_actual, gpt_predicted)
 joao_kappa = cohen_kappa_score(joao_actual, joao_predicted)
@@ -343,8 +326,8 @@ joao_kappa = cohen_kappa_score(joao_actual, joao_predicted)
 print(f"GPT Kappa: {gpt_kappa:.3f}")   # -1 to 1: 1 is perfect agreement
 print(f"João Kappa: {joao_kappa:.3f}")
 
-gpt_accuracy = (np.diag(conf_matrix_gpt).sum() / conf_matrix_gpt.values.sum()) * 100
-joao_accuracy = (np.diag(conf_matrix_joao).sum() / conf_matrix_joao.values.sum()) * 100
+gpt_accuracy = (np.diag(conf_matrix_gpt_common).sum() / conf_matrix_gpt_common.values.sum()) * 100
+joao_accuracy = (np.diag(conf_matrix_joao_common).sum() / conf_matrix_joao_common.values.sum()) * 100
 
 print(f"GPT Accuracy: {gpt_accuracy:.2f}%")
 print(f"João Accuracy: {joao_accuracy:.2f}%")
