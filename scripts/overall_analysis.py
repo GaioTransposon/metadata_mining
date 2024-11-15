@@ -247,7 +247,7 @@ gs = gridspec.GridSpec(2, 7, height_ratios=[4, 0.5], width_ratios=[3, 3, 0.25, 0
 ax1 = fig.add_subplot(gs[0, 0])
 sns.heatmap(normalized_conf_matrix_gpt_common, annot=True, fmt=".3f", cmap='viridis', ax=ax1, cbar=False, 
             vmin=0, vmax=1, annot_kws=annot_font)
-ax1.set_title('GPT\npredictions accuracy', fontsize=10)
+ax1.set_title('GPT\nclassification accuracy', fontsize=10)
 ax1.set_xlabel('Predicted biome', fontsize=10)
 ax1.set_ylabel('Benchmark biome', fontsize=10)
 ax1.tick_params(axis='both', which='major', labelsize=10)
@@ -256,7 +256,7 @@ ax1.tick_params(axis='both', which='major', labelsize=10)
 ax2 = fig.add_subplot(gs[0, 1])
 sns.heatmap(normalized_conf_matrix_joao_common, annot=True, fmt=".3f", cmap='viridis', ax=ax2, cbar=False, 
             vmin=0, vmax=1, annot_kws=annot_font)
-ax2.set_title('Keyword-based classifier\nprediction accuracy', fontsize=10)
+ax2.set_title('Keyword-based classifier\nclassification accuracy', fontsize=10)
 ax2.set_xlabel('Predicted biome', fontsize=10)
 ax2.set_ylabel(' \n \n  ')
 ax2.set_yticklabels([])  # Hide y-axis labels to avoid repetition

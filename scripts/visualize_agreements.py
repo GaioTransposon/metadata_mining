@@ -260,7 +260,7 @@ def process_and_visualize(df, my_title, cell_font_size, labels_font):
     cmap_subbiome = LinearSegmentedColormap.from_list("custom_blues", colors_sub, N=256)
     #norm = BoundaryNorm(bins, ncolors=256, clip=True)
 
-    plt.figure(figsize=(5, 4))
+    plt.figure(figsize=(5.5, 5.5)) # width, height
     sns.heatmap(numeric_combined_matrix, mask=mask_upper, cmap=cmap_subbiome, annot=combined_annotations, fmt="s", cbar=False,
                 linewidths=.2, linecolor='black', xticklabels=labels, yticklabels=labels, square=True,
                 annot_kws={"size": cell_font_size})
@@ -268,7 +268,9 @@ def process_and_visualize(df, my_title, cell_font_size, labels_font):
                 linewidths=.2, linecolor='black', xticklabels=labels, yticklabels=labels, square=True,
                 annot_kws={"size": cell_font_size})
     plt.title(my_title, fontsize=9)
-    plt.subplots_adjust(bottom=0.2)
+    #plt.subplots_adjust(bottom=0.2)
+    plt.subplots_adjust(top=0.95, right=0.98, bottom=0.25)
+
 
     plt.xticks(rotation=45, fontsize=labels_font, ha='right')
     plt.yticks(rotation=0, fontsize=labels_font)
@@ -282,12 +284,12 @@ def process_and_visualize(df, my_title, cell_font_size, labels_font):
 file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/biome_subbiome_stats.csv'
 df_full = pd.read_csv(file_path)
 
-df_subset = df_full[0:24] 
+df_subset = df_full[0:29] 
 process_and_visualize(df_subset, 'Chunking (y/n) and chunk sizes (sync requests)', 7, 8)  
 
 
-df_subset = df_full[23:54] 
-process_and_visualize(df_subset, 'Models (sync requests)', 8, 9)  
+df_subset = df_full[30:61] 
+process_and_visualize(df_subset, 'Models (sync requests)', 7, 8)  
 
 df_subset = df_full[59:106] 
 process_and_visualize(df_subset, 'Creativity parameters (sync requests chunking)', 8, 9) 
@@ -348,8 +350,6 @@ def create_pvalue_legend_with_ranges(bins, color_palette_1, color_palette_2, tit
 
 bins = [0, 0.01, 0.05, 0.2, 1.0]
 create_pvalue_legend_with_ranges(bins, 'Greens_r', 'Blues_r', 'Adjusted p-values ranges')
-
-
 
 
 
