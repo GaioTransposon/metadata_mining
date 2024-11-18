@@ -37,6 +37,9 @@ def prepare_data(df):
     df['avg_sim_err'] = df['SD'] / np.sqrt(df['subbiome_size'])
     return df
 
+
+
+
 def plot_bars(df, plot_title, labels_font):
     df = prepare_data(df)
     
@@ -47,9 +50,9 @@ def plot_bars(df, plot_title, labels_font):
     fig, ax = plt.subplots(figsize=(4, 4))
     indices = np.arange(n_points)
     
-    ax.bar(indices - width, df['exact_match'], yerr=df['exact_match_err'], width=width, capsize=capsize, label='Exact Match')
-    ax.bar(indices, df['lenient_match'], yerr=df['lenient_match_err'], width=width, capsize=capsize, label='Lenient Match')
-    ax.bar(indices + width, df['avg_sim'], yerr=df['avg_sim_err'], width=width, capsize=capsize, label='Average Similarity')
+    ax.bar(indices - width, df['exact_match'], yerr=df['exact_match_err'], width=width, capsize=capsize, label='Exact Match', color='#265CA4')
+    ax.bar(indices, df['lenient_match'], yerr=df['lenient_match_err'], width=width, capsize=capsize, label='Lenient Match', color='#e37222')
+    ax.bar(indices + width, df['avg_sim'], yerr=df['avg_sim_err'], width=width, capsize=capsize, label='Average Similarity', color='#347734')
 
     ax.set_xticks(indices)
     ax.set_xticklabels(df['Label'], rotation=90)
@@ -65,15 +68,39 @@ def plot_bars(df, plot_title, labels_font):
     plt.show()
 
 
-def plot_lines(df, plot_title, labels_font):
+
+
+
+
+def plot_lines(df, plot_title, labels_font, break_every_n=None):
     df = prepare_data(df)
     
     fig, ax = plt.subplots(figsize=(4, 4))
     indices = np.arange(len(df))
 
-    ax.errorbar(indices, df['exact_match'], yerr=df['exact_match_err'], fmt='o-', capsize=5, label='Exact Match')
-    ax.errorbar(indices, df['lenient_match'], yerr=df['lenient_match_err'], fmt='s-', capsize=5, label='Lenient Match')
-    ax.errorbar(indices, df['avg_sim'], yerr=df['avg_sim_err'], fmt='^-', capsize=5, label='Average Similarity')
+    # Colors and formats for each metric based on the legend you provided
+    metrics_info = {
+        'Exact Match': {'color': '#265CA4', 'fmt': 'o-', 'markersize': None},  # Blue circles
+        'Lenient Match': {'color': '#e37222', 'fmt': 's-', 'markersize': 3},   # Orange squares
+        'Average Similarity': {'color': '#347734', 'fmt': '^-', 'markersize': None}  # Green triangles
+    }
+
+    # Function to plot segments with discrete breaks
+    def plot_segment(data, indices, color, fmt, capsize, markersize, label):
+        ax.errorbar(indices, data[metric], yerr=data[metric + '_err'], fmt=fmt, capsize=capsize,
+                    markersize=markersize, color=color, label=label if i == 0 else "")
+
+    # Calculate break point
+    if break_every_n is None:
+        break_every_n = len(df)  # Use entire length if no break is specified
+
+    # Iterate over metrics and plot each in segments
+    for metric, details in zip(['exact_match', 'lenient_match', 'avg_sim'], metrics_info.values()):
+        for i in range(0, len(df), break_every_n):
+            segment_indices = indices[i:i+break_every_n]
+            segment_data = df.iloc[i:i+break_every_n]
+            plot_segment(segment_data, segment_indices, details['color'], details['fmt'], 5, 
+                         details['markersize'], metric)
 
     ax.set_xticks(indices)
     ax.set_xticklabels(df['Label'], rotation=0)  # Set initial rotation to 0 for clarity
@@ -87,7 +114,10 @@ def plot_lines(df, plot_title, labels_font):
 
     ax.tick_params(axis='y', labelsize=labels_font)  # Set y-axis font size without rotation
 
-    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    # Set the background to white
+    ax.set_facecolor('white')  # This ensures the background is white
+    ax.grid(True, which='both', linestyle='--', linewidth=0.5, color='grey')  # Configure the grid
+
     plt.tight_layout(rect=[0, 0, 0.85, 1])
     plt.show()
 
@@ -99,14 +129,27 @@ def plot_lines_legend(df, labels_font):
     fig, ax = plt.subplots(figsize=(4, 4))
     indices = np.arange(len(df))
 
-    ax.errorbar(indices, df['exact_match'], yerr=df['exact_match_err'], fmt='o-', capsize=5, label='Exact Match')
-    ax.errorbar(indices, df['lenient_match'], yerr=df['lenient_match_err'], fmt='s-', capsize=5, label='Lenient Match')
-    ax.errorbar(indices, df['avg_sim'], yerr=df['avg_sim_err'], fmt='^-', capsize=5, label='Average Similarity')
+    # Explicit colors for each metric
+    colors = {
+        'Exact Match': '#265CA4',  # Blue
+        'Lenient Match': '#e37222',  # Orange
+        'Average Similarity': '#347734'  # Green
+    }
+
+    # Exact Match
+    ax.errorbar(indices, df['exact_match'], yerr=df['exact_match_err'], fmt='o-', capsize=5, color=colors['Exact Match'], label='Exact Match')
+    
+    # Lenient Match with smaller markersize
+    ax.errorbar(indices, df['lenient_match'], yerr=df['lenient_match_err'], fmt='s-', capsize=5, markersize=3, color=colors['Lenient Match'], label='Lenient Match')  # Reduced markersize to 3
+    
+    # Average Similarity
+    ax.errorbar(indices, df['avg_sim'], yerr=df['avg_sim_err'], fmt='^-', capsize=5, color=colors['Average Similarity'], label='Average Similarity')
 
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
-    plt.legend(title='Metrics', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize = labels_font)
+    plt.legend(title='Metrics', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=labels_font)
     plt.tight_layout(rect=[0, 0, 0.85, 1])
     plt.show()
+
     
     
 def plot_bars_legend(df, labels_font):
@@ -119,9 +162,16 @@ def plot_bars_legend(df, labels_font):
     fig, ax = plt.subplots(figsize=(4, 4))
     indices = np.arange(n_points)
     
-    ax.bar(indices - width, df['exact_match'], yerr=df['exact_match_err'], width=width, capsize=capsize, label='Exact Match')
-    ax.bar(indices, df['lenient_match'], yerr=df['lenient_match_err'], width=width, capsize=capsize, label='Lenient Match')
-    ax.bar(indices + width, df['avg_sim'], yerr=df['avg_sim_err'], width=width, capsize=capsize, label='Average Similarity')
+    # Define colors for each metric
+    colors = {
+        'Exact Match': '#265CA4',  # Blue
+        'Lenient Match': '#e37222',  # Orange
+        'Average Similarity': '#347734'  # Green
+    }
+    
+    ax.bar(indices - width, df['exact_match'], yerr=df['exact_match_err'], width=width, capsize=capsize, label='Exact Match', color=colors['Exact Match'])
+    ax.bar(indices, df['lenient_match'], yerr=df['lenient_match_err'], width=width, capsize=capsize, label='Lenient Match', color=colors['Lenient Match'])
+    ax.bar(indices + width, df['avg_sim'], yerr=df['avg_sim_err'], width=width, capsize=capsize, label='Average Similarity', color=colors['Average Similarity'])
     
     plt.legend(title='Metrics', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize = labels_font)
     
@@ -131,11 +181,12 @@ def plot_bars_legend(df, labels_font):
 
 
 
+
 file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/biome_subbiome_results.csv'
 df_full = pd.read_csv(file_path)
 
 df_subset = df_full[0:6] 
-plot_lines(df_subset, 'Chunking (y/n) and chunk sizes (sync requests)', 9)
+plot_lines(df_subset, 'Effect of chunking (sync requests)', 9)
 
 # Legends 
 plot_bars_legend(df_subset, 9)
@@ -148,14 +199,17 @@ plot_bars(df_subset, 'Models (sync requests)', 9)
 
 
 
+df_subset = df_full[14:26]  
+plot_lines(df_subset, 'Creativity params: temp', 10, 4)  
 
 
 
 
+# continue below: 
 
 
-df_subset = df_full[14:33]  
-plot_lines(df_subset, 'Creativity parameters (sync requests chunking)', 9)  
+df_subset = df_full[14:26]  
+plot_lines(df_subset, 'Creativity parameters: temp (sync requests chunking)', 9)  
 
 df_subset = df_full[34:53]  
 plot_lines(df_subset, 'Creativity parameters (sync requests not chuking)', 9)  

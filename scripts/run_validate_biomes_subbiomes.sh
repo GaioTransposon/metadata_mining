@@ -69,17 +69,25 @@ python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
 
+
 #####################################################################################################
-# 3. creativity params testing, synchronous requests, chunking: 
+# 3. creativity params testing: temp
 #####################################################################################################
 
-# temp
 
 FILES=(
     "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt"
     "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp0.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API117_normal_dt202406051402.txt"
     "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051409.txt"
     "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp2.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051415.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp2.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131512.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131503.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp0.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131455.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp0.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchyTdqYI5NQpzbGR0gNBO6HU6x_dt202406071410.csv"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch9U6Gzkj2sLyTDWvTJooiQvtI_dt202406071411.csv"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp2.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchyP1BWiaONwk6peX6svVVuimq_dt202406071412.csv"
 )
 
 
@@ -88,188 +96,10 @@ LABELS=(
     "sync_chunkY_temp0.5"
     "sync_chunkY_temp1.5"
     "sync_chunkY_temp2.0"
-)
-
-python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
-
-
-#####################################################################################################
-
-# topp
-
-FILES=(
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt"
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.0_freqp0.25_presp1.5_rs22_API118_normal_dt202406051422.txt"
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.5_freqp0.25_presp1.5_rs22_API118_normal_dt202406051428.txt"
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp1.0_freqp0.25_presp1.5_rs22_API120_normal_dt202406051435.txt"
-)
-
-
-LABELS=(
-    "sync_chunkY_topp0.75"
-    "sync_chunkY_topp0.0"
-    "sync_chunkY_topp0.5"
-    "sync_chunkY_topp1.0"
-)
-
-python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
-
-
-#####################################################################################################
-
-
-# freqp
-
-FILES=(
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt"
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API120_normal_dt202406051442.txt"
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp1.0_presp1.5_rs22_API132_normal_dt202406051450.txt"
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp2.0_presp1.5_rs22_API153_normal_dt202406051500.txt"
-)
-
-
-LABELS=(
-    "sync_chunkY_freqp0.25"
-    "sync_chunkY_freqp0.0"
-    "sync_chunkY_freqp1.0"
-    "sync_chunkY_freqp2.0"
-)
-
-python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
-
-
-#####################################################################################################
-
-# presp
-
-FILES=(
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt"
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp0.0_rs22_API118_normal_dt202406051507.txt"
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.0_rs22_API118_normal_dt202406051513.txt"
-    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp2.0_rs22_API118_normal_dt202406051520.txt"
-)
-
-
-LABELS=(
-    "sync_chunkY_presp1.5"
-    "sync_chunkY_presp0.0"
-    "sync_chunkY_presp1.0"
-    "sync_chunkY_presp2.5"
-)
-
-python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
-
-
-#####################################################################################################
-# 4. creativity params testing, synchronous requests, not chunking: 
-#####################################################################################################
-
-# temp
-
-FILES=(
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp2.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131512.txt"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131503.txt"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp0.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131455.txt"
-)
-
-
-LABELS=(
     "sync_chunkN_temp1.0"
     "sync_chunkN_temp2.0"
     "sync_chunkN_temp1.5"
     "sync_chunkN_temp0.5"
-)
-
-python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
-
-
-#####################################################################################################
-
-# topp
-
-FILES=(
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp1.0_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131538.txt"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.5_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131529.txt"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.0_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131521.txt"
-)
-
-
-
-LABELS=(
-    "sync_chunkN_topp0.75"
-    "sync_chunkN_topp1.0"
-    "sync_chunkN_topp0.5"
-    "sync_chunkN_topp0.0"
-)
-
-python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
-
-
-#####################################################################################################
-
-
-# freqp
-
-FILES=(
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API499_repeat_dt202406171520.txt"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp1.0_presp1.5_rs22_API499_repeat_dt202406171543.txt"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp2.0_presp1.5_rs22_API499_repeat_dt202406171555.txt"
-)
-
-
-
-LABELS=(
-    "sync_chunkN_freqp0.25"
-    "sync_chunkN_freqp0.0"
-    "sync_chunkN_freqp1.0"
-    "sync_chunkN_freqp2.0"
-)
-
-python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
-
-
-#####################################################################################################
-
-# presp
-
-FILES=(
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp0.0_rs22_API499_repeat_dt202406171624.txt"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.0_rs22_API499_repeat_dt202406171636.txt"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp2.0_rs22_API499_repeat_dt202406171647.txt"
-)
-
-
-
-LABELS=(
-    "sync_chunkN_presp1.5"
-    "sync_chunkN_presp0.0"
-    "sync_chunkN_presp1.0"
-    "sync_chunkN_presp2.5"
-)
-
-python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
-
-
-#####################################################################################################
-# 5. creativity params testing, asynchronous requests:
-#####################################################################################################
-
-# temp
-
-FILES=(
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp0.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchyTdqYI5NQpzbGR0gNBO6HU6x_dt202406071410.csv"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch9U6Gzkj2sLyTDWvTJooiQvtI_dt202406071411.csv"
-    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp2.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchyP1BWiaONwk6peX6svVVuimq_dt202406071412.csv"
-)
-
-
-
-LABELS=(
     "async_temp1.0"
     "async_temp0.5"
     "async_temp1.5"
@@ -279,11 +109,21 @@ LABELS=(
 python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
+
+#####################################################################################################
+# 4. creativity params testing: topp
 #####################################################################################################
 
-# topp
 
 FILES=(
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt"
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.0_freqp0.25_presp1.5_rs22_API118_normal_dt202406051422.txt"
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.5_freqp0.25_presp1.5_rs22_API118_normal_dt202406051428.txt"
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp1.0_freqp0.25_presp1.5_rs22_API120_normal_dt202406051435.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp1.0_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131538.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.5_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131529.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.0_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131521.txt"
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv"
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.0_freqp0.25_presp1.5_rs22_batchw7kCe5puq0WqYKQq7BMa5iuT_dt202406071413.csv"
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.5_freqp0.25_presp1.5_rs22_batchkumTlIdj4B7wKVARjFoHQe4x_dt202406071414.csv"
@@ -291,8 +131,15 @@ FILES=(
 )
 
 
-
 LABELS=(
+    "sync_chunkY_topp0.75"
+    "sync_chunkY_topp0.0"
+    "sync_chunkY_topp0.5"
+    "sync_chunkY_topp1.0"
+    "sync_chunkN_topp0.75"
+    "sync_chunkN_topp1.0"
+    "sync_chunkN_topp0.5"
+    "sync_chunkN_topp0.0"
     "async_topp0.75"
     "async_topp0.0"
     "async_topp0.5"
@@ -302,12 +149,21 @@ LABELS=(
 python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
+
+#####################################################################################################
+# 5. creativity params testing: freqp
 #####################################################################################################
 
 
-# freqp
-
 FILES=(
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt"
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API120_normal_dt202406051442.txt"
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp1.0_presp1.5_rs22_API132_normal_dt202406051450.txt"
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp2.0_presp1.5_rs22_API153_normal_dt202406051500.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API499_repeat_dt202406171520.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp1.0_presp1.5_rs22_API499_repeat_dt202406171543.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp2.0_presp1.5_rs22_API499_repeat_dt202406171555.txt"
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv"
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_batchrTuC2pXWV1UcVrQjzhdQsTVm_dt202406071417.csv"
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp1.0_presp1.5_rs22_batch17uVtvnldxiQ6kr5NbBKJInh_dt202406071418.csv"
@@ -315,8 +171,15 @@ FILES=(
 )
 
 
-
 LABELS=(
+    "sync_chunkY_freqp0.25"
+    "sync_chunkY_freqp0.0"
+    "sync_chunkY_freqp1.0"
+    "sync_chunkY_freqp2.0"
+    "sync_chunkN_freqp0.25"
+    "sync_chunkN_freqp0.0"
+    "sync_chunkN_freqp1.0"
+    "sync_chunkN_freqp2.0"
     "async_freqp0.25"
     "async_freqp0.0"
     "async_freqp1.0"
@@ -326,11 +189,23 @@ LABELS=(
 python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
+
+
+#####################################################################################################
+# 6. creativity params testing: presp
 #####################################################################################################
 
-# presp
+
 
 FILES=(
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt"
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp0.0_rs22_API118_normal_dt202406051507.txt"
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.0_rs22_API118_normal_dt202406051513.txt"
+    "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp2.0_rs22_API118_normal_dt202406051520.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp0.0_rs22_API499_repeat_dt202406171624.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.0_rs22_API499_repeat_dt202406171636.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp2.0_rs22_API499_repeat_dt202406171647.txt"
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv"
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp0.0_rs22_batchKcsV0wRxs2BFSS1dxWjXoCgq_dt202406071420.csv"
     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.0_rs22_batchMPSOJiGWXtHSlVNfGJnR28vS_dt202406071421.csv"
@@ -338,8 +213,15 @@ FILES=(
 )
 
 
-
 LABELS=(
+    "sync_chunkY_presp1.5"
+    "sync_chunkY_presp0.0"
+    "sync_chunkY_presp1.0"
+    "sync_chunkY_presp2.5"
+    "sync_chunkN_presp1.5"
+    "sync_chunkN_presp0.0"
+    "sync_chunkN_presp1.0"
+    "sync_chunkN_presp2.5"
     "async_presp1.5"
     "async_presp0.0"
     "async_presp1.0"
