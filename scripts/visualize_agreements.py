@@ -11,8 +11,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.legend_handler import HandlerTuple
+from matplotlib.colors import Normalize
 
 
 def prepare_data(df):
@@ -44,16 +44,23 @@ def plot_bars(df, plot_title, labels_font):
     df = prepare_data(df)
     
     n_points = len(df)
-    width = max(0.15, 0.6 - 0.05 * n_points)  # Adjust bar width
-    capsize = max(2, 10 - 0.8 * n_points)  # Adjust capsize
+    group_count = 3  # Since you have three bar groups per index
     
-    fig, ax = plt.subplots(figsize=(4, 4))
+    # Calculate the total width for all bars in a group to be less than 1 unit
+    total_group_width = 0.9  # Total width per group that bars can occupy
+    width = total_group_width / group_count  # Individual bar width
+    
+    fig, ax = plt.subplots(figsize=(4, 4))  # Increased figure width for clarity
     indices = np.arange(n_points)
     
-    ax.bar(indices - width, df['exact_match'], yerr=df['exact_match_err'], width=width, capsize=capsize, label='Exact Match', color='#265CA4')
-    ax.bar(indices, df['lenient_match'], yerr=df['lenient_match_err'], width=width, capsize=capsize, label='Lenient Match', color='#e37222')
-    ax.bar(indices + width, df['avg_sim'], yerr=df['avg_sim_err'], width=width, capsize=capsize, label='Average Similarity', color='#347734')
-
+    # Calculate offset to center bars around the index point
+    # Each bar is positioned so that the group is centered on the index
+    offset = width * (group_count / 2 - 0.5)  # This offsets each group around its central index
+    
+    ax.bar(indices - offset, df['exact_match'], yerr=df['exact_match_err'], width=width, label='Exact Match', color='#265CA4')
+    ax.bar(indices - offset + width, df['lenient_match'], yerr=df['lenient_match_err'], width=width, label='Lenient Match', color='#e37222')
+    ax.bar(indices - offset + 2 * width, df['avg_sim'], yerr=df['avg_sim_err'], width=width, label='Average Similarity', color='#347734')
+    
     ax.set_xticks(indices)
     ax.set_xticklabels(df['Label'], rotation=90)
     plt.xlabel('')
@@ -62,11 +69,10 @@ def plot_bars(df, plot_title, labels_font):
     plt.xticks(rotation=45, fontsize=labels_font, ha='right')
     
     ax.tick_params(axis='y', labelsize=labels_font) 
-
+    
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
-    plt.tight_layout(rect=[0, 0, 0.85, 1])
+    plt.tight_layout()  # Adjust layout to fit everything nicely
     plt.show()
-
 
 
 
@@ -185,57 +191,64 @@ def plot_bars_legend(df, labels_font):
 file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/biome_subbiome_results.csv'
 df_full = pd.read_csv(file_path)
 
+
+###
+# Figure 3
 df_subset = df_full[0:6] 
 plot_lines(df_subset, 'Effect of chunking (sync requests)', 9)
+###
 
 # Legends 
 plot_bars_legend(df_subset, 9)
 plot_lines_legend(df_subset, 9)
 
-
+###
+# Figure 4
 df_subset = df_full[7:13] 
 plot_bars(df_subset, 'Models (sync requests)', 9)  
+###
 
 
-
-
-df_subset = df_full[14:26]  
+###
+# Figure 5 and Supplementary
+df_subset = df_full[14:28]  
 plot_lines(df_subset, 'Creativity params: temp', 10, 4)  
 
 
+df_subset = df_full[28:43]  
+plot_lines(df_subset, 'Creativity params: topp', 10, 4)  
 
 
-# continue below: 
+df_subset = df_full[44:59]  
+plot_lines(df_subset, 'Creativity params: freqp', 10, 4)  
+
+df_subset = df_full[60:74]  
+plot_lines(df_subset, 'Creativity params: presp', 10, 4)  
+###
 
 
-df_subset = df_full[14:26]  
-plot_lines(df_subset, 'Creativity parameters: temp (sync requests chunking)', 9)  
-
-df_subset = df_full[34:53]  
-plot_lines(df_subset, 'Creativity parameters (sync requests not chuking)', 9)  
-
-df_subset = df_full[54:73] 
-plot_lines(df_subset, 'Creativity parameters (async requests)', 9)  
+###
+# Suppl figure 
+df_subset = df_full[75:91] 
+plot_bars(df_subset, 'Sync requests: same and different sample groups (rs)', 7)  
 
 
+df_subset = df_full[92:113] 
+plot_bars(df_subset, 'Async requests: same and different sample groups (rs)', 7)  
 
-# =============================================================================
-# 
-# df_subset = df_full[66:] 
-# plot_lines(df_subset, 'Sync and async requests: different sample groups (rs)', 9)  
-# 
-# df_subset = df_full[115:128] 
-# plot_bars(df_subset, 'Sync and async requests: same sample groups (rs)', 9)  
-# 
-# 
-# df_subset = df_full[128:137] 
+
+df_subset = df_full[114:126] 
+plot_bars(df_subset, 'Sync versus async requests (same sample group)', 7)  
+###
+
+# df_subset = df_full[127:135] 
 # plot_bars(df_subset, 'Please', 9)  
-# 
-# 
-# df_subset = df_full[137:] 
-# plot_bars(df_subset, 'Output formats', 9)  
-# =============================================================================
 
+###
+# Figure 6
+df_subset = df_full[136:] 
+plot_bars(df_subset, 'Output formats', 9)  
+###
 
 
 
@@ -251,43 +264,30 @@ plot_lines(df_subset, 'Creativity parameters (async requests)', 9)
 
 def process_and_visualize(df, my_title, cell_font_size, labels_font):
     df = df.dropna()
-
-    # Define the columns to keep
     columns_to_keep = ['Label1', 'Label2', 'P-value', 'Adjusted P-value', 'Test Type', 'validation']
     df = df[columns_to_keep]
-
-    # Create a unique set of labels (keeping original order)
     labels = pd.unique(df[['Label1', 'Label2']].to_numpy().flatten())
-
-    # Initialize matrices for P-values and annotations
     biome_matrix = pd.DataFrame(np.nan, index=labels, columns=labels)
     subbiome_matrix = pd.DataFrame(np.nan, index=labels, columns=labels)
     biome_annot = pd.DataFrame("", index=labels, columns=labels)
     subbiome_annot = pd.DataFrame("", index=labels, columns=labels)
 
-
-    # Populate the matrices
     for _, row in df.iterrows():
         label1, label2 = row['Label1'], row['Label2']
         adj_p_value = row['Adjusted P-value']
         validation_type = row['validation']
         annotation = f"{row['P-value']:.2f};\n{adj_p_value:.2f}"
-
         if validation_type == 'biome':
             biome_matrix.at[label1, label2] = adj_p_value
             biome_matrix.at[label2, label1] = adj_p_value
             biome_annot.at[label1, label2] = annotation
             biome_annot.at[label2, label1] = annotation
-
         elif validation_type == 'sub-biome':
             subbiome_matrix.at[label1, label2] = adj_p_value
             subbiome_matrix.at[label2, label1] = adj_p_value
             subbiome_annot.at[label1, label2] = annotation
             subbiome_annot.at[label2, label1] = annotation
 
-    
-    
-    # Merge matrices
     combined_matrix = pd.DataFrame(np.nan, index=labels, columns=labels)
     combined_annotations = pd.DataFrame("", index=labels, columns=labels)
     for label1 in labels:
@@ -299,77 +299,86 @@ def process_and_visualize(df, my_title, cell_font_size, labels_font):
                 combined_matrix.at[label1, label2] = biome_matrix.at[label1, label2]
                 combined_annotations.at[label1, label2] = biome_annot.at[label1, label2]
             else:
-                combined_matrix.at[label1, label2] = '-'  # for diagonal
+                combined_matrix.at[label1, label2] = '-'
                 combined_annotations.at[label1, label2] = '-'
 
-    # Plotting
     numeric_combined_matrix = combined_matrix.replace('-', np.nan).astype(float)
     mask_upper = np.triu(np.ones_like(numeric_combined_matrix, dtype=bool), k=1)
     mask_lower = np.tril(np.ones_like(numeric_combined_matrix, dtype=bool), k=-1)
 
-    bins = [0, 0.01, 0.05, 0.2, 1.0]
-    colors = sns.color_palette("Greens_r", n_colors=len(bins))  # Colors for biome
-    colors_sub = sns.color_palette("Blues_r", n_colors=len(bins))  # Colors for sub-biome
-    cmap_biome = LinearSegmentedColormap.from_list("custom_greens", colors, N=256)
-    cmap_subbiome = LinearSegmentedColormap.from_list("custom_blues", colors_sub, N=256)
-    #norm = BoundaryNorm(bins, ncolors=256, clip=True)
+    colors = sns.color_palette("Greens_r", as_cmap=True)  # Colors for biome
+    colors_sub = sns.color_palette("Blues_r", as_cmap=True)  # Colors for sub-biome
+    norm = Normalize(vmin=0, vmax=1)  # Normalize from 0 to 1
 
-    plt.figure(figsize=(5.5, 5.5)) # width, height
-    sns.heatmap(numeric_combined_matrix, mask=mask_upper, cmap=cmap_subbiome, annot=combined_annotations, fmt="s", cbar=False,
+    plt.figure(figsize=(5.5, 5.5))
+    sns.heatmap(numeric_combined_matrix, mask=mask_upper, cmap=colors_sub, annot=combined_annotations, fmt="s", cbar=False,
                 linewidths=.2, linecolor='black', xticklabels=labels, yticklabels=labels, square=True,
-                annot_kws={"size": cell_font_size})
-    sns.heatmap(numeric_combined_matrix, mask=mask_lower, cmap=cmap_biome, annot=combined_annotations, fmt="s", cbar=False,
+                annot_kws={"size": cell_font_size}, norm=norm)
+    sns.heatmap(numeric_combined_matrix, mask=mask_lower, cmap=colors, annot=combined_annotations, fmt="s", cbar=False,
                 linewidths=.2, linecolor='black', xticklabels=labels, yticklabels=labels, square=True,
-                annot_kws={"size": cell_font_size})
+                annot_kws={"size": cell_font_size}, norm=norm)
     plt.title(my_title, fontsize=9)
-    #plt.subplots_adjust(bottom=0.2)
     plt.subplots_adjust(top=0.95, right=0.98, bottom=0.25)
-
-
     plt.xticks(rotation=45, fontsize=labels_font, ha='right')
     plt.yticks(rotation=0, fontsize=labels_font)
     plt.show()
 
-    
 
     
+
+
+
+
 
 
 file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/biome_subbiome_stats.csv'
 df_full = pd.read_csv(file_path)
 
+
 df_subset = df_full[0:29] 
-process_and_visualize(df_subset, 'Chunking (y/n) and chunk sizes (sync requests)', 7, 8)  
+process_and_visualize(df_subset, 'Effect of chunking (sync requests)', 8, 9)  
 
 
 df_subset = df_full[30:61] 
-process_and_visualize(df_subset, 'Models (sync requests)', 7, 8)  
-
-df_subset = df_full[59:106] 
-process_and_visualize(df_subset, 'Creativity parameters (sync requests chunking)', 8, 9) 
-
-df_subset = df_full[106:159] 
-process_and_visualize(df_subset, 'Creativity parameters (sync requests no chunking)', 8, 9) 
-
-df_subset = df_full[159:210] 
-process_and_visualize(df_subset, 'Creativity parameters (async requests)', 8, 9)  
+process_and_visualize(df_subset, 'Models (sync requests)', 8, 9)  
 
 
-df_subset = df_full[210:904] 
-process_and_visualize(df_subset, 'Sync and async requests: different sample groups (rs)', 4, 8)  
+
+df_subset = df_full[62:100] 
+process_and_visualize(df_subset, 'Creativity parameters: temp', 8, 9) 
 
 
-df_subset = df_full[904:1037] 
-process_and_visualize(df_subset, 'Sync and async requests: same sample groups (rs)', 4, 8)  
+df_subset = df_full[100:139] 
+process_and_visualize(df_subset, 'Creativity parameters: topp', 8, 9) 
 
 
-df_subset = df_full[1037:1094] 
-process_and_visualize(df_subset, 'Please', 4, 8)  
-
-df_subset = df_full[1094:] 
-process_and_visualize(df_subset, 'Output formats', 8, 9)  
+df_subset = df_full[140:178] 
+process_and_visualize(df_subset, 'Creativity parameters: freqp', 8, 9)  
 
 
+df_subset = df_full[179:217] 
+process_and_visualize(df_subset, 'Creativity parameters: presp', 8, 9)  
+
+
+
+df_subset = df_full[218:490] 
+process_and_visualize(df_subset, 'Sync requests: same and different sample groups (rs)', 4, 8)  
+
+df_subset = df_full[491:911] 
+process_and_visualize(df_subset, 'Async requests: same and different sample groups (rs)', 4, 8)  
+
+
+df_subset = df_full[912:1044] 
+process_and_visualize(df_subset, 'Sync versus async requests (same sample group)', 4, 8)  
+
+
+
+# df_subset = df_full[1044:1101] 
+# process_and_visualize(df_subset, 'Please (async)', 8, 9)  
+
+
+df_subset = df_full[1101:] 
+process_and_visualize(df_subset, 'Output formats', 8, 9) 
 
 
 
