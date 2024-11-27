@@ -481,8 +481,8 @@ descriptive_stats(misclass_counts, 'All Misclassifications')
 
 
 # Display top misclassified samples 
-top_misclassified = summary.sort_values(by='misclass_count', ascending=False).head(30)
-print("\nTop 30 misclassified samples from the full dataset:")
+top_misclassified = summary.sort_values(by='misclass_count', ascending=False).head(50)
+print("\nTop 50 misclassified samples from the full dataset:")
 print(top_misclassified)
 
 
@@ -509,9 +509,8 @@ print(f"\nMetadata for '{sample_key}':\n{metadata}")
 
 # SRS994677              water # anaerobic sludge ; should have gone to other 105/113
 # SRS2217033             animal # mock community 105/108
-# SRS5304049             soil # rhizosphere 111/111
+# SRS4776621             soil # rhizosphere 94/95
 # SRS942824              soil # rhizosphere 109/110
-
 
 
 

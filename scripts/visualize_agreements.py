@@ -100,15 +100,17 @@ def plot_bars(df, plots_dir, plot_title, labels_font):
 
 def plot_lines(df, plots_dir, plot_title, labels_font, break_every_n=None):
     df = prepare_data(df)
-    
+    # Remove rows where 'Label' is NaN
+    df = df.dropna(subset=['Label'])
+
     fig, ax = plt.subplots(figsize=(4, 4))
     indices = np.arange(len(df))
 
-    # Colors and formats for each metric based on the legend you provided
+    # Colors and formats for each metric
     metrics_info = {
-        'Exact Match': {'color': '#265CA4', 'fmt': 'o-', 'markersize': None},  # Blue circles
-        'Lenient Match': {'color': '#e37222', 'fmt': 's-', 'markersize': 3},   # Orange squares
-        'Average Similarity': {'color': '#347734', 'fmt': '^-', 'markersize': None}  # Green triangles
+        'Exact Match': {'color': '#265CA4', 'fmt': 'o-', 'markersize': None},
+        'Lenient Match': {'color': '#e37222', 'fmt': 's-', 'markersize': 3},
+        'Average Similarity': {'color': '#347734', 'fmt': '^-', 'markersize': None}
     }
 
     # Function to plot segments with discrete breaks
@@ -116,11 +118,9 @@ def plot_lines(df, plots_dir, plot_title, labels_font, break_every_n=None):
         ax.errorbar(indices, data[metric], yerr=data[metric + '_err'], fmt=fmt, capsize=capsize,
                     markersize=markersize, color=color, label=label if i == 0 else "")
 
-    # Calculate break point
     if break_every_n is None:
         break_every_n = len(df)  # Use entire length if no break is specified
 
-    # Iterate over metrics and plot each in segments
     for metric, details in zip(['exact_match', 'lenient_match', 'avg_sim'], metrics_info.values()):
         for i in range(0, len(df), break_every_n):
             segment_indices = indices[i:i+break_every_n]
@@ -129,25 +129,18 @@ def plot_lines(df, plots_dir, plot_title, labels_font, break_every_n=None):
                          details['markersize'], metric)
 
     ax.set_xticks(indices)
-    ax.set_xticklabels(df['Label'], rotation=0)  # Set initial rotation to 0 for clarity
-
+    ax.set_xticklabels(df['Label'], rotation=0)
     plt.xlabel('')
     plt.ylabel('Scores (%)', fontsize=labels_font)
     plt.title(plot_title, fontsize=labels_font)
-
-    # Use plt.xticks to set rotation, font size, and horizontal alignment
     plt.xticks(indices, df['Label'], rotation=45, fontsize=labels_font, ha='right')
-
-    ax.tick_params(axis='y', labelsize=labels_font)  # Set y-axis font size without rotation
-
-    # Set the background to white
-    ax.set_facecolor('white')  # This ensures the background is white
-    ax.grid(True, which='both', linestyle='--', linewidth=0.5, color='grey')  # Configure the grid
+    ax.tick_params(axis='y', labelsize=labels_font)
+    ax.set_facecolor('white')
+    ax.grid(True, which='both', linestyle='--', linewidth=0.5, color='grey')
 
     plt.tight_layout(rect=[0, 0, 0.85, 1])
     plt.show()
-    
-    # Save the figure to a PDF file
+
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     pdf_filename = os.path.join(plots_dir, f"results_plot_{current_time}.pdf")
     fig.savefig(pdf_filename, bbox_inches='tight')
