@@ -259,7 +259,7 @@ plot_lines(df_subset, plots_dir, 'Creativity params: topp', 8, 4)
 df_subset = df_full[44:59]  
 plot_lines(df_subset, plots_dir, 'Creativity params: freqp', 8, 4)  
 
-df_subset = df_full[60:74]  
+df_subset = df_full[59:74]  
 plot_lines(df_subset, plots_dir, 'Creativity params: presp', 8, 4)  
 ###
 
