@@ -26,10 +26,10 @@ import re
 import glob
 
 # Set directory and API key paths
-directory_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject'
+directory_path = '/Users/danielagaio/cloudstor/Gaio/MicrobeAtlasProject'   # UZH: /Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject
 output_dir = os.path.join(directory_path, 'embeddings')
-api_key_path = '/Users/dgaio/my_api_key_embeddings'
-gold_dict_path = '/Users/dgaio/github/metadata_mining/source_data/gold_dict.pkl'
+api_key_path = '/Users/danielagaio/Desktop/keys/my_api_key_embeddings'    # UZH: /Users/dgaio/my_api_key_embeddings
+gold_dict_path = '/Users/danielagaio/github/metadata_mining/source_data/gold_dict.pkl'   # UZH: /Users/dgaio/github/metadata_mining/source_data/gold_dict.pkl
 
 # Set OpenAI API key
 with open(api_key_path, "r") as file:
@@ -76,7 +76,7 @@ def process_file(csv_file_path, output_dir):
     samples = {}
     with open(csv_file_path, mode='r', newline='', encoding='utf-8') as file:
         reader = csv.reader(file)
-        next(reader)  # Skip header
+        next(reader)  # skip header
         for row in reader:
             if len(row) < 5:
                 continue
@@ -112,7 +112,7 @@ if not os.path.exists(output_file_path):
     print('Embeddings saved to:', output_file_path)
 
 # Check and process each file that matches the pattern
-pattern = os.path.join(directory_path, 'gpt_clean_output*')
+pattern = os.path.join(directory_path, 'gpt_clean_output*')    # when running for George (2nd curator) file: GH_collect*
 file_list = glob.glob(pattern + '.txt') + glob.glob(pattern + '.csv')
 for file_path in file_list:
     output_filename = os.path.basename(file_path).replace('.csv', '_sbembeddings.json').replace('.txt', '_sbembeddings.json')
