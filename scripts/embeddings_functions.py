@@ -13,7 +13,7 @@ from scipy.spatial import distance
 from matplotlib.backends.backend_pdf import PdfPages
 import random
 from scipy.stats import ttest_rel, ttest_ind
-from statsmodels.stats.multitest import multipletests
+#from statsmodels.stats.multitest import multipletests
 
 
 # Now adapted to load embeddings with this format: {sample_id: {'embedding': [values], 'sub_biome_text': text}}

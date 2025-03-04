@@ -17,7 +17,7 @@ import numpy as np
 import sys
 import re
 from itertools import combinations
-sys.path.append('/Users/dgaio/github/metadata_mining/scripts')
+sys.path.append('/Users/danielagaio/github/metadata_mining/scripts')   # UZH: /Users/dgaio/github/metadata_mining/scripts
 from features_process import find_distinguishing_features, extract_labels_from_filename, edit_features, load_and_process_file, handle_malformed_lines, filter_common_keys
 from embeddings_functions import (load_embeddings, compare_embeddings, create_shuffled_background_distribution, sample_by_category)
 from stats_module import calculate_overlap_and_run_tests_biomes, compare_based_on_overlap_subbiomes, print_statistics, test_similarity_separation
@@ -29,8 +29,8 @@ import argparse
 # ----------------------------- 
 
 home_dir = os.getenv('HOME')
-work_dir = os.path.join(home_dir, "MicrobeAtlasProject")
-embeddings_dir = os.path.join(work_dir, "embeddings")
+work_dir = os.path.join(home_dir, "cloudstor/Gaio/MicrobeAtlasProject")  # UZH: MicrobeAtlasProject
+embeddings_dir = os.path.join(work_dir, "embeddings") 
 gold_dict_path = os.path.join(home_dir, "github/metadata_mining/source_data/gold_dict.pkl")
 
 
@@ -309,3 +309,49 @@ output_to_csv(biomes_subbiomes_stats, filename)
 #     "async_temp2.0"
 # ]
 # =============================================================================
+
+
+
+
+
+# =============================================================================
+# # 2nd curator vs GPT: 
+# 
+# my_files=[
+#     "GH_collect_output_here.txt",
+#     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202407191713.txt"
+# ]
+# 
+# 
+# my_labels=[
+#     "man",
+#     "machine",
+# ]
+# 
+# 
+# 
+# df = full_agreement_df
+# 
+# 
+# # Step A: Samples with 'man' label and 'False' agreement
+# samples_false_man = df[(df['label'] == 'man') & (df['agreement'] == False)]['sample']
+# 
+# # Step B: Samples with 'machine' label and 'False' agreement
+# samples_false_machine = df[(df['label'] == 'machine') & (df['agreement'] == False)]['sample']
+# 
+# # Subtract B from A
+# result_samples = samples_false_man[~samples_false_man.isin(samples_false_machine)]
+# 
+# # Subset the original DataFrame using the result_samples
+# subset_df = df[df['sample'].isin(result_samples)]
+# 
+# print(subset_df)
+# len(subset_df)
+# =============================================================================
+
+
+
+
+
+
+
