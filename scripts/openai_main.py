@@ -319,17 +319,21 @@ if __name__ == "__main__":
 # 20241014
 # running testing new param --format 
 
+# 20250304
+# running with better prompt
+
+
 # python ~/github/metadata_mining/scripts/openai_main.py \
-#     --work_dir "MicrobeAtlasProject" \
+#     --work_dir "cloudstor/Gaio/MicrobeAtlasProject" \      # UZH: "MicrobeAtlasProject" # careful to delete spaces after backslash when running
 #     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 2 \
-#     --chunking "yes" \
-#     --chunk_size 3000 \
+#     --n_samples_per_biome 100 \
+#     --chunking "no" \
+#     --chunk_size 2000 \
 #     --seed 22 \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json.txt" \
+#     --system_prompt_file "github/metadata_mining/source_data/openai_system_better_prompt.txt" \
 #     --encoding_name "cl100k_base" \
-#     --api_key_path "my_api_key" \
+#     --api_key_path "/Users/danielagaio/Desktop/keys/my_api_key" \       # UZH: "my_api_key"   # careful to delete spaces after backslash when running
 #     --model "gpt-3.5-turbo-1106" \
 #     --temperature 1.00 \
 #     --max_tokens 4096 \
@@ -338,8 +342,28 @@ if __name__ == "__main__":
 #     --presence_penalty 1.5 \
 #     --max_requests_per_minute 3500 \
 #     --opt_text "normal" \
-#     --output_format 'json' 
+#     --output_format 'inline'
 
+# python ~/github/metadata_mining/scripts/openai_main.py \
+#     --work_dir "cloudstor/Gaio/MicrobeAtlasProject" \
+#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+#     --n_samples_per_biome 100 \
+#     --chunking "no" \
+#     --chunk_size 2000 \
+#     --seed 22 \
+#     --directory_with_split_metadata "sample.info_split_dirs" \
+#     --system_prompt_file "github/metadata_mining/source_data/openai_system_better_prompt.txt" \
+#     --encoding_name "cl100k_base" \
+#     --api_key_path "/Users/danielagaio/Desktop/keys/my_api_key" \
+#     --model "gpt-3.5-turbo-1106" \
+#     --temperature 1.00 \
+#     --max_tokens 4096 \
+#     --top_p 0.75 \
+#     --frequency_penalty 0.25 \
+#     --presence_penalty 1.5 \
+#     --max_requests_per_minute 3500 \
+#     --opt_text "normal" \
+#     --output_format 'inline'
 
 
 

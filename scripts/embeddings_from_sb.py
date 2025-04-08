@@ -112,7 +112,7 @@ if not os.path.exists(output_file_path):
     print('Embeddings saved to:', output_file_path)
 
 # Check and process each file that matches the pattern
-pattern = os.path.join(directory_path, 'gpt_clean_output*')    # when running for George (2nd curator) file: GH_collect*
+pattern = os.path.join(directory_path, 'gpt_clean_output*')    # when running for George (2nd curator) file: GH_collect* or GH_combined* (2nd round)
 file_list = glob.glob(pattern + '.txt') + glob.glob(pattern + '.csv')
 for file_path in file_list:
     output_filename = os.path.basename(file_path).replace('.csv', '_sbembeddings.json').replace('.txt', '_sbembeddings.json')

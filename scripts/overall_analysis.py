@@ -15,7 +15,11 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import glob
 from scipy.stats import chi2_contingency
-sys.path.append('/Users/dgaio/github/metadata_mining/scripts')
+
+home_dir = os.getenv('HOME')
+mypath = os.path.join(home_dir, "github/metadata_mining/scripts")
+sys.path.append(mypath)
+
 from plot_biome_agreement import lenient_match
 from features_process import extract_labels_from_filename, load_and_process_file, find_distinguishing_features 
 import numpy as np
@@ -25,21 +29,17 @@ import requests
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
-import os
-import numpy as np
 from sklearn.metrics import cohen_kappa_score
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
 import matplotlib.gridspec as gridspec
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
 
 # -----------------------------
 # Files and Paths
 # -----------------------------
 
-home_dir = os.getenv('HOME')
-work_dir = os.path.join(home_dir, "MicrobeAtlasProject")
-METADATA_DIRECTORY = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs"  
+work_dir = os.path.join(home_dir, "cloudstor/Gaio/MicrobeAtlasProject")  # UZH: MicrobeAtlasProject
+METADATA_DIRECTORY = os.path.join(work_dir, "sample.info_split_dirs") 
 
 
 # Find all 'gpt_clean_output' files that end with .csv or .txt
@@ -52,10 +52,11 @@ print('\nNumber of files: ', len(my_files), '\n')
 
 
 # Joao's file:
-file_path = '/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/joao_biomes_parsed.csv'
+file_path = os.path.join(home_dir, "cloudstor/Gaio/MicrobeAtlasProject/joao_biomes_parsed.csv")  
 joao_biomes_df = pd.read_csv(file_path, usecols=['sample', 'biome'])
 joao_biomes_df['biome'] = joao_biomes_df['biome'].replace({'aquatic': 'water', 'unknown': 'other'})
 joao_biomes_df['biome'].fillna('other', inplace=True)
+
 
 # -----------------------------
 # Ground truth loading & processing
@@ -135,7 +136,10 @@ agreement_standard_deviation = lenient_agreement_df['agreement'].std() * 100
 
 median_agreement = lenient_agreement_df['agreement'].median() * 100
 
-confidence_interval = stats.norm.interval(0.95, loc=overall_agreement_percentage, scale=agreement_standard_deviation)
+n = len(lenient_agreement_df)
+sem = agreement_standard_deviation / np.sqrt(n)
+confidence_interval = stats.norm.interval(0.95, loc=overall_agreement_percentage, scale=sem)
+
 
 cv = (agreement_standard_deviation / overall_agreement_percentage) * 100
 
@@ -153,83 +157,174 @@ print(f"Kurtosis: {kurtosis:.2f}")
 
 
 
-
 ################## Old (Joao's) vs new (GPT) biome agreements conf matrices: 
 ###
-# GPT vs ground truth:
+
 selected_biomes = ['animal', 'plant', 'soil', 'water', 'other']
+
+###
+# GPT vs ground truth:
 lenient_agreement_df_filt = lenient_agreement_df[lenient_agreement_df['gpt_biome'].isin(selected_biomes)].copy()
 lenient_agreement_df_filt.rename(columns={'gpt_biome': 'predicted_biome', 'biome': 'gd_biome'}, inplace=True)
 
 ###
-###
 # Joao's vs ground truth:  
 merged_df = pd.merge(joao_biomes_df, gold_dict_df, on='sample', how='inner')
+merged_df = merged_df[merged_df['biome_x'].isin(selected_biomes)].copy()
 merged_df.rename(columns={'biome_x': 'predicted_biome', 'biome_y': 'gd_biome'}, inplace=True)
-
 
 # Find common sample IDs between GPT and João's datasets
 common_samples = set(lenient_agreement_df_filt['sample']).intersection(set(merged_df['sample']))
-len(common_samples)
-
+print(f"Number of common samples between GPT and Joao: {len(common_samples)}")
 
 # Subset both DataFrames to include only the common samples
 lenient_agreement_df_common = lenient_agreement_df_filt[lenient_agreement_df_filt['sample'].isin(common_samples)]
 merged_df_common = merged_df[merged_df['sample'].isin(common_samples)]
 
+
+####
+# Overall metrics: GPT vs Joao's  
+
+y_true = lenient_agreement_df_common["gd_biome"]
+y_pred = lenient_agreement_df_common["predicted_biome"]
+
+print("\nGPT Model Biome-Specific Metrics:")
+print("Accuracy:", accuracy_score(y_true, y_pred))
+print("Macro Precision:", precision_score(y_true, y_pred, average='macro'))
+print("Macro Recall:", recall_score(y_true, y_pred, average='macro'))
+print("Macro F1:", f1_score(y_true, y_pred, average='macro'))
+
+
+y_true = merged_df_common["gd_biome"]
+y_pred = merged_df_common["predicted_biome"]
+print("\nJoão's Model Biome-Specific Metrics:")
+print("Accuracy:", accuracy_score(y_true, y_pred))
+print("Macro Precision:", precision_score(y_true, y_pred, average='macro'))
+print("Macro Recall:", recall_score(y_true, y_pred, average='macro'))
+print("Macro F1:", f1_score(y_true, y_pred, average='macro'))
+####
+
+
+
+
+### Min and Max of metrics across tests 
+grouped_metrics = []
+
+for label, group in lenient_agreement_df_common.groupby("label"):
+    y_true = group["gd_biome"]
+    y_pred = group["predicted_biome"]
+
+    metrics = {
+        "label": label,
+        "accuracy": accuracy_score(y_true, y_pred),
+        "precision_macro": precision_score(y_true, y_pred, average='macro', zero_division=0),
+        "recall_macro": recall_score(y_true, y_pred, average='macro', zero_division=0),
+        "f1_macro": f1_score(y_true, y_pred, average='macro', zero_division=0)
+    }
+
+    grouped_metrics.append(metrics)
+
+metrics_df = pd.DataFrame(grouped_metrics)
+
+print(f"\nNumber of tests (labels): {len(metrics_df)}")
+
+print("\nRanges of metrics per label:")
+for metric in ["accuracy", "precision_macro", "recall_macro", "f1_macro"]:
+    print(f"{metric}: min = {metrics_df[metric].min():.3f}, max = {metrics_df[metric].max():.3f}")
+###
+
+
+
+
+### biome-specific metrics:
+    
+    
+###
+
 # Create a confusion matrix for GPT predictions on the common samples
 conf_matrix_gpt_common = pd.crosstab(lenient_agreement_df_common['gd_biome'], lenient_agreement_df_common['predicted_biome'], rownames=['benchmark biome'], colnames=['predicted biome'])
-normalized_conf_matrix_gpt_common = conf_matrix_gpt_common.div(conf_matrix_gpt_common.sum(axis=1), axis=0)
+normalized_conf_matrix_gpt_common = conf_matrix_gpt_common.div(
+    conf_matrix_gpt_common.sum(axis=1), axis=0
+).reindex(index=selected_biomes, columns=selected_biomes).fillna(0)
 
 # Create a confusion matrix for João's predictions on the common samples
 conf_matrix_joao_common = pd.crosstab(merged_df_common['gd_biome'], merged_df_common['predicted_biome'], rownames=['benchmark biome'], colnames=['predicted biome'])
-normalized_conf_matrix_joao_common = conf_matrix_joao_common.div(conf_matrix_joao_common.sum(axis=1), axis=0)
+normalized_conf_matrix_joao_common = conf_matrix_joao_common.div(
+    conf_matrix_joao_common.sum(axis=1), axis=0
+).reindex(index=selected_biomes, columns=selected_biomes).fillna(0)
 
+# Print matrices for inspection (optional)
+print("\nNormalized GPT Confusion Matrix:\n", normalized_conf_matrix_gpt_common.round(3))
+print("\nNormalized Joao Confusion Matrix:\n", normalized_conf_matrix_joao_common.round(3))
 
-# Define the order of the biomes (labels)
-biome_order = ['animal', 'plant', 'soil', 'water', 'other']
+###
 
-# Reindex the heatmap DataFrames to set the order of labels
-normalized_conf_matrix_gpt_common = normalized_conf_matrix_gpt_common.reindex(index=biome_order, columns=biome_order)
-normalized_conf_matrix_joao_common = normalized_conf_matrix_joao_common.reindex(index=biome_order, columns=biome_order)
-
-
-
-
-#####
-
-# Function to calculate precision and F1-score, with overall accuracy
 def compute_scores(conf_matrix):
     true_positives = conf_matrix.values.diagonal()
-    total_predicted = conf_matrix.sum(axis=0).values  # Sum per predicted class (for precision)
-    total_actual = conf_matrix.sum(axis=1).values  # Sum per actual class (for recall)
-    total_true = conf_matrix.values.sum()  # Total number of samples
+    total_predicted = conf_matrix.sum(axis=0).values
+    total_actual = conf_matrix.sum(axis=1).values  # for per-biome accuracy
 
-    precision = true_positives / total_predicted
-    recall = true_positives / total_actual
-    overall_accuracy = true_positives.sum() / total_true  # Overall accuracy for the matrix
-    f1_scores = 2 * (precision * recall) / (precision + recall)
-    return precision, overall_accuracy, f1_scores
+    with np.errstate(divide='ignore', invalid='ignore'):
+        precision = np.where(total_predicted != 0, true_positives / total_predicted, 0)
+        per_biome_accuracy = np.where(total_actual != 0, true_positives / total_actual, 0)
+        f1_scores = np.where(
+            (precision + per_biome_accuracy) != 0,
+            2 * (precision * per_biome_accuracy) / (precision + per_biome_accuracy),
+            0
+        )
 
-# Calculate scores for GPT
-precision_gpt, overall_accuracy_gpt, f1_scores_gpt = compute_scores(conf_matrix_gpt_common)
+    return precision, per_biome_accuracy, f1_scores
 
-# Calculate scores for João
-precision_joao, overall_accuracy_joao, f1_scores_joao = compute_scores(conf_matrix_joao_common)
 
-# Print precision, overall accuracy, and F1-score
-print("\nGPT Model Overall Accuracy: {:.3f}".format(overall_accuracy_gpt))
-print("João's Model Overall Accuracy: {:.3f}".format(overall_accuracy_joao))
-print("\nGPT Model Biome-Specific Metrics:")
-for i, biome in enumerate(biome_order):
-    print(f"{biome} - Precision: {precision_gpt[i]:.3f}, F1-Score: {f1_scores_gpt[i]:.3f}")
+# Reindex conf_matrix_* before computing scores
+conf_matrix_gpt_common = conf_matrix_gpt_common.reindex(index=selected_biomes, columns=selected_biomes).fillna(0)
+conf_matrix_joao_common = conf_matrix_joao_common.reindex(index=selected_biomes, columns=selected_biomes).fillna(0)
 
-print("\nJoão's Model Biome-Specific Metrics:")
-for i, biome in enumerate(biome_order):
-    print(f"{biome} - Precision: {precision_joao[i]:.3f}, F1-Score: {f1_scores_joao[i]:.3f}")
+# Compute scores
+precision_gpt, accuracy_gpt, f1_scores_gpt = compute_scores(conf_matrix_gpt_common)
+precision_joao, accuracy_joao, f1_scores_joao = compute_scores(conf_matrix_joao_common)
 
-#####
+# Print per-biome metrics
+print("\nPer-Biome Metrics for GPT:")
+for biome, prec, acc, f1 in zip(selected_biomes, precision_gpt, accuracy_gpt, f1_scores_gpt):
+    print(f"{biome.capitalize():<10}  Precision: {prec:.3f}  Accuracy: {acc:.3f}  F1: {f1:.3f}")
 
+print("\nPer-Biome Metrics for João:")
+for biome, prec, acc, f1 in zip(selected_biomes, precision_joao, accuracy_joao, f1_scores_joao):
+    print(f"{biome.capitalize():<10}  Precision: {prec:.3f}  Accuracy: {acc:.3f}  F1: {f1:.3f}")
+
+
+    
+
+## Cohen's kappa: 
+
+def extract_labels_from_conf_matrix(conf_matrix):
+    actual = []
+    predicted = []
+    for index, row in conf_matrix.iterrows():
+        for col, count in row.iteritems():
+            actual.extend([index] * count)
+            predicted.extend([col] * count)
+    return actual, predicted
+
+gpt_actual, gpt_predicted = extract_labels_from_conf_matrix(conf_matrix_gpt_common)
+joao_actual, joao_predicted = extract_labels_from_conf_matrix(conf_matrix_joao_common)
+
+gpt_kappa = cohen_kappa_score(gpt_actual, gpt_predicted)
+joao_kappa = cohen_kappa_score(joao_actual, joao_predicted)
+
+print(f"GPT Kappa: {gpt_kappa:.3f}")   # -1 to 1: 1 is perfect agreement
+print(f"João Kappa: {joao_kappa:.3f}")
+## 
+
+
+
+
+
+###
+# Plotting confusion matrices: 
+
+biome_order = ["animal", "plant", "soil", "water", "other"]    
 
 # Define font properties for heatmap annotations
 annot_font = {
@@ -300,44 +395,7 @@ legend = legend_ax.legend(*ax4.get_legend_handles_labels(), loc='center', fontsi
 legend_ax.axis('off')  # Hide the axis box for the legend
 
 plt.show()
-
-
-
-
-
-
-################## Comparison GPT matrix vs Joao matrix: 
-
-def extract_labels_from_conf_matrix(conf_matrix):
-    actual = []
-    predicted = []
-    for index, row in conf_matrix.iterrows():
-        for col, count in row.iteritems():
-            actual.extend([index] * count)
-            predicted.extend([col] * count)
-    return actual, predicted
-
-gpt_actual, gpt_predicted = extract_labels_from_conf_matrix(conf_matrix_gpt_common)
-joao_actual, joao_predicted = extract_labels_from_conf_matrix(conf_matrix_joao_common)
-
-gpt_kappa = cohen_kappa_score(gpt_actual, gpt_predicted)
-joao_kappa = cohen_kappa_score(joao_actual, joao_predicted)
-
-print(f"GPT Kappa: {gpt_kappa:.3f}")   # -1 to 1: 1 is perfect agreement
-print(f"João Kappa: {joao_kappa:.3f}")
-
-gpt_accuracy = (np.diag(conf_matrix_gpt_common).sum() / conf_matrix_gpt_common.values.sum()) * 100
-joao_accuracy = (np.diag(conf_matrix_joao_common).sum() / conf_matrix_joao_common.values.sum()) * 100
-
-print(f"GPT Accuracy: {gpt_accuracy:.2f}%")
-print(f"João Accuracy: {joao_accuracy:.2f}%")
-
-
-
-
-
-
-
+###
 
 
 
