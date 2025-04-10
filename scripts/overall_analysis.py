@@ -489,11 +489,6 @@ def calculate_residuals(contingency, expected):
     residuals = contingency - expected
     return residuals / np.sqrt(expected)
 
-def descriptive_stats(data, label):
-    print(f"\nDescriptive Statistics for {label}:")
-    print(data.describe())
-    print(f"\nSkewness for {label}:", data.skew())
-    print(f"Kurtosis for {label}:", data.kurt())
 
 # Analysis of Biomes
 print(f"Chi-squared: {chi2_contingency(contingency_table)[:2]}")
@@ -510,6 +505,12 @@ for biome in misclassification_percentages.index:
             print(f"{gpt_biome:10} {percentage:.2f}% residual {residual:.2f}")
 
 
+
+def descriptive_stats(data, label):
+    print(f"\nDescriptive Statistics for {label}:")
+    print(data.describe())
+    print(f"\nSkewness for {label}:", data.skew())
+    print(f"Kurtosis for {label}:", data.kurt())
 
 
 # Misclassified samples analysis
@@ -533,6 +534,25 @@ plt.show()
 descriptive_stats(misclass_counts, 'All Misclassifications')
 
 
+# Compute IQR
+Q1 = misclass_counts.quantile(0.25)
+Q3 = misclass_counts.quantile(0.75)
+IQR = Q3 - Q1
+
+# Define outliers as values greater than Q3 + 1.5*IQR
+outlier_threshold = Q3 + 1.5 * IQR
+outliers = misclass_counts[misclass_counts > outlier_threshold]
+
+print(f"\nOutlier threshold: {outlier_threshold}")
+print(f"Number of outlier samples: {len(outliers)}")
+print(f"Proportion of outlier samples: {len(outliers) / len(misclass_counts):.2%}")
+
+
+percentile_95 = misclass_counts.quantile(0.95)
+top_5_percent = misclass_counts[misclass_counts >= percentile_95]
+
+print(f"\n95th percentile threshold: {percentile_95}")
+print(f"Number of samples above 95th percentile: {len(top_5_percent)}")
 
 
 ################## Misclassified samples in detail 

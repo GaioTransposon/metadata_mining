@@ -90,11 +90,14 @@ lenient_agreement_df['agreement'] = lenient_agreement_df.apply(
 
 full_result, lenient_result = plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map, work_dir)
 
+
 results_biome = pd.concat([
     # full match 
     full_result[['full match label']].rename(columns={'full match label': 'Agreement biome (exact match)'}),
     full_result[['mean']].rename(columns={'mean': 'biome_exact_match_mean'}),
     full_result[['sd']].rename(columns={'sd': 'biome_exact_match_sd'}),
+    full_result[['min']].rename(columns={'min': 'biome_exact_match_min'}),
+    full_result[['max']].rename(columns={'max': 'biome_exact_match_max'}),
     
     # lenient match
     lenient_result[['full+partial match label']].rename(columns={'full+partial match label': 'Agreement biome (lenient match)'}),
@@ -104,6 +107,7 @@ results_biome = pd.concat([
     # in common
     full_result[['Full Total Counts']].rename(columns={'Full Total Counts': 'sample_size'})
 ], axis=1)
+
 
 filename_label_map = {label: os.path.basename(file) for file, label in file_label_map.items()}
 results_biome['Filename'] = [filename_label_map.get(label) for label in results_biome.index]
@@ -136,8 +140,8 @@ for gpt_file in my_files:
     ########################################
     # Calculate and print statistics
     actual_similarities = [result['cosine'] for result in compare_results.values()]
-    avg_sim, median_sim, std_dev, percentiles, subbiome_sample_size = print_statistics(actual_similarities)
-    
+    avg_sim, median_sim, std_dev, percentiles, subbiome_sample_size, min_sim, max_sim = print_statistics(actual_similarities)
+
     results[gpt_file_ori] = compare_results
 
     
@@ -154,15 +158,17 @@ for gpt_file in my_files:
     # Gather info: 
     #avg_sim, median_sim, std_dev, percentiles, MWU_stat, MWU_p_value, filename, label
     results_sub_biome = {
-        'Average Similarity': avg_sim,
-        'Median Similarity': median_sim,
-        'Standard Deviation': std_dev,
-        'subbiome_sample_size': subbiome_sample_size,
-        '95th Percentile': percentiles,  
-        'MWU Statistic': MWU_stat,
-        'MWU P-value': MWU_p_value,
-        'Filename': gpt_file_ori,
-    }
+    'Average Similarity': avg_sim,
+    'Median Similarity': median_sim,
+    'Standard Deviation': std_dev,
+    'subbiome_sample_size': subbiome_sample_size,
+    '95th Percentile': percentiles,  
+    'Min Similarity': min_sim,
+    'Max Similarity': max_sim,
+    'MWU Statistic': MWU_stat,
+    'MWU P-value': MWU_p_value,
+    'Filename': gpt_file_ori,
+}
     
     # Append the dictionary to the results list
     results_list.append(results_sub_biome)

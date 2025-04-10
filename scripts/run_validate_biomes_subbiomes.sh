@@ -545,5 +545,24 @@ python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 
 
+#####################################################################################################
+# 12. man vs machine
+#####################################################################################################
+
+FILES=(
+    "GH_collect_output_here.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202407191713.txt"
+    "GH_combined_output.txt"
+    "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202503041426.txt"
+)
+
+LABELS=(
+    "man"
+    "machine"
+    "man_better_prompt"
+    "machine_better_prompt"
+)
+
+python "$PYTHON_SCRIPT" --files "${FILES[@]}" --labels "${LABELS[@]}"
 
 

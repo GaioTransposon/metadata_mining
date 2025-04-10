@@ -82,6 +82,9 @@ def plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map
     full_total_counts = full_agreement_df.groupby('label').size()
     full_mean = (full_true_counts / full_total_counts * 100).round(2)
     full_sd = full_agreement_df.groupby('label')['agreement'].std().round(2) * 100
+    full_min = full_agreement_df.groupby('label')['agreement'].min().round(2) * 100
+    full_max = full_agreement_df.groupby('label')['agreement'].max().round(2) * 100
+
 
     full_result = pd.DataFrame({
         'Full True Counts': full_true_counts,
@@ -90,6 +93,8 @@ def plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map
         'full match label': full_mean.astype(str) + '%\n(n=' + full_total_counts.astype(str) + ')',
         'mean': full_mean,
         'sd': full_sd,
+        'min': full_min,
+        'max': full_max,
         'sample_size': full_total_counts
     })
     print('full', full_result)
@@ -99,6 +104,9 @@ def plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map
     lenient_total_counts = lenient_agreement_df.groupby('label').size()
     lenient_mean = (lenient_true_counts / lenient_total_counts * 100).round(2)
     lenient_sd = lenient_agreement_df.groupby('label')['agreement'].std().round(2) * 100
+    lenient_min = lenient_agreement_df.groupby('label')['agreement'].min().round(2) * 100
+    lenient_max = lenient_agreement_df.groupby('label')['agreement'].max().round(2) * 100
+
 
     lenient_result = pd.DataFrame({
         'Lenient True Counts': lenient_true_counts,
@@ -107,6 +115,8 @@ def plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map
         'full+partial match label': lenient_mean.astype(str) + '%\n(n=' + lenient_total_counts.astype(str) + ')',
         'mean': lenient_mean,
         'sd': lenient_sd,
+        'min': lenient_min,
+        'max': lenient_max,
         'sample_size': lenient_total_counts
     })
     print('full+partial', lenient_result)

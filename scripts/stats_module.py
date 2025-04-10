@@ -97,6 +97,8 @@ def print_statistics(similarities):
     avg_sim = round(np.mean(similarities), 2)
     median_sim = round(np.median(similarities), 2)
     std_dev = round(np.std(similarities), 2)
+    min_sim = round(np.min(similarities), 2)
+    max_sim = round(np.max(similarities), 2)
     percentiles = np.percentile(similarities, [25, 50, 75])
     percentiles = np.round(percentiles, 2)  
     subbiome_sample_size = len(similarities)
@@ -104,11 +106,12 @@ def print_statistics(similarities):
     print(f"Average cosine similarity: {avg_sim}")
     print(f"Median cosine similarity: {median_sim}")
     print(f"Standard deviation of cosine similarity: {std_dev}")
+    print(f"Min: {min_sim}, Max: {max_sim}")
     print(f"Percentiles: {percentiles[0]}, {percentiles[1]}, {percentiles[2]}")
     print(f"How many similarities: {subbiome_sample_size}")
     
     
-    return avg_sim, median_sim, std_dev, percentiles, subbiome_sample_size
+    return avg_sim, median_sim, std_dev, min_sim, max_sim, percentiles, subbiome_sample_size
 
 
 
