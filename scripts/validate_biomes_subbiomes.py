@@ -96,9 +96,7 @@ results_biome = pd.concat([
     full_result[['full match label']].rename(columns={'full match label': 'Agreement biome (exact match)'}),
     full_result[['mean']].rename(columns={'mean': 'biome_exact_match_mean'}),
     full_result[['sd']].rename(columns={'sd': 'biome_exact_match_sd'}),
-    full_result[['min']].rename(columns={'min': 'biome_exact_match_min'}),
-    full_result[['max']].rename(columns={'max': 'biome_exact_match_max'}),
-    
+
     # lenient match
     lenient_result[['full+partial match label']].rename(columns={'full+partial match label': 'Agreement biome (lenient match)'}),
     lenient_result[['mean']].rename(columns={'mean': 'biome_lenient_match_mean'}),
@@ -140,7 +138,7 @@ for gpt_file in my_files:
     ########################################
     # Calculate and print statistics
     actual_similarities = [result['cosine'] for result in compare_results.values()]
-    avg_sim, median_sim, std_dev, percentiles, subbiome_sample_size, min_sim, max_sim = print_statistics(actual_similarities)
+    avg_sim, median_sim, std_dev, percentiles, subbiome_sample_size = print_statistics(actual_similarities)
 
     results[gpt_file_ori] = compare_results
 
@@ -163,8 +161,6 @@ for gpt_file in my_files:
     'Standard Deviation': std_dev,
     'subbiome_sample_size': subbiome_sample_size,
     '95th Percentile': percentiles,  
-    'Min Similarity': min_sim,
-    'Max Similarity': max_sim,
     'MWU Statistic': MWU_stat,
     'MWU P-value': MWU_p_value,
     'Filename': gpt_file_ori,
@@ -358,10 +354,3 @@ subset_df = df[df['sample'].isin(result_samples)]
 
 print(subset_df)
 len(subset_df)
-
-
-
-
-
-
-

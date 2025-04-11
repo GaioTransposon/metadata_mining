@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_DIR="/Users/dgaio/github/metadata_mining/scripts"
+SCRIPT_DIR="/Users/danielagaio/github/metadata_mining/scripts"  # USZH: "/Users/dgaio/github/metadata_mining/scripts"
 PYTHON_SCRIPT="${SCRIPT_DIR}/validate_biomes_subbiomes.py"
 cd $SCRIPT_DIR
 
