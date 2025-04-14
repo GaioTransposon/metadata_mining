@@ -26,7 +26,6 @@ import json
 # paths:
 work_dir = os.path.join(os.path.expanduser('~'), 'cloudstor/Gaio/MicrobeAtlasProject')
 middle_dir = os.path.join(os.path.expanduser('~'), 'github/metadata_mining/middle_dir')
-out_dir = os.path.join(os.path.expanduser('~'), 'github/metadata_mining/out')
 directory_with_split_metadata = 'sample.info_split_dirs'
 
 # files
@@ -37,8 +36,8 @@ api_key_file = os.path.join(os.path.expanduser('~'), 'google_maps_api_key')
 random_misclassified_samples_dict = 'random_misclassified_samples_dict.pkl'
 
 # output files: 
-map_all_matches = os.path.join(out_dir, 'map_with_color_coded_points_all.html')
-map_all_mismatches = os.path.join(out_dir, 'map_with_color_coded_points_mismatches.html')
+map_all_matches = os.path.join(work_dir, 'map_with_color_coded_points_all.html')
+map_all_mismatches = os.path.join(work_dir, 'map_with_color_coded_points_mismatches.html')
 
 
 # 1. open gpt files and concatenate them: 
