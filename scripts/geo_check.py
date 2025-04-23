@@ -14,7 +14,8 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
-sys.path.append('/Users/dgaio/github/metadata_mining/scripts')
+scripts = os.path.join(os.path.expanduser('~'), 'github/metadata_mining/scripts')
+sys.path.append(scripts)
 from call_googlemaps_get_coordinates import GoogleMapsLocationCache
 from location_validation import LocationValidationGame
 from math import radians, cos, sin, sqrt, atan2
@@ -24,20 +25,33 @@ from collections import defaultdict, Counter
 import json
 
 # paths:
-work_dir = os.path.join(os.path.expanduser('~'), 'cloudstor/Gaio/MicrobeAtlasProject')
 middle_dir = os.path.join(os.path.expanduser('~'), 'github/metadata_mining/middle_dir')
 directory_with_split_metadata = 'sample.info_split_dirs'
+home_path = os.path.expanduser('~')
 
+if home_path == '/Users/danielagaio':
+    work_dir = os.path.join(os.path.expanduser('~'), 'cloudstor/Gaio/MicrobeAtlasProject') 
+    api_key_file = os.path.join(home_path, 'Desktop', 'keys', 'google_maps_api_key')
+    
+elif home_path == '/Users/dgaio':
+    work_dir = os.path.join(os.path.expanduser('~'), 'MicrobeAtlasProject') 
+    api_key_file = os.path.join(home_path, 'google_maps_api_key')
+    
+else:
+    raise ValueError(f"Unrecognized home path: {home_path}")
+    
+    
 # files
 file_pattern = os.path.join(work_dir, 'production/gpt_clean_output*.csv')
 coordinates_file = 'sample.coordinates.reparsed.filtered'
 translated_coordinates = 'geocoded_coordinates.csv'
-api_key_file = os.path.join(os.path.expanduser('~'), 'google_maps_api_key')
+
 random_misclassified_samples_dict = 'random_misclassified_samples_dict.pkl'
 
 # output files: 
 map_all_matches = os.path.join(work_dir, 'map_with_color_coded_points_all.html')
 map_all_mismatches = os.path.join(work_dir, 'map_with_color_coded_points_mismatches.html')
+
 
 
 # 1. open gpt files and concatenate them: 
@@ -198,20 +212,33 @@ map = folium.Map(location=[final_merge['latitude'].mean(), final_merge['longitud
 def get_color(match):
     return 'green' if match else 'red'
 
-# Add points to the map
-for idx, row in final_merge.iterrows():
+# Plot green markers first (matches = True)
+for idx, row in final_merge[final_merge['location_match'] == True].iterrows():
     folium.CircleMarker(
         location=(row['latitude'], row['longitude']),
-        radius=3,
-        color=get_color(row['location_match']),
+        radius=0.01,
+        color='green',
         fill=True,
-        fill_color=get_color(row['location_match']),
+        fill_color='green',
+        fill_opacity=0.7,
+        popup=f"Sample ID: {row['sample_id']}<br>Match: {row['location_match']}"
+    ).add_to(map)
+
+# Plot red markers second (matches = False)
+for idx, row in final_merge[final_merge['location_match'] == False].iterrows():
+    folium.CircleMarker(
+        location=(row['latitude'], row['longitude']),
+        radius=0.01,
+        color='red',
+        fill=True,
+        fill_color='red',
         fill_opacity=0.7,
         popup=f"Sample ID: {row['sample_id']}<br>Match: {row['location_match']}"
     ).add_to(map)
 
 # Save the map as an HTML file
 map.save(map_all_matches)
+
 
 #######################################################
 ###################### Visualization mismatches #######
@@ -224,7 +251,7 @@ map = folium.Map(location=[mapped_data['latitude_original'].mean(), mapped_data[
 
 def get_color(distance):
     if 0 < distance <= 100:
-        return '#ADD8E6'  # Light Blue
+        return '#00008B'  # Dark Blue
     elif 100 < distance <= 500:
         return '#32CD32'  # Green
     elif 500 < distance <= 1000:
@@ -237,11 +264,11 @@ def get_color(distance):
 # determine the radius based on count
 def get_radius(count):
     if count == 1:
-        return 2  # Tiniest dot
+        return 0.1  # Tiniest dot
     elif 2 <= count <= 30:
-        return 5  # Medium size
+        return 1  # Medium size
     else:
-        return 8  # Large size
+        return 2  # Large size
 
 # Add points to the map
 for idx, row in mapped_data.iterrows():

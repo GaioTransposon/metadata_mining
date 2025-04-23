@@ -15,64 +15,62 @@ from scipy.stats import ttest_rel, mannwhitneyu
 
 
 
-def calculate_overlap_and_run_tests_biomes(df):
-    threshold = 0.7
+
+def calculate_overlap_and_run_tests_biomes(df, overlap_threshold=0.9):
     sample_sets = df.groupby('label')['sample'].apply(set)
     results = []
 
-    # Iterate over all pairs of labels to calculate overlap and decide on the test type
     for label1, label2 in combinations(sample_sets.keys(), 2):
         samples1 = sample_sets[label1]
         samples2 = sample_sets[label2]
         common_samples = samples1 & samples2
-        total_samples = samples1 | samples2
-        overlap_percentage = len(common_samples) / len(total_samples)
 
-        if overlap_percentage >= threshold:
-            # Extract agreement data for each label
-            df1 = df[df['label'] == label1]
-            df2 = df[df['label'] == label2]
-            # Merge on 'sample' column
+        # Asymmetric overlap: how much of the smaller set is covered
+        min_size = min(len(samples1), len(samples2))
+        overlap_ratio = len(common_samples) / min_size
+
+        # Extract agreement values
+        df1 = df[df['label'] == label1]
+        df2 = df[df['label'] == label2]
+
+        if overlap_ratio >= overlap_threshold:
+            # Perform paired test (McNemar)
             merged_df = df1.merge(df2, on='sample', suffixes=(f'_{label1}', f'_{label2}'))
-            # Construct the contingency table for McNemar's test
             a = len(merged_df[(merged_df[f'agreement_{label1}'] == 1) & (merged_df[f'agreement_{label2}'] == 1)])
             b = len(merged_df[(merged_df[f'agreement_{label1}'] == 1) & (merged_df[f'agreement_{label2}'] == 0)])
             c = len(merged_df[(merged_df[f'agreement_{label1}'] == 0) & (merged_df[f'agreement_{label2}'] == 1)])
             d = len(merged_df[(merged_df[f'agreement_{label1}'] == 0) & (merged_df[f'agreement_{label2}'] == 0)])
             table = [[a, b], [c, d]]
-            # Perform McNemar's test
             result = mcnemar(table, exact=False, correction=True)
-            results.append((label1, label2, result.statistic, result.pvalue, 'McNemar'))
+            test_type = 'McNemar'
+            stat, p = result.statistic, result.pvalue
         else:
-            # Compare agreements using independent t-test
-            group1_data = df[df['label'] == label1]['agreement']
-            group2_data = df[df['label'] == label2]['agreement']
-            stat, p = ttest_ind(group1_data, group2_data)
-            results.append((label1, label2, stat, p, 'Independent T-test'))
+            # Perform unpaired t-test
+            stat, p = ttest_ind(df1['agreement'], df2['agreement'])
+            test_type = 'Independent T-test'
+
+        results.append((label1, label2, stat, p, test_type))
 
     # Apply Bonferroni correction
-    correction_factor = len(results)
     corrected_results = []
-    for result in results:
-        label1, label2, stat, p_value, test_type = result
-        corrected_pvalue = min(p_value * correction_factor, 1.0)
-        corrected_results.append((label1, label2, round(stat, 2), round(p_value, 5), round(corrected_pvalue, 5), test_type))
+    for label1, label2, stat, p_value, test_type in results:
+        p_adjusted = min(p_value * len(results), 1.0)
+        corrected_results.append((label1, label2, round(stat, 2), round(p_value, 5), round(p_adjusted, 5), test_type))
 
-    # Prepare results DataFrame
     results_df = pd.DataFrame(corrected_results, columns=['Label1', 'Label2', 'Statistic', 'P-value', 'Adjusted P-value', 'Test Type'])
     return results_df
 
 
 
-
-def compare_based_on_overlap_subbiomes(similarities_dict1, similarities_dict2, threshold=0.7):
+def compare_based_on_overlap_subbiomes(similarities_dict1, similarities_dict2, threshold=0.8):
     keys1 = set(similarities_dict1.keys())
     keys2 = set(similarities_dict2.keys())
     common_keys = keys1 & keys2
-    total_keys = keys1 | keys2
-    overlap_percentage = len(common_keys) / len(total_keys)
-    print('Percentage of overlapping samples: ', overlap_percentage*100)
-    
+
+    # Asymmetric overlap: how much of the smaller set is shared
+    overlap_percentage = len(common_keys) / min(len(keys1), len(keys2))
+    print(f"Percentage of overlapping samples: {overlap_percentage * 100:.2f}%")
+
     sorted_common_keys = sorted(common_keys)
     similarities1 = [similarities_dict1[key]['cosine'] for key in sorted_common_keys]
     similarities2 = [similarities_dict2[key]['cosine'] for key in sorted_common_keys]
@@ -84,11 +82,19 @@ def compare_based_on_overlap_subbiomes(similarities_dict1, similarities_dict2, t
         stat, p_value = ttest_ind(similarities1, similarities2)
         test_type = 'ttest_ind'
 
-    num_tests=len(sorted_common_keys)
-    p_adjusted = min(p_value * num_tests, 1.0)  # ensures p-value does not exceed 1
+    num_tests = len(sorted_common_keys)
+    p_adjusted = min(p_value * num_tests, 1.0)
+
+    print(f"{test_type} t-test result: t={stat:.2f}, p={p_value:.5f}, p-adj={p_adjusted:.5f}")
     
-    print(f"{test_type} t-test result: t={stat}, p={p_value}, p-adj={p_adjusted}")
-    return overlap_percentage*100, round(stat, 2), round(p_value, 5), round(p_adjusted, 5), test_type
+    print("#####################################################")
+    print(f"Dict1 keys: {list(similarities_dict1.keys())[:5]}")
+    print(f"Dict2 keys: {list(similarities_dict2.keys())[:5]}")
+    print(f"Common: {len(common_keys)} / Min(len1={len(keys1)}, len2={len(keys2)}) = {overlap_percentage:.2f}")
+
+
+    return overlap_percentage * 100, round(stat, 2), round(p_value, 5), round(p_adjusted, 5), test_type
+
 
 
 
@@ -107,9 +113,7 @@ def print_statistics(similarities):
     print(f"Percentiles: {percentiles[0]}, {percentiles[1]}, {percentiles[2]}")
     print(f"How many similarities: {subbiome_sample_size}")
     
-    
     return avg_sim, median_sim, std_dev, percentiles, subbiome_sample_size
-
 
 
 
@@ -119,3 +123,6 @@ def test_similarity_separation(actual_similarities, background_similarities):
     stat, p_value = mannwhitneyu(actual_similarities, background_similarities)
     print(f"Actual vs background similarities: Mann-Whitney U test: U={stat}, p-value={p_value}")
     return round(stat, 2), round(p_value, 3)
+
+
+
