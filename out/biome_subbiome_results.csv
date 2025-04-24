@@ -1,0 +1,398 @@
+Agreement biome (exact match),biome_exact_match_mean,biome_exact_match_sd,Agreement biome (lenient match),biome_lenient_match_mean,biome_lenient_match_sd,sample_size,Filename,Average Similarity,Median Similarity,Standard Deviation,subbiome_sample_size,95th Percentile,MWU Statistic,MWU P-value,Label
+"79.76%
+(n=499)",79.76,40.0,"79.76%
+(n=499)",79.76,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202407191713.txt,0.51,0.48,0.24,424.0,[0.31 0.48 0.67],154501.5,0.0,chunk_no
+"78.76%
+(n=499)",78.76,41.0,"79.16%
+(n=499)",79.16,41.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API117_normal_dt202407191720.txt,0.52,0.49,0.24,480.0,[0.32 0.49 0.69],203065.5,0.0,chunk_size2000
+"78.2%
+(n=500)",78.2,41.0,"79.8%
+(n=500)",79.8,40.0,500.0,gpt_clean_output_nspb100_chunkingyes_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API78_normal_dt202407191729.txt,0.51,0.49,0.24,476.0,[0.32 0.49 0.66],195015.0,0.0,chunk_size3000
+"77.2%
+(n=500)",77.2,42.0,"79.8%
+(n=500)",79.8,40.0,500.0,gpt_clean_output_nspb100_chunkingyes_chunksize4000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API61_normal_dt202407191736.txt,0.48,0.47,0.24,470.0,[0.27 0.47 0.64],187011.5,0.0,chunk_size4000
+"73.85%
+(n=501)",73.85,44.0,"76.65%
+(n=501)",76.65,42.0,501.0,gpt_clean_output_nspb100_chunkingyes_chunksize5000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API51_normal_dt202407191744.txt,0.46,0.45,0.22,445.0,[0.28 0.45 0.61],167713.5,0.0,chunk_size5000
+"72.15%
+(n=492)",72.15,45.0,"76.42%
+(n=492)",76.42,42.0,492.0,gpt_clean_output_nspb100_chunkingyes_chunksize6000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API47_normal_dt202410151045.txt,0.44,0.44,0.21,442.0,[0.25 0.44 0.61],162178.5,0.0,chunk_size6000
+,,,,,,,,,,,,,,,
+"78.4%
+(n=250)",78.4,41.0,"78.4%
+(n=250)",78.4,41.0,250.0,gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API57_normal_dt202407241530.txt,0.48,0.47,0.24,222.0,[0.27 0.47 0.67],41124.5,0.0,gpt3.5-turbo-0125
+"77.6%
+(n=250)",77.6,42.0,"77.6%
+(n=250)",77.6,42.0,250.0,gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API58_repeat_dt202407241553.txt,0.5,0.48,0.24,241.0,[0.3  0.48 0.66],49539.5,0.0,gpt3.5-turbo-0125_rep
+"82.4%
+(n=250)",82.4,38.0,"82.4%
+(n=250)",82.4,38.0,250.0,gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API60_normal_dt202407241527.txt,0.5,0.48,0.23,234.0,[0.32 0.48 0.67],48143.0,0.0,gpt3.5-turbo-1106
+"81.6%
+(n=250)",81.6,39.0,"81.6%
+(n=250)",81.6,39.0,250.0,gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API58_repeat_dt202407241550.txt,0.53,0.51,0.24,238.0,[0.34 0.51 0.69],49731.5,0.0,gpt3.5-turbo-1106_rep
+"79.6%
+(n=250)",79.6,40.0,"80.4%
+(n=250)",80.4,40.0,250.0,gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-4-0613_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API58_normal_dt202407241543.txt,0.61,0.58,0.26,247.0,[0.39 0.58 0.81],55040.0,0.0,gpt4-0613
+"80.8%
+(n=250)",80.8,39.0,"81.6%
+(n=250)",81.6,39.0,250.0,gpt_clean_output_nspb50_chunkingyes_chunksize2000_modelgpt-4-0613_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API57_repeat_dt202407241607.txt,0.62,0.62,0.26,248.0,[0.4  0.62 0.83],55973.5,0.0,gpt4-0613_rep
+,,,,,,,,,,,,,,,
+"77.76%
+(n=499)",77.76,42.0,"77.76%
+(n=499)",77.76,42.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp0.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API117_normal_dt202406051402.txt,0.5,0.49,0.25,460.0,[0.29 0.49 0.68],182488.0,0.0,sync_chunkY_temp0.5
+"78.16%
+(n=499)",78.16,41.0,"78.16%
+(n=499)",78.16,41.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt,0.51,0.5,0.24,455.0,[0.31 0.5  0.69],178588.0,0.0,sync_chunkY_temp1.0
+"76.35%
+(n=499)",76.35,43.0,"76.55%
+(n=499)",76.55,42.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051409.txt,0.5,0.48,0.23,466.0,[0.31 0.48 0.68],188452.5,0.0,sync_chunkY_temp1.5
+"77.56%
+(n=499)",77.56,42.0,"78.16%
+(n=499)",78.16,41.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp2.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051415.txt,0.5,0.48,0.25,464.0,[0.29 0.48 0.66],183574.0,0.0,sync_chunkY_temp2.0
+,,,,,,,,,,,,,,,
+"80.16%
+(n=499)",80.16,40.0,"80.16%
+(n=499)",80.16,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp0.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131455.txt,0.52,0.49,0.24,420.0,[0.31 0.49 0.69],154479.0,0.0,sync_chunkN_temp0.5
+"78.76%
+(n=499)",78.76,41.0,"78.76%
+(n=499)",78.76,41.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt,0.52,0.5,0.25,434.0,[0.32 0.5  0.69],162240.0,0.0,sync_chunkN_temp1.0
+"80.56%
+(n=499)",80.56,40.0,"80.56%
+(n=499)",80.56,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131503.txt,0.51,0.48,0.24,432.0,[0.31 0.48 0.68],163787.0,0.0,sync_chunkN_temp1.5
+"79.36%
+(n=499)",79.36,41.0,"79.36%
+(n=499)",79.36,41.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp2.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131512.txt,0.51,0.49,0.24,425.0,[0.31 0.49 0.69],154875.5,0.0,sync_chunkN_temp2.0
+,,,,,,,,,,,,,,,
+"82.2%
+(n=500)",82.2,38.0,"82.2%
+(n=500)",82.2,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp0.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchyTdqYI5NQpzbGR0gNBO6HU6x_dt202406071410.csv,0.58,0.58,0.25,495.0,[0.38 0.58 0.76],219276.0,0.0,async_temp0.5
+"82.6%
+(n=500)",82.6,38.0,"82.6%
+(n=500)",82.6,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv,0.58,0.58,0.25,495.0,[0.39 0.58 0.76],221876.0,0.0,async_temp1.0
+"82.2%
+(n=500)",82.2,38.0,"82.2%
+(n=500)",82.2,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch9U6Gzkj2sLyTDWvTJooiQvtI_dt202406071411.csv,0.58,0.58,0.25,496.0,[0.38 0.58 0.74],220963.0,0.0,async_temp1.5
+"81.8%
+(n=500)",81.8,39.0,"81.8%
+(n=500)",81.8,39.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp2.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchyP1BWiaONwk6peX6svVVuimq_dt202406071412.csv,0.57,0.57,0.25,491.0,[0.38 0.57 0.74],216018.5,0.0,async_temp2.0
+,,,,,,,,,,,,,,,
+"77.35%
+(n=499)",77.35,42.0,"77.76%
+(n=499)",77.76,42.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.0_freqp0.25_presp1.5_rs22_API118_normal_dt202406051422.txt,0.51,0.49,0.24,460.0,[0.3  0.49 0.68],180997.5,0.0,sync_chunkY_topp0.0
+"78.36%
+(n=499)",78.36,41.0,"78.56%
+(n=499)",78.56,41.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.5_freqp0.25_presp1.5_rs22_API118_normal_dt202406051428.txt,0.5,0.47,0.24,449.0,[0.31 0.47 0.66],173622.5,0.0,sync_chunkY_topp0.5
+"78.16%
+(n=499)",78.16,41.0,"78.16%
+(n=499)",78.16,41.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt,0.51,0.5,0.24,455.0,[0.31 0.5  0.69],178620.5,0.0,sync_chunkY_topp0.75
+"76.35%
+(n=499)",76.35,43.0,"77.35%
+(n=499)",77.35,42.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp1.0_freqp0.25_presp1.5_rs22_API120_normal_dt202406051435.txt,0.5,0.47,0.24,462.0,[0.29 0.47 0.67],184196.5,0.0,sync_chunkY_topp1.0
+,,,,,,,,,,,,,,,
+"79.76%
+(n=499)",79.76,40.0,"79.76%
+(n=499)",79.76,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.0_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131521.txt,0.51,0.48,0.24,427.0,[0.31 0.48 0.69],157771.5,0.0,sync_chunkN_topp0.0
+"79.56%
+(n=499)",79.56,40.0,"79.56%
+(n=499)",79.56,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.5_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131529.txt,0.51,0.48,0.24,423.0,[0.31 0.48 0.68],154715.0,0.0,sync_chunkN_topp0.5
+"78.76%
+(n=499)",78.76,41.0,"78.76%
+(n=499)",78.76,41.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt,0.52,0.5,0.25,434.0,[0.32 0.5  0.69],163290.5,0.0,sync_chunkN_topp0.75
+"79.96%
+(n=499)",79.96,40.0,"79.96%
+(n=499)",79.96,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp1.0_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131538.txt,0.5,0.47,0.24,445.0,[0.3  0.47 0.67],169753.5,0.0,sync_chunkN_topp1.0
+,,,,,,,,,,,,,,,
+"81.6%
+(n=500)",81.6,39.0,"81.6%
+(n=500)",81.6,39.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.0_freqp0.25_presp1.5_rs22_batchw7kCe5puq0WqYKQq7BMa5iuT_dt202406071413.csv,0.59,0.59,0.25,493.0,[0.39 0.59 0.76],217296.5,0.0,async_topp0.0
+"82.6%
+(n=500)",82.6,38.0,"82.6%
+(n=500)",82.6,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.5_freqp0.25_presp1.5_rs22_batchkumTlIdj4B7wKVARjFoHQe4x_dt202406071414.csv,0.57,0.58,0.25,494.0,[0.38 0.58 0.74],220223.5,0.0,async_topp0.5
+"82.6%
+(n=500)",82.6,38.0,"82.6%
+(n=500)",82.6,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv,0.58,0.58,0.25,495.0,[0.39 0.58 0.76],221093.0,0.0,async_topp0.75
+"82.2%
+(n=500)",82.2,38.0,"82.2%
+(n=500)",82.2,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp1.0_freqp0.25_presp1.5_rs22_batchudcfHtFjYh6fZMOL0oKk7yLR_dt202406071415.csv,0.57,0.57,0.24,490.0,[0.4  0.57 0.74],215011.5,0.0,async_topp1.0
+,,,,,,,,,,,,,,,
+"79.16%
+(n=499)",79.16,41.0,"79.16%
+(n=499)",79.16,41.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API120_normal_dt202406051442.txt,0.49,0.46,0.24,474.0,[0.3  0.46 0.65],194788.0,0.0,sync_chunkY_freqp0.0
+"78.16%
+(n=499)",78.16,41.0,"78.16%
+(n=499)",78.16,41.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt,0.51,0.5,0.24,455.0,[0.31 0.5  0.69],180023.5,0.0,sync_chunkY_freqp0.25
+"66.47%
+(n=498)",66.47,47.0,"76.71%
+(n=498)",76.71,42.0,498.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp1.0_presp1.5_rs22_API132_normal_dt202406051450.txt,0.5,0.46,0.25,393.0,[0.29 0.46 0.67],131691.0,0.0,sync_chunkY_freqp1.0
+"64.26%
+(n=484)",64.26,48.0,"78.31%
+(n=484)",78.31,41.0,484.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp2.0_presp1.5_rs22_API153_normal_dt202406051500.txt,0.5,0.46,0.25,349.0,[0.29 0.46 0.67],105482.0,0.0,sync_chunkY_freqp2.0
+,,,,,,,,,,,,,,,
+"80.76%
+(n=499)",80.76,39.0,"80.76%
+(n=499)",80.76,39.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_API499_repeat_dt202406171520.txt,0.5,0.47,0.25,423.0,[0.3  0.47 0.69],153920.0,0.0,sync_chunkN_freqp0.0
+"78.76%
+(n=499)",78.76,41.0,"78.76%
+(n=499)",78.76,41.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt,0.52,0.5,0.25,434.0,[0.32 0.5  0.69],163375.0,0.0,sync_chunkN_freqp0.25
+"79.16%
+(n=499)",79.16,41.0,"79.16%
+(n=499)",79.16,41.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp1.0_presp1.5_rs22_API499_repeat_dt202406171543.txt,0.51,0.48,0.25,418.0,[0.29 0.48 0.69],148977.0,0.0,sync_chunkN_freqp1.0
+"80.96%
+(n=499)",80.96,39.0,"80.96%
+(n=499)",80.96,39.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp2.0_presp1.5_rs22_API499_repeat_dt202406171555.txt,0.51,0.48,0.25,412.0,[0.3  0.48 0.7 ],145791.0,0.0,sync_chunkN_freqp2.0
+,,,,,,,,,,,,,,,
+"81.6%
+(n=500)",81.6,39.0,"81.6%
+(n=500)",81.6,39.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.0_presp1.5_rs22_batchrTuC2pXWV1UcVrQjzhdQsTVm_dt202406071417.csv,0.58,0.57,0.25,494.0,[0.38 0.57 0.76],219600.5,0.0,async_freqp0.0
+"82.6%
+(n=500)",82.6,38.0,"82.6%
+(n=500)",82.6,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv,0.58,0.58,0.25,495.0,[0.39 0.58 0.76],221118.0,0.0,async_freqp0.25
+"82.4%
+(n=500)",82.4,38.0,"82.4%
+(n=500)",82.4,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp1.0_presp1.5_rs22_batch17uVtvnldxiQ6kr5NbBKJInh_dt202406071418.csv,0.57,0.57,0.24,496.0,[0.37 0.57 0.74],221257.0,0.0,async_freqp1.0
+"82.05%
+(n=468)",82.05,38.0,"82.05%
+(n=468)",82.05,38.0,468.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp2.0_presp1.5_rs22_batchrsizRxW3st3W2olyp0fU3Go0_dt202406071419.csv,0.55,0.54,0.25,458.0,[0.36 0.54 0.73],186424.5,0.0,async_freqp2.0
+,,,,,,,,,,,,,,,
+"77.96%
+(n=499)",77.96,41.0,"78.16%
+(n=499)",78.16,41.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp0.0_rs22_API118_normal_dt202406051507.txt,0.51,0.48,0.25,475.0,[0.31 0.48 0.69],194759.0,0.0,sync_chunkY_presp0.0
+"77.56%
+(n=499)",77.56,42.0,"78.16%
+(n=499)",78.16,41.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.0_rs22_API118_normal_dt202406051513.txt,0.51,0.49,0.25,468.0,[0.29 0.49 0.69],187036.0,0.0,sync_chunkY_presp1.0
+"78.16%
+(n=499)",78.16,41.0,"78.16%
+(n=499)",78.16,41.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt,0.51,0.5,0.24,455.0,[0.31 0.5  0.69],179850.5,0.0,sync_chunkY_presp1.5
+"78.36%
+(n=499)",78.36,41.0,"78.96%
+(n=499)",78.96,41.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp2.0_rs22_API118_normal_dt202406051520.txt,0.51,0.49,0.25,464.0,[0.31 0.49 0.7 ],184537.0,0.0,sync_chunkY_presp2.5
+,,,,,,,,,,,,,,,
+"80.56%
+(n=499)",80.56,40.0,"80.56%
+(n=499)",80.56,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp0.0_rs22_API499_repeat_dt202406171624.txt,0.52,0.5,0.24,434.0,[0.34 0.5  0.69],165187.0,0.0,sync_chunkN_presp0.0
+"79.36%
+(n=499)",79.36,41.0,"79.36%
+(n=499)",79.36,41.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.0_rs22_API499_repeat_dt202406171636.txt,0.52,0.5,0.25,426.0,[0.32 0.5  0.7 ],158280.5,0.0,sync_chunkN_presp1.0
+"78.76%
+(n=499)",78.76,41.0,"78.76%
+(n=499)",78.76,41.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt,0.52,0.5,0.25,434.0,[0.32 0.5  0.69],163005.5,0.0,sync_chunkN_presp1.5
+"80.76%
+(n=499)",80.76,39.0,"80.76%
+(n=499)",80.76,39.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp2.0_rs22_API499_repeat_dt202406171647.txt,0.52,0.49,0.25,423.0,[0.32 0.49 0.69],155894.5,0.0,sync_chunkN_presp2.5
+,,,,,,,,,,,,,,,
+"83.4%
+(n=500)",83.4,37.0,"83.4%
+(n=500)",83.4,37.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp0.0_rs22_batchKcsV0wRxs2BFSS1dxWjXoCgq_dt202406071420.csv,0.58,0.59,0.24,494.0,[0.4  0.59 0.76],221053.0,0.0,async_presp0.0
+"81.8%
+(n=500)",81.8,39.0,"81.8%
+(n=500)",81.8,39.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.0_rs22_batchMPSOJiGWXtHSlVNfGJnR28vS_dt202406071421.csv,0.57,0.58,0.25,495.0,[0.38 0.58 0.74],220767.5,0.0,async_presp1.0
+"82.6%
+(n=500)",82.6,38.0,"82.6%
+(n=500)",82.6,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv,0.58,0.58,0.25,495.0,[0.39 0.58 0.76],220697.5,0.0,async_presp1.5
+"83.0%
+(n=500)",83.0,38.0,"83.0%
+(n=500)",83.0,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp2.0_rs22_batchDs2ASNWkbUmXrtZn2Mlw5dJY_dt202406071422.csv,0.58,0.58,0.25,496.0,[0.38 0.58 0.75],220848.5,0.0,async_presp2.5
+,,,,,,,,,,,,,,,
+"78.16%
+(n=499)",78.16,41.0,"78.16%
+(n=499)",78.16,41.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt,0.51,0.5,0.24,455.0,[0.31 0.5  0.69],178703.5,0.0,sync_inl_rs22
+"78.56%
+(n=499)",78.56,41.0,"78.96%
+(n=499)",78.96,41.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API119_repeat_dt202406061246.txt,0.5,0.48,0.24,462.0,[0.31 0.48 0.66],182818.0,0.0,sync_inl_rs22_rep1
+"79.76%
+(n=499)",79.76,40.0,"79.76%
+(n=499)",79.76,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API503_timeTue1800CESTrep_dt202407301808.txt,0.5,0.47,0.23,435.0,[0.31 0.47 0.66],163947.5,0.0,sync_inl_rs22_rep10
+"80.16%
+(n=499)",80.16,40.0,"80.16%
+(n=499)",80.16,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue2100CEST_dt202407302116.txt,0.49,0.47,0.24,434.0,[0.29 0.47 0.66],158717.5,0.0,sync_inl_rs22_rep11
+"79.76%
+(n=499)",79.76,40.0,"79.76%
+(n=499)",79.76,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue2100CESTrep_dt202407302129.txt,0.49,0.46,0.24,439.0,[0.3  0.46 0.65],162402.0,0.0,sync_inl_rs22_rep12
+"80.16%
+(n=499)",80.16,40.0,"80.16%
+(n=499)",80.16,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API500_timeSat1600CEST_dt202407271555.txt,0.49,0.46,0.24,440.0,[0.3  0.46 0.64],165517.5,0.0,sync_inl_rs22_rep2
+"80.16%
+(n=499)",80.16,40.0,"80.16%
+(n=499)",80.16,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API500_timeMon1100CEST_dt202407291058.txt,0.5,0.47,0.23,436.0,[0.31 0.47 0.66],162490.5,0.0,sync_inl_rs22_rep3
+"80.76%
+(n=499)",80.76,39.0,"80.76%
+(n=499)",80.76,39.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API500_timeMon1600CEST_dt202407291559.txt,0.5,0.46,0.24,438.0,[0.31 0.46 0.66],163858.0,0.0,sync_inl_rs22_rep4
+"80.76%
+(n=499)",80.76,39.0,"80.76%
+(n=499)",80.76,39.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue1100CEST_dt202407301104.txt,0.49,0.46,0.24,437.0,[0.3  0.46 0.67],160921.5,0.0,sync_inl_rs22_rep5
+"79.96%
+(n=499)",79.96,40.0,"79.96%
+(n=499)",79.96,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API500_timeTue1100CESTrep_dt202407301116.txt,0.49,0.46,0.23,448.0,[0.3  0.46 0.64],171140.0,0.0,sync_inl_rs22_rep6
+"79.96%
+(n=499)",79.96,40.0,"79.96%
+(n=499)",79.96,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue1600CEST_dt202407301558.txt,0.5,0.47,0.24,435.0,[0.31 0.47 0.66],163448.5,0.0,sync_inl_rs22_rep7
+"80.16%
+(n=499)",80.16,40.0,"80.16%
+(n=499)",80.16,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue1600CESTrep_dt202407301622.txt,0.49,0.46,0.24,437.0,[0.3  0.46 0.64],163901.5,0.0,sync_inl_rs22_rep8
+"79.96%
+(n=499)",79.96,40.0,"79.96%
+(n=499)",79.96,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_timeTue1800CEST_dt202407301757.txt,0.49,0.47,0.23,437.0,[0.3  0.47 0.65],164652.5,0.0,sync_inl_rs22_rep9
+"79.32%
+(n=498)",79.32,41.0,"79.92%
+(n=498)",79.92,40.0,498.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs32_API118_normal_dt202406051533.txt,0.51,0.49,0.25,466.0,[0.3  0.49 0.69],186500.5,0.0,sync_inl_rs32
+"78.71%
+(n=498)",78.71,41.0,"79.52%
+(n=498)",79.52,40.0,498.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs32_API120_repeat_dt202406061258.txt,0.53,0.5,0.25,469.0,[0.34 0.5  0.71],194712.0,0.0,sync_inl_rs32_rep
+"81.16%
+(n=499)",81.16,39.0,"81.76%
+(n=499)",81.76,39.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs42_API109_normal_dt202406051527.txt,0.52,0.49,0.25,452.0,[0.31 0.49 0.71],177494.5,0.0,sync_inl_rs42
+"81.36%
+(n=499)",81.36,39.0,"81.56%
+(n=499)",81.56,39.0,499.0,gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs42_API110_repeat_dt202406061252.txt,0.5,0.47,0.25,465.0,[0.29 0.47 0.69],184269.0,0.0,sync_inl_rs42_rep
+,,,,,,,,,,,,,,,
+"82.2%
+(n=500)",82.2,38.0,"82.2%
+(n=500)",82.2,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch3UrsPni6Ue63YXRYwisZ5Ygz_dt202407311542.csv,0.56,0.55,0.24,497.0,[0.38 0.55 0.73],220551.5,0.0,async_js_rs22_rep1
+"82.6%
+(n=500)",82.6,38.0,"82.6%
+(n=500)",82.6,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchkeK2m8Hncyy2FaWDAJwvDyn3_dt202407311543.csv,0.57,0.55,0.24,495.0,[0.39 0.55 0.74],219601.5,0.0,async_js_rs22_rep10
+"82.2%
+(n=500)",82.2,38.0,"82.2%
+(n=500)",82.2,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchkxeRGfXerVFAPjV6LvHDMDmu_dt202407311542.csv,0.57,0.56,0.24,495.0,[0.38 0.56 0.74],219266.5,0.0,async_js_rs22_rep11
+"81.8%
+(n=500)",81.8,39.0,"81.8%
+(n=500)",81.8,39.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch4V631Bmz2q8THhl5vWhjN7xL_dt202407311543.csv,0.57,0.56,0.24,496.0,[0.39 0.56 0.74],219878.5,0.0,async_js_rs22_rep2
+"83.0%
+(n=500)",83.0,38.0,"83.0%
+(n=500)",83.0,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch9Kxb9CgSKO4Jrc4nHeNXjIlL_dt202407311542.csv,0.57,0.57,0.24,496.0,[0.38 0.57 0.74],218535.0,0.0,async_js_rs22_rep3
+"81.8%
+(n=500)",81.8,39.0,"81.8%
+(n=500)",81.8,39.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchCIMrqld1ZrfyF7qtmkdMHt7V_dt202407311541.csv,0.58,0.57,0.25,497.0,[0.37 0.57 0.75],220753.5,0.0,async_js_rs22_rep4
+"83.2%
+(n=500)",83.2,37.0,"83.2%
+(n=500)",83.2,37.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchWLGIEwamUdCiNXmuJ8ecDIiZ_dt202407311542.csv,0.56,0.55,0.24,495.0,[0.39 0.55 0.73],219387.5,0.0,async_js_rs22_rep5
+"81.8%
+(n=500)",81.8,39.0,"81.8%
+(n=500)",81.8,39.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchWXV7DhkQXGAU3ieCwTOvVkrJ_dt202407311542.csv,0.56,0.55,0.24,496.0,[0.38 0.55 0.73],219339.0,0.0,async_js_rs22_rep6
+"82.6%
+(n=500)",82.6,38.0,"82.6%
+(n=500)",82.6,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchYBPAJfHUxVnBm9YVywZL5wUc_dt202407311543.csv,0.57,0.55,0.24,495.0,[0.4  0.55 0.74],221222.5,0.0,async_js_rs22_rep7
+"82.4%
+(n=500)",82.4,38.0,"82.4%
+(n=500)",82.4,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchbYb8LE5CosmqIJqySwqu6wyx_dt202407311543.csv,0.58,0.57,0.24,497.0,[0.4  0.57 0.74],222227.0,0.0,async_js_rs22_rep8
+"82.8%
+(n=500)",82.8,38.0,"82.8%
+(n=500)",82.8,38.0,500.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-0125_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchkJkjHPS0P9LlbDlUOfaXwotC_dt202407311543.csv,0.57,0.55,0.24,496.0,[0.37 0.55 0.74],219940.5,0.0,async_js_rs22_rep9
+"82.8%
+(n=250)",82.8,38.0,"82.8%
+(n=250)",82.8,38.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs55_batch3o0hNkYn3qMIb6H3Eqa7ZVpr_dt202407231432.csv,0.58,0.56,0.25,246.0,[0.41 0.56 0.77],54861.0,0.0,async_js_rs55
+"83.6%
+(n=250)",83.6,37.0,"83.6%
+(n=250)",83.6,37.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs55_batchn8C5mQeif6OV1LBhJ5fPd2jt_dt202407231425.csv,0.6,0.58,0.25,247.0,[0.43 0.58 0.77],56355.5,0.0,async_js_rs55_rep
+"84.0%
+(n=250)",84.0,37.0,"84.0%
+(n=250)",84.0,37.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs66_batchZk8tZDOF5WsrqcAvYPewbLtS_dt202407231432.csv,0.58,0.58,0.24,247.0,[0.4  0.58 0.77],54916.0,0.0,async_js_rs66
+"83.2%
+(n=250)",83.2,37.0,"83.2%
+(n=250)",83.2,37.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs66_batchluBKAqRedUv3mOgkmjcJ6Ebq_dt202407231426.csv,0.57,0.55,0.25,246.0,[0.38 0.55 0.77],53996.0,0.0,async_js_rs66_rep
+"82.4%
+(n=250)",82.4,38.0,"82.4%
+(n=250)",82.4,38.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs77_batch8yuPSurBvuXCp8m7AAzpOYMZ_dt202407231427.csv,0.59,0.59,0.26,244.0,[0.36 0.59 0.8 ],53257.0,0.0,async_js_rs77
+"82.4%
+(n=250)",82.4,38.0,"82.4%
+(n=250)",82.4,38.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs77_batchl8fGIwSNBj0DXJfBHtArnz8n_dt202407231432.csv,0.58,0.6,0.26,247.0,[0.37 0.6  0.78],54251.0,0.0,async_js_rs77_rep
+"82.0%
+(n=250)",82.0,38.0,"82.0%
+(n=250)",82.0,38.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs88_batchNZrsNsi10rMTWPyZUocTHv6r_dt202407231427.csv,0.6,0.61,0.26,247.0,[0.38 0.61 0.81],54656.5,0.0,async_js_rs88
+"80.8%
+(n=250)",80.8,39.0,"80.8%
+(n=250)",80.8,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs88_batchVuGTjZgtQSotdEoAWrBVk3cd_dt202407231433.csv,0.6,0.59,0.25,244.0,[0.4  0.59 0.78],53899.0,0.0,async_js_rs88_rep
+"84.4%
+(n=250)",84.4,36.0,"84.4%
+(n=250)",84.4,36.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs99_batchFH19lIBQYqjKQ0shEGRVpqhi_dt202407231427.csv,0.58,0.55,0.25,248.0,[0.4  0.55 0.77],55515.5,0.0,async_js_rs99
+"83.6%
+(n=250)",83.6,37.0,"83.6%
+(n=250)",83.6,37.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs99_batchFZgD75ev26VujM8LYnIt8pFg_dt202407231433.csv,0.59,0.6,0.25,247.0,[0.4  0.6  0.77],55426.0,0.0,async_js_rs99_rep
+,,,,,,,,,,,,,,,
+"81.6%
+(n=250)",81.6,39.0,"81.6%
+(n=250)",81.6,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e493dbacc8190a39bd001c1f72d6b_dt202410151251.csv,0.6,0.61,0.26,247.0,[0.4  0.61 0.76],55074.0,0.0,async_js
+"79.2%
+(n=250)",79.2,41.0,"79.2%
+(n=250)",79.2,41.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e49446d888190a86e428fb46406c5_dt202410151251.csv,0.59,0.58,0.25,248.0,[0.4  0.58 0.76],55557.5,0.0,async_js_rep1
+"81.2%
+(n=250)",81.2,39.0,"81.2%
+(n=250)",81.2,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e4949656881908d97b5142449b51f_dt202410151251.csv,0.6,0.6,0.26,246.0,[0.39 0.6  0.79],54611.0,0.0,async_js_rep2
+"80.8%
+(n=250)",80.8,39.0,"80.8%
+(n=250)",80.8,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e494e783081909e34f78775804f08_dt202410151251.csv,0.61,0.62,0.26,247.0,[0.41 0.62 0.79],55094.0,0.0,async_js_rep3
+"80.0%
+(n=250)",80.0,40.0,"80.0%
+(n=250)",80.0,40.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e49543298819085d1b0b2325ca876_dt202410151252.csv,0.6,0.61,0.25,245.0,[0.41 0.61 0.77],54355.0,0.0,async_js_rep4
+"81.2%
+(n=250)",81.2,39.0,"81.2%
+(n=250)",81.2,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e4bc1b1cc8190a3eeff102b680361_dt202410151302.csv,0.59,0.58,0.26,248.0,[0.39 0.58 0.79],55362.5,0.0,async_js_rep5
+"81.2%
+(n=250)",81.2,39.0,"81.2%
+(n=250)",81.2,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API250_normal_dt202410151053.txt,0.61,0.62,0.25,245.0,[0.41 0.62 0.79],54381.0,0.0,sync_js
+"80.8%
+(n=250)",80.8,39.0,"80.8%
+(n=250)",80.8,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API250_rep1_dt202410151059.txt,0.61,0.6,0.25,244.0,[0.42 0.6  0.79],53334.0,0.0,sync_js_rep1
+"80.8%
+(n=250)",80.8,39.0,"80.8%
+(n=250)",80.8,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API250_rep2_dt202410151106.txt,0.6,0.61,0.25,245.0,[0.41 0.61 0.78],54683.5,0.0,sync_js_rep2
+"80.4%
+(n=250)",80.4,40.0,"80.4%
+(n=250)",80.4,40.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API250_rep3_dt202410151112.txt,0.6,0.61,0.25,244.0,[0.42 0.61 0.76],53462.5,0.0,sync_js_rep3
+"81.2%
+(n=250)",81.2,39.0,"81.2%
+(n=250)",81.2,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API250_rep4_dt202410151118.txt,0.6,0.59,0.26,246.0,[0.4  0.59 0.78],55121.0,0.0,sync_js_rep4
+"80.0%
+(n=250)",80.0,40.0,"80.0%
+(n=250)",80.0,40.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API250_rep5_dt202410151124.txt,0.61,0.61,0.26,244.0,[0.42 0.61 0.8 ],53398.0,0.0,sync_js_rep5
+,,,,,,,,,,,,,,,
+"81.6%
+(n=250)",81.6,39.0,"81.6%
+(n=250)",81.6,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e493dbacc8190a39bd001c1f72d6b_dt202410151251.csv,0.6,0.61,0.26,247.0,[0.4  0.61 0.76],54592.0,0.0,async_js
+"81.2%
+(n=250)",81.2,39.0,"81.2%
+(n=250)",81.2,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e49abc8ac81908590f00a2e248014_dt202410151253.csv,0.6,0.61,0.25,250.0,[0.4  0.61 0.77],55814.0,0.0,async_js_please
+"80.8%
+(n=250)",80.8,39.0,"80.8%
+(n=250)",80.8,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e49b07d388190b3cd6f619f824a3b_dt202410151253.csv,0.6,0.6,0.25,246.0,[0.4  0.6  0.77],54509.0,0.0,async_js_please_rep
+"79.2%
+(n=250)",79.2,41.0,"79.2%
+(n=250)",79.2,41.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e49446d888190a86e428fb46406c5_dt202410151251.csv,0.59,0.58,0.25,248.0,[0.4  0.58 0.76],55576.0,0.0,async_js_rep1
+"81.2%
+(n=250)",81.2,39.0,"81.2%
+(n=250)",81.2,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e4949656881908d97b5142449b51f_dt202410151251.csv,0.6,0.6,0.26,246.0,[0.39 0.6  0.79],53917.0,0.0,async_js_rep2
+"80.8%
+(n=250)",80.8,39.0,"80.8%
+(n=250)",80.8,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e494e783081909e34f78775804f08_dt202410151251.csv,0.61,0.62,0.26,247.0,[0.41 0.62 0.79],54974.0,0.0,async_js_rep3
+"80.0%
+(n=250)",80.0,40.0,"80.0%
+(n=250)",80.0,40.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e49543298819085d1b0b2325ca876_dt202410151252.csv,0.6,0.61,0.25,245.0,[0.41 0.61 0.77],54513.5,0.0,async_js_rep4
+"81.2%
+(n=250)",81.2,39.0,"81.2%
+(n=250)",81.2,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch670e4bc1b1cc8190a3eeff102b680361_dt202410151302.csv,0.59,0.58,0.26,248.0,[0.39 0.58 0.79],54720.0,0.0,async_js_rep5
+,,,,,,,,,,,,,,,
+"77.91%
+(n=249)",77.91,42.0,"77.91%
+(n=249)",77.91,42.0,249.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_formatinline_batch67164db65fd0819097f31ac6c55e8caf_dt202410211448.csv,0.52,0.51,0.24,213.0,[0.31 0.51 0.69],38931.0,0.0,inline
+"79.52%
+(n=249)",79.52,40.0,"79.52%
+(n=249)",79.52,40.0,249.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_formatinline_batch67164dbbe8b081908bf02a4d2b6e2f65_dt202410211449.csv,0.52,0.5,0.25,211.0,[0.32 0.5  0.71],38532.5,0.0,inline_rep
+"81.6%
+(n=250)",81.6,39.0,"81.6%
+(n=250)",81.6,39.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_formatjson_batch67164d8ded048190badb01069142cbda_dt202410211448.csv,0.6,0.61,0.26,248.0,[0.41 0.61 0.78],56043.5,0.0,json
+"80.0%
+(n=250)",80.0,40.0,"80.0%
+(n=250)",80.0,40.0,250.0,gpt_clean_output_nspb50_chunkingno_chunksize3000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_formatjson_batch67164da1e4ac81909991913126e9eecb_dt202410211448.csv,0.61,0.63,0.25,246.0,[0.41 0.63 0.79],54614.5,0.0,json_rep
+,,,,,,,,,,,,,,,
+"79.76%
+(n=499)",79.76,40.0,"79.76%
+(n=499)",79.76,40.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202407191713.txt,0.51,0.48,0.24,424.0,[0.31 0.48 0.67],156136.5,0.0,machine
+"83.17%
+(n=499)",83.17,37.0,"83.17%
+(n=499)",83.17,37.0,499.0,gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202503041426.txt,0.49,0.45,0.24,426.0,[0.29 0.45 0.66],153525.5,0.0,machine_better_prompt
+"78.0%
+(n=250)",78.0,42.0,"78.0%
+(n=250)",78.0,42.0,250.0,GH_collect_output_here.txt,0.51,0.5,0.24,244.0,[0.3 0.5 0.7],51196.0,0.0,man
+"88.0%
+(n=250)",88.0,33.0,"88.0%
+(n=250)",88.0,33.0,250.0,GH_combined_output.txt,0.5,0.49,0.24,246.0,[0.29 0.49 0.69],52692.0,0.0,man_better_prompt
