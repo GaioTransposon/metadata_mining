@@ -91,6 +91,8 @@ if __name__ == "__main__":
 
 
 # =============================================================================
+## Inspect metadata file being created: 
+# 
 # import pickle
 # 
 # # Load the metadata from the pickle file

@@ -6,6 +6,8 @@ Created on Mon Aug  5 14:23:58 2024
 @author: dgaio
 """
 
+# script: gpt_async_batch_production.py
+    
 
 import argparse
 import os
@@ -16,7 +18,6 @@ from datetime import datetime, timedelta
 import time
 import logging
 from io import BytesIO
-
 from openai import OpenAI
 
 
@@ -46,7 +47,7 @@ def load_system_prompt(system_prompt_file):
         return file.read().strip()
 
 # Fetch Metadata
-def fetch_metadata(sample_ids, directory_with_split_metadata, work_dir):
+def fetch_metadata(sample_ids, directory_with_split_metadata, work_dir, success_log, fail_log):
     metadata_dict = {}
     for sample_id in sample_ids:
         folder_name = f"dir_{sample_id[-3:]}"
@@ -55,9 +56,15 @@ def fetch_metadata(sample_ids, directory_with_split_metadata, work_dir):
         try:
             with open(metadata_file_path, 'r') as file:
                 metadata_dict[sample_id] = file.read()
+            with open(success_log, 'a') as s_log:
+                s_log.write(sample_id + '\n')
         except Exception as e:
             logging.error(f"Failed to fetch metadata for sample {sample_id}: {e}")
+            with open(fail_log, 'a') as f_log:
+                f_log.write(sample_id + '\n')
     return metadata_dict
+
+
 
 # Save Metadata
 def save_metadata(metadata_dict, output_pkl_path):
@@ -169,8 +176,8 @@ def parse_args():
     parser.add_argument("--work_dir", type=str, required=True, help="Working directory path")
     parser.add_argument("--sample_list_file", type=str, required=True, help="File containing list of samples")
     parser.add_argument("--directory_with_split_metadata", type=str, required=True, help="Directory with split metadata")
-    parser.add_argument("--output_pkl", type=str, required=True, help="Output .pkl file path")
-    parser.add_argument("--system_prompt_file", type=str, required=True, help="System prompt file path")
+    parser.add_argument("--output_pkl", type=str, required=True, help="Name of output .pkl file - this is a staging file that gets remade dynamically")
+    parser.add_argument("--system_prompt_file", type=str, required=True, help="System prompt file name")
     parser.add_argument("--api_key_path", type=str, required=True, help="API key file path")
     parser.add_argument("--model", type=str, required=True, help="Model to use for batch processing")
     parser.add_argument("--temperature", type=float, required=True, help="Temperature for completion randomness")
@@ -191,7 +198,9 @@ def main():
     args = parse_args()
     setup_logging()
     
+    # paths 
     work_dir_full = os.path.join(os.path.expanduser('~'), args.work_dir)
+    directory_with_split_metadata = os.path.join(work_dir_full, args.directory_with_split_metadata)
     
     sample_list_path = os.path.join(work_dir_full, args.sample_list_file)
     with open(sample_list_path, 'r') as file:
@@ -210,13 +219,23 @@ def main():
         end_index = min(start_index + samples_per_batch, total_samples)
         selected_samples = all_samples[start_index:end_index]
         
-        # Process selected samples
-        metadata_dict = fetch_metadata(selected_samples, args.directory_with_split_metadata, work_dir_full)
+        # Process selected samples 
+        success_log = os.path.join(work_dir_full, "sent_samples.txt")
+        fail_log = os.path.join(work_dir_full, "failed_samples.txt")
+        metadata_dict = fetch_metadata(selected_samples, directory_with_split_metadata, work_dir_full, success_log, fail_log)
+
+        # NB: this .pkl file is recreated for every batch and is not reused from earlier runs.
         save_metadata(metadata_dict, os.path.join(work_dir_full, args.output_pkl))
-        
+
+
         # Initialize OpenAI client and load system prompt
-        client = init_openai_client(os.path.expanduser(args.api_key_path))
-        system_prompt = load_system_prompt(os.path.join(os.path.expanduser('~'), args.system_prompt_file))
+        with open(os.path.expanduser(args.api_key_path), "r") as f:
+            api_key = f.read().strip()
+
+        client = OpenAI(api_key=api_key)
+        
+        system_prompt_file = os.path.join(os.path.expanduser('~'), args.system_prompt_file)
+        system_prompt = load_system_prompt(os.path.join(os.path.expanduser('~'), system_prompt_file))
 
         # Load metadata and prepare tasks
         metadata_dict = load_metadata(os.path.join(work_dir_full, args.output_pkl))
@@ -237,32 +256,43 @@ if __name__ == "__main__":
 
 
 
-        
 
-
-
-# =============================================================================
-# python /Users/dgaio/github/metadata_mining/scripts/gpt_async_batch_production.py \
-#     --work_dir "MicrobeAtlasProject" \
+# python /Users/danielagaio/github/metadata_mining/scripts/production/gpt_async_batch_production.py \
+#     --work_dir "cloudstor/Gaio/MicrobeAtlasProject" \
 #     --sample_list_file "samples_list.txt" \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
 #     --output_pkl "metadataprov.pkl" \
-#     --system_prompt_file "/Users/dgaio/github/metadata_mining/source_data/openai_system_prompt_batch.txt" \
-#     --api_key_path "my_api_key_production_run" \
+#     --system_prompt_file "github/metadata_mining/source_data/openai_system_better_prompt_batch.txt" \
+#     --api_key_path "Desktop/keys/my_api_key_production_run" \
 #     --model "gpt-3.5-turbo-0125" \
 #     --temperature 1.00 \
 #     --max_tokens 4096 \
 #     --top_p 0.75 \
 #     --frequency_penalty 0.25 \
 #     --presence_penalty 1.5 \
-#     --n_samples 3500 \
-#     --n_batches 77 \
+#     --n_samples 100 \
+#     --n_batches 2 \
 #     --delay_minutes 1.5 \
-#     --state_file "state_file.txt"
-# =============================================================================
+#     --state_file "state_file_202504.txt"
     
     
     
 
-    
-    
+
+
+# =============================================================================
+## Inspect metadata file being created: 
+# 
+# import pickle
+# 
+# # Load the metadata from the pickle file
+# with open('/Users/danielagaio/cloudstor/Gaio/MicrobeAtlasProject/metadataprov.pkl', 'rb') as file:
+#     metadata = pickle.load(file)
+# 
+# # Print the metadata for inspection
+# for sample_id, content in metadata.items():
+#     print(f"Sample ID: {sample_id}")
+#     print("Metadata:")
+#     print(content)
+#     print("-" * 40)  # Separator for readability
+# =============================================================================
