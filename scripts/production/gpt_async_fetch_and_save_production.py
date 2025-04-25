@@ -22,6 +22,8 @@ def init_openai_client(api_key_path):
         api_key = file.read().strip()
     return OpenAI(api_key=api_key)
 
+
+
 def retrieve_results(client, batch_job_id):
     batch_job = client.batches.retrieve(batch_job_id)
     print('\n', batch_job, '\n')
@@ -33,8 +35,6 @@ def retrieve_results(client, batch_job_id):
         print('Batch not completed yet')
         return None
     
-
-
 
 def convert_jsonl_content_to_csv(jsonl_content, output_csv_path, failed_samples_path):
     lines = jsonl_content.splitlines()
@@ -71,25 +71,26 @@ def get_existing_batch_ids(directory):
 
 
 
-
-
 def log_failed_batch(directory, batch_job_id):
     failed_log_path = os.path.join(directory, "failed_async_batches_production_run.txt")
     with open(failed_log_path, "a") as file:
         file.write(batch_job_id + "\n")
 
 # Main execution
-api_key_file = os.path.expanduser("~/my_api_key_production_run")
+api_key_file = os.path.expanduser("~/Desktop/keys/my_api_key_production_run")
 client = init_openai_client(api_key_file)
 
-directory = "MicrobeAtlasProject"  # Example directory
-failed_samples_path = os.path.join(directory, "failed_async_samples_production_run.txt")
+work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject")
+failed_samples_path = os.path.join(work_dir, "failed_async_samples_production_run.txt")
 
-existing_batch_ids = get_existing_batch_ids(directory)
+existing_batch_ids = get_existing_batch_ids(work_dir)
 print('Existing batch ids for this client: \n', existing_batch_ids, '\n')
 
+
+
+
 # Load batch job information
-with open(f"{directory}/batch_job_info_production.json", "r") as f:
+with open(f"{work_dir}/batch_job_info_production.json", "r") as f:
     batch_info_list = json.load(f)
 
 for batch_info in batch_info_list:
@@ -99,15 +100,20 @@ for batch_info in batch_info_list:
         try:
             result_json = retrieve_results(client, batch_job_id)
             if result_json:
-                output_csv_path = f"{directory}/production/gpt_clean_output_batch{batch_job_id.split('_')[-1]}_dt{batch_info['datetime']}.csv"
+                output_csv_path = f"{work_dir}/production/gpt_clean_output_batch{batch_job_id.split('_')[-1]}_dt{batch_info['datetime']}.csv"
                 convert_jsonl_content_to_csv(result_json, output_csv_path, failed_samples_path)
                 print("Batch completed and results saved to CSV.")
             else:
                 print("Please wait until the batch job is completed.")
         except Exception as e:
             print(f"Error processing batch {batch_job_id}: {str(e)}. Logging failed batch.")
-            log_failed_batch(directory, batch_job_id)
+            log_failed_batch(work_dir, batch_job_id)
     else:
         print(f"CSV file for batch {batch_job_id} already exists. Skipping creation.")
+
+
+
+
+
 
 

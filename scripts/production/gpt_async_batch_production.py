@@ -7,6 +7,11 @@ Created on Mon Aug  5 14:23:58 2024
 """
 
 # script: gpt_async_batch_production.py
+
+# run in order: 
+    # 1. generate_sample.list.py
+    # 2. gpt_async_batch_production.py
+    # 3. gpt_async_fetch_and_save_production.py 
     
 
 import argparse
