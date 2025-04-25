@@ -7,6 +7,8 @@ Created on Wed Jul 31 17:40:14 2024
 """
 
 # script: metadata_prep_for_production.py
+# NB: no need to run before gpt_async_batch_production.py (it will do it by itself)
+# this script is just to check the metadata pkl being created 
 
 
 import os
@@ -52,8 +54,12 @@ def main():
     # Parse the sample range
     start, end = map(int, args.sample_range.split(':'))
 
+    # paths 
+    work_dir = os.path.expanduser(os.path.join("~", args.work_dir))
+    directory_with_split_metadata = os.path.expanduser(os.path.join(work_dir, args.directory_with_split_metadata))
+    
     # Load the list of sample IDs
-    sample_list_path = os.path.join(args.work_dir, args.sample_list_file)
+    sample_list_path = os.path.join(work_dir, args.sample_list_file)
     with open(sample_list_path, 'r') as file:
         all_samples = [line.strip() for line in file]
 
@@ -61,10 +67,10 @@ def main():
     selected_samples = all_samples[start-1:end]
 
     # Fetch metadata for the selected samples
-    metadata_dict = fetch_metadata(selected_samples, args.directory_with_split_metadata, args.work_dir)
+    metadata_dict = fetch_metadata(selected_samples, directory_with_split_metadata, work_dir)
 
     # Save the metadata to a .pkl file
-    output_pkl_path = os.path.join(args.work_dir, args.output_pkl)
+    output_pkl_path = os.path.join(work_dir, args.output_pkl)
     save_metadata(metadata_dict, output_pkl_path)
 
 if __name__ == "__main__":
@@ -72,9 +78,9 @@ if __name__ == "__main__":
 
 
 
-# python /Users/dgaio/github/metadata_mining/scripts/metadata_prep_for_production.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --sample_list_file "samples_list.txt" \
+# python /Users/danielagaio/github/metadata_mining/scripts/production/metadata_prep_for_production.py \
+#     --work_dir "cloudstor/Gaio/MicrobeAtlasProject" \
+#     --sample_list_file "samples_list_202404.txt" \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
 #     --sample_range 1:3500 \
 #     --output_pkl "metadataprov.pkl" 
@@ -88,7 +94,7 @@ if __name__ == "__main__":
 # import pickle
 # 
 # # Load the metadata from the pickle file
-# with open('/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/metadataprov.pkl', 'rb') as file:
+# with open('/Users/danielagaio/cloudstor/Gaio/MicrobeAtlasProject/metadataprov.pkl', 'rb') as file:
 #     metadata = pickle.load(file)
 # 
 # # Print the metadata for inspection
