@@ -115,7 +115,7 @@ if __name__ == "__main__":
 #     --work_dir "cloudstor/Gaio/MicrobeAtlasProject" \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
 #     --seed 22 \
-#     --output_file "samples_list_202404.txt" \
+#     --output_file "samples_list_202504.txt" \
 #     --whitelist_file "all_minfilt_sampids_map2021.tsv"
 
 
