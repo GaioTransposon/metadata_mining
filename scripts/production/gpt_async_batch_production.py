@@ -6,53 +6,50 @@ Created on Mon Aug  5 14:23:58 2024
 @author: dgaio
 """
 
+
 # script: gpt_async_batch_production.py
 
-# run in order: 
-    # 1. generate_sample.list.py
-    # 2. gpt_async_batch_production.py
-    # 3. gpt_async_fetch_and_save_production.py 
-    
+# run in order:
+# 1. generate_sample_list.py
+# 2. gpt_async_batch_production.py
+# 3. gpt_async_fetch_and_save_production.py
 
 import argparse
 import os
 import pickle
 import json
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 import time
 import logging
 from io import BytesIO
 from openai import OpenAI
 
-
-def setup_logging():
-    # Get the directory where the script is located
-    directory = os.path.dirname(os.path.realpath(__file__))
-    # Create a log filename with a timestamp in the script's directory
-    log_filename = os.path.join(directory, datetime.now().strftime("gpt_async_batch_production_%Y%m%d%H%M%S.log"))
     
+    
+    
+def setup_logging():
+    directory = os.path.dirname(os.path.realpath(__file__))
+    log_filename = os.path.join(directory, datetime.now().strftime("gpt_async_batch_production_%Y%m%d%H%M%S.log"))
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s - %(levelname)s - %(message)s',
                         handlers=[
-                            logging.FileHandler(log_filename, mode='a'),  # Logs to a file in the script's directory
-                            logging.StreamHandler()  # Also logs to the standard console output
+                            logging.FileHandler(log_filename, mode='a'), # logs to file in the script's dir
+                            logging.StreamHandler() # logs to console too
                         ])
 
-
-# Initialize OpenAI Client
+   
 def init_openai_client(api_key_path):
     with open(api_key_path, "r") as file:
         api_key = file.read().strip()
     return OpenAI(api_key=api_key)
 
-# Load System Prompt
 def load_system_prompt(system_prompt_file):
     with open(system_prompt_file, 'r') as file:
         return file.read().strip()
+    
 
-# Fetch Metadata
-def fetch_metadata(sample_ids, directory_with_split_metadata, work_dir, success_log, fail_log):
+def fetch_metadata(sample_ids, directory_with_split_metadata, work_dir, fail_log):
     metadata_dict = {}
     for sample_id in sample_ids:
         folder_name = f"dir_{sample_id[-3:]}"
@@ -61,23 +58,19 @@ def fetch_metadata(sample_ids, directory_with_split_metadata, work_dir, success_
         try:
             with open(metadata_file_path, 'r') as file:
                 metadata_dict[sample_id] = file.read()
-            with open(success_log, 'a') as s_log:
-                s_log.write(sample_id + '\n')
         except Exception as e:
             logging.error(f"Failed to fetch metadata for sample {sample_id}: {e}")
             with open(fail_log, 'a') as f_log:
                 f_log.write(sample_id + '\n')
     return metadata_dict
 
-
-
-# Save Metadata
+    
 def save_metadata(metadata_dict, output_pkl_path):
     with open(output_pkl_path, 'wb') as file:
         pickle.dump(metadata_dict, file)
     logging.info(f"Metadata saved to {output_pkl_path}")
 
-# Prepare Batch Tasks
+
 def prepare_batch_tasks(df, system_prompt, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty):
     tasks = []
     for _, row in df.iterrows():
@@ -93,7 +86,7 @@ def prepare_batch_tasks(df, system_prompt, model, temperature, max_tokens, top_p
                 "top_p": top_p,
                 "frequency_penalty": frequency_penalty,
                 "presence_penalty": presence_penalty,
-                "response_format": {"type": "json_object"}, 
+                "response_format": {"type": "json_object"},
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_content}
@@ -104,29 +97,26 @@ def prepare_batch_tasks(df, system_prompt, model, temperature, max_tokens, top_p
     return tasks
 
 
-def submit_batch_tasks(client, tasks, batch_info_file, work_dir_full, n_samples, n_batches, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty):
-    # Convert tasks to JSONL format (one JSON object per line)
-    tasks_jsonl = "\n".join(json.dumps(task) for task in tasks)
 
-    # Convert string to bytes and save to BytesIO for submission
+def submit_batch_tasks(client, tasks, batch_info_file, work_dir_full, n_samples, batch_number, total_batches, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty):
+    # convert tasks to JSONL format (one JSON object per line)
+    tasks_jsonl = "\n".join(json.dumps(task) for task in tasks)
+    # convert string to bytes and save to BytesIO for submission
     tasks_buffer = BytesIO(tasks_jsonl.encode('utf-8'))
 
-    # Create and submit batch job
     batch_file = client.files.create(file=tasks_buffer, purpose="batch")
     batch_job = client.batches.create(input_file_id=batch_file.id, endpoint="/v1/chat/completions", completion_window="24h")
     logging.info(f"Submitted batch job ID: {batch_job.id}")
 
-    # Write the JSONL data to a file in the specified work directory
     jsonl_filename = f"batch_tasks_metadata_{batch_job.id}.jsonl"
     jsonl_file_path = os.path.join(work_dir_full, jsonl_filename)
     with open(jsonl_file_path, 'w') as file:
         file.write(tasks_jsonl)
 
-    # Log the batch job information
     batch_info = {
         "batch_job_id": batch_job.id,
         "n_samples": n_samples,
-        "n_batches": n_batches,
+        "batch_number": f"{batch_number} of {total_batches}",
         "model": model,
         "temperature": temperature,
         "max_tokens": max_tokens,
@@ -138,26 +128,24 @@ def submit_batch_tasks(client, tasks, batch_info_file, work_dir_full, n_samples,
     update_batch_info_file(os.path.join(work_dir_full, batch_info_file), batch_info)
 
 
-
 def update_batch_info_file(info_filename, batch_info):
     if not os.path.exists(info_filename):
         with open(info_filename, "w") as file:
-            json.dump([batch_info], file, indent=2)  # Create new file with batch info if not existing
+            # create new batch info file if it doesn't already exist
+            json.dump([batch_info], file, indent=2)
     else:
         with open(info_filename, "r+") as file:
             data = json.load(file)
-            data.append(batch_info)  # Append new batch info
+            data.append(batch_info)
             file.seek(0)
             json.dump(data, file, indent=2)
 
 
 
-# Load Metadata
 def load_metadata(file_path):
     with open(file_path, 'rb') as file:
         return pickle.load(file)
 
-# Get Current Batch Range
 def get_current_batch_range(state_file, total_samples, samples_per_batch):
     if os.path.exists(state_file):
         with open(state_file, 'r') as file:
@@ -165,17 +153,17 @@ def get_current_batch_range(state_file, total_samples, samples_per_batch):
             last_sample = state_data['last_sample']
     else:
         last_sample = 0
-    
     start = last_sample
     end = min(last_sample + samples_per_batch, total_samples)
     return start, end
 
-# Update State File
+
+
 def update_state_file(state_file, end):
     with open(state_file, 'w') as file:
         json.dump({"last_sample": end}, file)
-
-# Parse Arguments
+        
+        
 def parse_args():
     parser = argparse.ArgumentParser(description="Integrated script to handle metadata and OpenAI batch processing.")
     parser.add_argument("--work_dir", type=str, required=True, help="Working directory path")
@@ -197,16 +185,13 @@ def parse_args():
     return parser.parse_args()
 
 
-
-
 def main():
     args = parse_args()
     setup_logging()
-    
-    # paths 
+
     work_dir_full = os.path.join(os.path.expanduser('~'), args.work_dir)
     directory_with_split_metadata = os.path.join(work_dir_full, args.directory_with_split_metadata)
-    
+
     sample_list_path = os.path.join(work_dir_full, args.sample_list_file)
     with open(sample_list_path, 'r') as file:
         all_samples = [line.strip() for line in file]
@@ -215,42 +200,63 @@ def main():
     samples_per_batch = args.n_samples
     delay_minutes = args.delay_minutes
     state_file = os.path.join(work_dir_full, args.state_file)
-    batch_info_file = "batch_job_info_production.json"  # Name of the batch info file
-    
+    batch_info_file = "batch_job_info_production.json"
+
     start_index = get_current_batch_range(state_file, total_samples, samples_per_batch)[0]
     batches_processed = 0
 
     while start_index < total_samples and batches_processed < args.n_batches:
         end_index = min(start_index + samples_per_batch, total_samples)
         selected_samples = all_samples[start_index:end_index]
-        
-        # Process selected samples 
-        success_log = os.path.join(work_dir_full, "sent_samples.txt")
-        fail_log = os.path.join(work_dir_full, "failed_samples.txt")
-        metadata_dict = fetch_metadata(selected_samples, directory_with_split_metadata, work_dir_full, success_log, fail_log)
 
-        # NB: this .pkl file is recreated for every batch and is not reused from earlier runs.
+        # Paths for logs
+        fail_log = os.path.join(work_dir_full, "failed_samples.txt")
+        success_log = os.path.join(work_dir_full, "sent_samples.txt")
+
+        # Fetch metadata
+        metadata_dict = fetch_metadata(selected_samples, directory_with_split_metadata, work_dir_full, fail_log)
+
+        # Log successful samples
+        successful_sample_ids = list(metadata_dict.keys())
+        with open(success_log, 'a') as f:
+            for sid in successful_sample_ids:
+                f.write(sid + '\n')
+
+        # Save metadata
         save_metadata(metadata_dict, os.path.join(work_dir_full, args.output_pkl))
 
-
-        # Initialize OpenAI client and load system prompt
+        # OpenAI client
         with open(os.path.expanduser(args.api_key_path), "r") as f:
             api_key = f.read().strip()
-
         client = OpenAI(api_key=api_key)
-        
-        system_prompt_file = os.path.join(os.path.expanduser('~'), args.system_prompt_file)
-        system_prompt = load_system_prompt(os.path.join(os.path.expanduser('~'), system_prompt_file))
 
-        # Load metadata and prepare tasks
-        metadata_dict = load_metadata(os.path.join(work_dir_full, args.output_pkl))
+        # Load system prompt
+        system_prompt_file = os.path.join(os.path.expanduser('~'), args.system_prompt_file)
+        system_prompt = load_system_prompt(system_prompt_file)
+
+        # Prepare tasks
         df = pd.DataFrame(list(metadata_dict.items()), columns=['sample_id', 'metadata'])
         tasks = prepare_batch_tasks(df, system_prompt, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty)
 
-        # Submit batch tasks and wait for delay
-        submit_batch_tasks(client, tasks, batch_info_file, work_dir_full, samples_per_batch, args.n_batches, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty)
-        time.sleep(delay_minutes * 60)  # Delay between batches
+        # Submit tasks
+        submit_batch_tasks(
+            client,
+            tasks,
+            batch_info_file,
+            work_dir_full,
+            samples_per_batch,
+            batches_processed + 1,
+            args.n_batches,
+            args.model,
+            args.temperature,
+            args.max_tokens,
+            args.top_p,
+            args.frequency_penalty,
+            args.presence_penalty
+        )
 
+        # Sleep and update state
+        time.sleep(delay_minutes * 60)
         start_index += samples_per_batch
         batches_processed += 1
         update_state_file(state_file, end_index)
@@ -258,6 +264,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
+    
+    
 
 
 
@@ -275,8 +284,8 @@ if __name__ == "__main__":
 #     --top_p 0.75 \
 #     --frequency_penalty 0.25 \
 #     --presence_penalty 1.5 \
-#     --n_samples 7000 \
-#     --n_batches 77 \
+#     --n_samples 9000 \
+#     --n_batches 20 \
 #     --delay_minutes 1.5 \
 #     --state_file "state_file_202504.txt"
     
