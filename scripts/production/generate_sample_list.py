@@ -6,9 +6,6 @@ Created on Wed Jul 31 17:05:20 2024
 @author: dgaio
 """
 
-# generate_sample_list.py
-
-
 # script: generate_sample_list.py
 
 

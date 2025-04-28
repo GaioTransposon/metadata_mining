@@ -285,7 +285,7 @@ if __name__ == "__main__":
 #     --frequency_penalty 0.25 \
 #     --presence_penalty 1.5 \
 #     --n_samples 9000 \
-#     --n_batches 20 \
+#     --n_batches 80 \
 #     --delay_minutes 1.5 \
 #     --state_file "state_file_202504.txt"
     
