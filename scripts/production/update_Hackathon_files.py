@@ -20,10 +20,10 @@ hackathon_dir.mkdir(exist_ok=True)
 
 # Output files
 output_files = {
-    "biomes": hackathon_dir / "biomes.txt",
-    "geo_texts": hackathon_dir / "geo_texts.txt",
-    "keywords": hackathon_dir / "keywords.txt",
-    "sub_biomes": hackathon_dir / "sub_biomes.txt",
+    "biomes": hackathon_dir / "GPT_biomes.txt",
+    "geo_texts": hackathon_dir / "GPT_geo_texts.txt",
+    "keywords": hackathon_dir / "GPT_keywords.txt",
+    "sub_biomes": hackathon_dir / "GPT_sub_biomes.txt",
 }
 
 # Load existing data if available
