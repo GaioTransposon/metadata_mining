@@ -96,8 +96,8 @@ def process_and_save(input_filename, output_filename, keywords=False, limit_samp
         print(f"No new samples to embed. Existing file is up-to-date.")
 
 # Run everything
-process_and_save('GPT_sub_biomes.txt', 'embeddings/GPT_sub_biomes_embeddings.json', keywords=False, limit_samples=32)
-process_and_save('GPT_keywords.txt', 'embeddings/GPT_keywords_embeddings.json', keywords=True, limit_samples=5)
+process_and_save('GPT_sub_biomes.txt', 'embeddings/GPT_sub_biomes_embeddings.json', keywords=False, limit_samples=100)
+process_and_save('GPT_keywords.txt', 'embeddings/GPT_keywords_embeddings.json', keywords=True, limit_samples=100)
 
 
 
