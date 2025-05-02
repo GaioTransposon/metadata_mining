@@ -273,7 +273,7 @@ if __name__ == "__main__":
 
 # python /Users/danielagaio/github/metadata_mining/scripts/production/gpt_async_batch_production.py \
 #     --work_dir "cloudstor/Gaio/MicrobeAtlasProject" \
-#     --sample_list_file "samples_list_202504.txt" \
+#     --sample_list_file "missing_samples.txt" \
 #     --directory_with_split_metadata "sample.info_split_dirs" \
 #     --output_pkl "metadataprov.pkl" \
 #     --system_prompt_file "github/metadata_mining/source_data/openai_system_better_prompt_batch.txt" \
@@ -290,7 +290,7 @@ if __name__ == "__main__":
 #     --state_file "state_file_202504.txt"
     
     
-    
+    # samples_list_202504.txt
 
 
 
