@@ -159,7 +159,10 @@ print(f"🏁 All embedding runs completed in {overall_elapsed/60:.2f} minutes")
 
 
 
-
+# ✅ All samples processed for GPT_keywords.txt
+# ✅ Finished GPT_keywords.txt: 1076410 samples in 60.78 min
+# ✅ Completed GPT_keywords.txt
+# 🏁 All embedding runs completed in 60.78 minutes
 
 
 import h5py
