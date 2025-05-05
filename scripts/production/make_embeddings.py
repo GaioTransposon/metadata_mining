@@ -13,21 +13,32 @@ import openai
 import h5py
 import numpy as np
 import time
+import json
+import itertools
 
-# Set paths
+# ===== CONFIGURATION =====
 work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
 api_key_path = os.path.join(os.path.expanduser('~'), "Desktop/keys/my_api_key_embeddings")
+input_files = [
+    ('GPT_sub_biomes.txt', 'embeddings/GPT_sub_biomes_embeddings.h5', 'state_file_sub_biomes.txt', False),
+    ('GPT_keywords.txt', 'embeddings/GPT_keywords_embeddings.h5', 'state_file_keywords.txt', True)
+]
 
-# Read API key
+batch_size = 1000  # API batch size
+file_slice_size = 10000  # how many samples to load per slice
+max_requests_per_round = 100  # requests before waiting
+wait_time = 60  # seconds to wait
+embedding_dim = 1536
+
+# ===== SETUP API =====
 with open(api_key_path, 'r') as f:
     openai_client = openai.OpenAI(api_key=f.read().strip())
 
-def read_samples(file_path, keywords=False, limit_samples=None):
+# ===== HELPER FUNCTIONS =====
+def read_samples_slice(file_path, start, end, keywords=False):
     samples = {}
     with open(file_path, 'r', encoding='utf-8') as f:
-        for idx, line in enumerate(f):
-            if limit_samples is not None and idx >= limit_samples:
-                break
+        for line in itertools.islice(f, start, end):
             parts = line.strip().split('\t')
             if len(parts) != 2:
                 continue
@@ -37,16 +48,16 @@ def read_samples(file_path, keywords=False, limit_samples=None):
             samples[sample_id] = text.strip()
     return samples
 
-def get_embeddings(samples_dict, batch_size=1000, max_requests_per_round=10, wait_time=30):
+def get_embeddings(samples_dict):
     embeddings_dict = {}
     sample_ids = list(samples_dict.keys())
     descriptions = list(samples_dict.values())
 
     request_count = 0
-
     for i in range(0, len(descriptions), batch_size):
         chunk = descriptions[i:i + batch_size]
         sample_ids_chunk = sample_ids[i:i + batch_size]
+        start_time = time.time()
         try:
             response = openai_client.embeddings.create(
                 input=chunk,
@@ -59,144 +70,116 @@ def get_embeddings(samples_dict, batch_size=1000, max_requests_per_round=10, wai
                     'text': samples_dict[sample_id]
                 }
             request_count += 1
-
+            elapsed = time.time() - start_time
+            print(f" → Batch {request_count} ({len(sample_ids_chunk)} samples) took {elapsed:.2f}s")
             if request_count % max_requests_per_round == 0:
-                print(f"Reached {request_count} requests → waiting {wait_time} sec...")
+                print(f" → Reached {request_count} requests, waiting {wait_time}s...")
                 time.sleep(wait_time)
-
         except Exception as e:
             print(f"Failed batch {sample_ids_chunk[0]}–{sample_ids_chunk[-1]}: {e}")
-
     return embeddings_dict
 
-def process_and_save_h5(input_filename, output_filename, keywords=False, limit_samples=None, embedding_dim=1536):
-    input_path = os.path.join(work_dir, input_filename)
-    output_path = os.path.join(work_dir, output_filename)
+def update_state_file(state_file, index):
+    with open(state_file, 'w') as f:
+        json.dump({'last_sample': index}, f)
 
-    samples = read_samples(input_path, keywords=keywords, limit_samples=limit_samples)
-    all_ids = np.array(list(samples.keys()))
-    all_texts = np.array(list(samples.values()))
+def get_current_index(state_file):
+    if os.path.exists(state_file):
+        with open(state_file, 'r') as f:
+            state = json.load(f)
+            return state.get('last_sample', 0)
+    return 0
 
-    if os.path.exists(output_path):
-        with h5py.File(output_path, 'r+') as h5f:
-            existing_ids = h5f['sample_ids'][:]
-            existing_ids_set = set(existing_ids)
-            new_ids = [sid for sid in all_ids if sid not in existing_ids_set]
-            print(f"Found {len(new_ids)} new samples to embed (out of {len(all_ids)} total).")
-            if not new_ids:
-                print(f"No new samples to embed. File is up-to-date.")
-                return
-            new_samples = {sid: samples[sid] for sid in new_ids}
-            new_embeddings = get_embeddings(new_samples)
+def process_file(input_file, output_file, state_file, keywords):
+    input_path = os.path.join(work_dir, input_file)
+    output_path = os.path.join(work_dir, output_file)
+    state_path = os.path.join(work_dir, 'embeddings', state_file)
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    os.makedirs(os.path.dirname(state_path), exist_ok=True)
 
-            n_new = len(new_embeddings)
-            new_ids_array = np.array(list(new_embeddings.keys()))
-            new_texts_array = np.array([new_embeddings[sid]['text'] for sid in new_ids_array])
-            new_emb_array = np.vstack([new_embeddings[sid]['embedding'] for sid in new_ids_array])
+    start_idx = get_current_index(state_path)
+    total_processed = 0
+    total_start_time = time.time()
 
-            h5f['sample_ids'].resize(h5f['sample_ids'].shape[0] + n_new, axis=0)
-            h5f['texts'].resize(h5f['texts'].shape[0] + n_new, axis=0)
-            h5f['embeddings'].resize(h5f['embeddings'].shape[0] + n_new, axis=0)
-            h5f['sample_ids'][-n_new:] = new_ids_array
-            h5f['texts'][-n_new:] = new_texts_array
-            h5f['embeddings'][-n_new:, :] = new_emb_array
-            print(f"Updated embeddings saved to: {output_path}")
+    while True:
+        slice_start = start_idx
+        slice_end = slice_start + file_slice_size
+        samples = read_samples_slice(input_path, slice_start, slice_end, keywords)
+        if not samples:
+            print(f"✅ All samples processed for {input_file}")
+            break
+        print(f"Processing samples {slice_start}–{slice_end -1} ({len(samples)})")
 
-    else:
-        print(f"Creating new HDF5 file: {output_filename}")
-        new_embeddings = get_embeddings(samples)
-        n_samples = len(new_embeddings)
-        ids_array = np.array(list(new_embeddings.keys()))
-        texts_array = np.array([new_embeddings[sid]['text'] for sid in ids_array])
-        emb_array = np.vstack([new_embeddings[sid]['embedding'] for sid in ids_array])
+        slice_start_time = time.time()
+        embeddings = get_embeddings(samples)
+        if not embeddings:
+            print("⚠️ No embeddings generated, skipping slice")
+            break
 
-        with h5py.File(output_path, 'w') as h5f:
-            dt = h5py.string_dtype(encoding='utf-8')
-            h5f.create_dataset('sample_ids', data=ids_array, maxshape=(None,), dtype=dt)
-            h5f.create_dataset('texts', data=texts_array, maxshape=(None,), dtype=dt)
-            h5f.create_dataset('embeddings', data=emb_array, maxshape=(None, embedding_dim), dtype='f4')
-        print(f"Saved new embeddings to: {output_path}")
-
-def merge_embeddings(subbiomes_h5, keywords_h5, output_h5):
-    with h5py.File(subbiomes_h5, 'r') as f_sub, h5py.File(keywords_h5, 'r') as f_key:
-        ids_sub = f_sub['sample_ids'][:].astype(str)
-        ids_key = f_key['sample_ids'][:].astype(str)
-
-        embeddings_sub = f_sub['embeddings'][:]
-        embeddings_key = f_key['embeddings'][:]
-
-        texts_sub = f_sub['texts'][:]
-        texts_key = f_key['texts'][:]
-
-        # Find intersection
-        common_ids = np.intersect1d(ids_sub, ids_key)
-        print(f"Found {len(common_ids)} common samples between subbiomes and keywords.")
-
-        # Build index mappings
-        sub_idx_map = {id_: i for i, id_ in enumerate(ids_sub)}
-        key_idx_map = {id_: i for i, id_ in enumerate(ids_key)}
-
-        sub_indices = np.array([sub_idx_map[id_] for id_ in common_ids])
-        key_indices = np.array([key_idx_map[id_] for id_ in common_ids])
-
-        # Align arrays
-        ids_sub_common = ids_sub[sub_indices]
-        ids_key_common = ids_key[key_indices]
-        emb_sub_common = embeddings_sub[sub_indices]
-        emb_key_common = embeddings_key[key_indices]
-        texts_sub_common = texts_sub[sub_indices]
-        texts_key_common = texts_key[key_indices]
-
-        # Final check
-        if not np.array_equal(ids_sub_common, ids_key_common):
-            raise ValueError("Aligned sample IDs do not match after indexing!")
-
-        # Average embeddings
-        merged_embeddings = (emb_sub_common + emb_key_common) / 2
-
-    with h5py.File(output_h5, 'w') as f_out:
+        ids = list(embeddings.keys())
+        texts = [embeddings[s]['text'] for s in ids]
+        emb_array = np.vstack([embeddings[s]['embedding'] for s in ids])
         dt = h5py.string_dtype(encoding='utf-8')
-        f_out.create_dataset('sample_ids', data=ids_sub_common.astype('S'), maxshape=(None,), dtype=dt)
-        f_out.create_dataset('texts', data=texts_sub_common.astype('S'), maxshape=(None,), dtype=dt)
-        f_out.create_dataset('embeddings', data=merged_embeddings, maxshape=(None, emb_sub_common.shape[1]), dtype='f4')
 
-    print(f"Saved merged embeddings to: {output_h5}")
+        if os.path.exists(output_path):
+            with h5py.File(output_path, 'r+') as h5f:
+                for name, data, shape in [('sample_ids', ids, (None,)), ('texts', texts, (None,)), ('embeddings', emb_array, (None, embedding_dim))]:
+                    if name not in h5f:
+                        maxshape = (None,) if name != 'embeddings' else (None, embedding_dim)
+                        dtype = dt if name != 'embeddings' else 'f4'
+                        h5f.create_dataset(name, data=data, maxshape=maxshape, dtype=dtype)
+                    else:
+                        h5f[name].resize(h5f[name].shape[0] + len(ids), axis=0)
+                        h5f[name][-len(ids):] = data
+        else:
+            with h5py.File(output_path, 'w') as h5f:
+                h5f.create_dataset('sample_ids', data=ids, maxshape=(None,), dtype=dt)
+                h5f.create_dataset('texts', data=texts, maxshape=(None,), dtype=dt)
+                h5f.create_dataset('embeddings', data=emb_array, maxshape=(None, embedding_dim), dtype='f4')
+        
+        slice_elapsed = time.time() - slice_start_time
+        print(f" → Slice done in {slice_elapsed/60:.2f} min")
+
+        start_idx = slice_end
+        total_processed += len(ids)
+        update_state_file(state_path, start_idx)
+    
+    total_elapsed = time.time() - total_start_time
+    print(f"✅ Finished {input_file}: {total_processed} samples in {total_elapsed/60:.2f} min")
+
+# ===== RUN PIPELINE =====
+overall_start_time = time.time()
+
+for infile, outfile, statefile, keywords in input_files:
+    process_file(infile, outfile, statefile, keywords)
+    print(f"✅ Completed {infile}\n")
+
+overall_elapsed = time.time() - overall_start_time
+print(f"🏁 All embedding runs completed in {overall_elapsed/60:.2f} minutes")
 
 
 
-# Run everything
-process_and_save_h5('GPT_sub_biomes.txt', 'embeddings/GPT_sub_biomes_embeddings.h5', keywords=False, limit_samples=200000)
-process_and_save_h5('GPT_keywords.txt', 'embeddings/GPT_keywords_embeddings.h5', keywords=True, limit_samples=200000)
-
-# Merge embeddings at the end
-merge_embeddings(
-    os.path.join(work_dir, 'embeddings/GPT_sub_biomes_embeddings.h5'),
-    os.path.join(work_dir, 'embeddings/GPT_keywords_embeddings.h5'),
-    os.path.join(work_dir, 'embeddings/GPT_sub_biomes_keywords_embeddings.h5')
-)
 
 
 
-
-
-
+import h5py
+import os
+import numpy as np
 
 def count_samples_in_h5(h5_path):
     with h5py.File(h5_path, 'r') as f:
-        n_samples = f['sample_ids'].shape[0]
+        sample_ids = f['sample_ids'][:]
+        n_samples = sample_ids.shape[0]
+        unique_sample_ids = np.unique(sample_ids)
+        n_unique_samples = unique_sample_ids.shape[0]
         print(f"✅ {n_samples} samples in {h5_path}")
+        print(f"🔹 {n_unique_samples} unique samples in {h5_path}")
 
 # Example usage:
 work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
 
-count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_sub_biomes_embeddings.h5'))
+count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_sub_biomes_embeddings.h5')) # 197979
 count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_keywords_embeddings.h5'))
 count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_sub_biomes_keywords_embeddings.h5'))
-
-
-
-
-
-
 
 
