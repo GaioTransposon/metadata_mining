@@ -157,12 +157,95 @@ for infile, outfile, statefile, keywords in input_files:
 overall_elapsed = time.time() - overall_start_time
 print(f"🏁 All embedding runs completed in {overall_elapsed/60:.2f} minutes")
 
+# 🏁 speed for keywords: : 1076410 samples in 60.78 min
 
 
-# ✅ All samples processed for GPT_keywords.txt
-# ✅ Finished GPT_keywords.txt: 1076410 samples in 60.78 min
-# ✅ Completed GPT_keywords.txt
-# 🏁 All embedding runs completed in 60.78 minutes
+
+
+
+
+
+
+
+
+
+import os
+import h5py
+import numpy as np
+
+work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
+
+subbiomes_path = os.path.join(work_dir, 'embeddings/GPT_sub_biomes_embeddings.h5')
+keywords_path = os.path.join(work_dir, 'embeddings/GPT_keywords_embeddings.h5')
+output_path = os.path.join(work_dir, 'embeddings/GPT_sub_biomes_keywords_embeddings.h5')
+
+batch_size = 10000
+
+# ===== Safeguard: avoid overwriting output =====
+if os.path.exists(output_path):
+    print(f"⚠️ Output file {output_path} already exists. Exiting to avoid overwrite.")
+    exit(1)
+
+# ===== Load input file metadata =====
+with h5py.File(subbiomes_path, 'r') as subf, h5py.File(keywords_path, 'r') as keyf:
+    sub_ids = subf['sample_ids'][:]
+    key_ids = keyf['sample_ids'][:]
+
+    # Decode bytes to strings
+    sub_ids = np.array([s.decode('utf-8') if isinstance(s, bytes) else str(s) for s in sub_ids])
+    key_ids = np.array([s.decode('utf-8') if isinstance(s, bytes) else str(s) for s in key_ids])
+
+    # Find intersection and get index positions
+    common_ids, sub_idx_pos, key_idx_pos = np.intersect1d(sub_ids, key_ids, return_indices=True)
+    print(f"✅ {len(common_ids)} common samples found")
+
+    # Sort indices ONCE (use subbiome order)
+    sorted_order = np.argsort(sub_idx_pos)
+    common_ids = common_ids[sorted_order]
+    sub_idx_pos = sub_idx_pos[sorted_order]
+    key_idx_pos = key_idx_pos[np.argsort(key_idx_pos)]  # align keywords
+
+    # ===== Prepare output HDF5 file =====
+    dt = h5py.string_dtype(encoding='utf-8')
+    with h5py.File(output_path, 'w') as outf:
+        outf.create_dataset('sample_ids', shape=(0,), maxshape=(None,), dtype=dt)
+        outf.create_dataset('texts', shape=(0,), maxshape=(None,), dtype=dt)
+        outf.create_dataset('embeddings', shape=(0, 1536), maxshape=(None, 1536), dtype='f4')
+
+        for i in range(0, len(common_ids), batch_size):
+            batch_ids = common_ids[i:i + batch_size]
+            sub_batch_idx = sub_idx_pos[i:i + batch_size]
+            key_batch_idx = key_idx_pos[i:i + batch_size]
+
+            sub_texts = subf['texts'][sub_batch_idx]
+            key_texts = keyf['texts'][key_batch_idx]
+            sub_embeds = subf['embeddings'][sub_batch_idx]
+            key_embeds = keyf['embeddings'][key_batch_idx]
+
+            # Decode texts if needed
+            sub_texts = [s.decode('utf-8') if isinstance(s, bytes) else str(s) for s in sub_texts]
+            key_texts = [s.decode('utf-8') if isinstance(s, bytes) else str(s) for s in key_texts]
+
+            avg_embeds = (sub_embeds + key_embeds) / 2
+            combined_texts = [f"{sub} | {key}" for sub, key in zip(sub_texts, key_texts)]
+
+            # Resize and write
+            n = outf['sample_ids'].shape[0]
+            outf['sample_ids'].resize(n + len(batch_ids), axis=0)
+            outf['texts'].resize(n + len(batch_ids), axis=0)
+            outf['embeddings'].resize(n + len(batch_ids), axis=0)
+
+            outf['sample_ids'][n:] = np.array(batch_ids, dtype=object)
+            outf['texts'][n:] = np.array(combined_texts, dtype=object)
+            outf['embeddings'][n:] = avg_embeds
+
+            print(f" → Processed batch {i // batch_size +1} ({len(batch_ids)} samples)")
+
+print(f"✅ Saved averaged embeddings to {output_path}")
+
+
+
+
 
 
 import h5py
@@ -181,8 +264,8 @@ def count_samples_in_h5(h5_path):
 # Example usage:
 work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
 
-count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_sub_biomes_embeddings.h5')) # 197979
-count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_keywords_embeddings.h5'))
+count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_sub_biomes_embeddings.h5'))# 2036583
+count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_keywords_embeddings.h5')) # 2056410
 count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_sub_biomes_keywords_embeddings.h5'))
 
 
