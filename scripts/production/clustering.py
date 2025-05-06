@@ -32,7 +32,7 @@ def load_embeddings_h5(filepath, biome_labels_path, limit_samples=None):
         vectors = f['embeddings'][:]
 
     # Proper UTF-8 decoding
-    sample_ids = np.array([sid.decode('utf-8') if isinstance(sid, bytes) else sid for sid in sample_ids_raw])
+    sample_ids = sample_ids_raw.astype(str)
     texts = np.array([txt.decode('utf-8') if isinstance(txt, bytes) else txt for txt in texts_raw])
 
     # Map biome labels
@@ -77,9 +77,9 @@ sb_keywords_path = os.path.join(work_dir, 'GPT_sub_biomes_keywords_embeddings.h5
 
 
 # Load embeddings
-df_subbiomes, X_subbiomes = load_embeddings_h5(subbiomes_path, biome_labels_path, limit_samples=5000)
-df_keywords, X_keywords = load_embeddings_h5(keywords_path, biome_labels_path, limit_samples=5000)
-df_sb_keywords, X_sb_keywords = load_embeddings_h5(sb_keywords_path, biome_labels_path, limit_samples=5000)
+df_subbiomes, X_subbiomes = load_embeddings_h5(subbiomes_path, biome_labels_path, limit_samples=6000)
+df_keywords, X_keywords = load_embeddings_h5(keywords_path, biome_labels_path, limit_samples=6000)
+df_sb_keywords, X_sb_keywords = load_embeddings_h5(sb_keywords_path, biome_labels_path, limit_samples=6000)
 
 
 

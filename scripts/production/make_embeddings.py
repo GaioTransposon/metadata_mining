@@ -16,6 +16,9 @@ import time
 import json
 import itertools
 
+
+
+
 # ===== CONFIGURATION =====
 work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
 api_key_path = os.path.join(os.path.expanduser('~'), "Desktop/keys/my_api_key_embeddings")
@@ -161,17 +164,8 @@ print(f"🏁 All embedding runs completed in {overall_elapsed/60:.2f} minutes")
 
 
 
+####
 
-
-
-
-
-
-
-
-import os
-import h5py
-import numpy as np
 
 work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
 
@@ -246,11 +240,9 @@ print(f"✅ Saved averaged embeddings to {output_path}")
 
 
 
+####
 
 
-import h5py
-import os
-import numpy as np
 
 def count_samples_in_h5(h5_path):
     with h5py.File(h5_path, 'r') as f:
@@ -264,8 +256,8 @@ def count_samples_in_h5(h5_path):
 # Example usage:
 work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
 
-count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_sub_biomes_embeddings.h5'))# 2036583
+count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_sub_biomes_embeddings.h5')) # 2036583
 count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_keywords_embeddings.h5')) # 2056410
-count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_sub_biomes_keywords_embeddings.h5'))
+count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_sub_biomes_keywords_embeddings.h5')) # 2036583
 
 

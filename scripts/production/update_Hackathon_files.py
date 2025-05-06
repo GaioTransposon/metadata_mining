@@ -56,3 +56,54 @@ for key, new_df in new_data.items():
     combined.to_csv(output_files[key], sep="\t", header=False, index=False)
 
 print("Hackathon files updated successfully!")
+
+
+
+
+
+# #####
+# # Extra to know how many NAs in origianl files per field: 
+# 
+# import pandas as pd
+# from pathlib import Path
+# 
+# # Set directory
+# work_dir = Path.home() / "cloudstor" / "Gaio" / "MicrobeAtlasProject"
+# production_dir = work_dir / "production"
+# 
+# # Collect all gpt_clean_output*.csv files
+# csv_files = list(production_dir.glob("gpt_clean_output*.csv"))
+# 
+# # Columns to check
+# columns_to_check = ['biome_label', 'geo_location', 'keywords', 'sub_biome']
+# 
+# # Initialize total counters
+# total_counts = {col: 0 for col in columns_to_check}
+# total_rows = 0
+# 
+# # Process each file
+# print("\nPer-file NA summary:")
+# for f in csv_files:
+#     df = pd.read_csv(f)
+#     file_total = len(df)
+#     total_rows += file_total
+#     file_counts = {}
+#     for col in columns_to_check:
+#         if col in df.columns:
+#             na_count = df[col].isna().sum()
+#             percent = (na_count / file_total * 100) if file_total > 0 else 0
+#             file_counts[col] = f"{na_count} / {file_total} ({percent:.2f}%)"
+#             total_counts[col] += na_count
+#         else:
+#             file_counts[col] = 'MISSING'
+#     # Print per-file summary
+#     print(f"{f.name}: {file_counts}")
+# 
+# # Print total summary
+# print("\nTotal NA counts across all files:")
+# for col in columns_to_check:
+#     na_count = total_counts[col]
+#     percent = (na_count / total_rows * 100) if total_rows > 0 else 0
+#     print(f"{col}: {na_count} / {total_rows} ({percent:.2f}%)")
+# #####
+# =============================================================================
