@@ -105,6 +105,10 @@ df_sb_keywords['UMAP1'] = X_sb_keywords_umap[:, 0]
 df_sb_keywords['UMAP2'] = X_sb_keywords_umap[:, 1]
 
 
+df_keywords = df_keywords.rename(columns={'sub-biome': 'keywords'})
+df_sb_keywords = df_sb_keywords.rename(columns={'sub-biome': 'keywords'})
+
+
 # Define biome colors
 biome_colors = {
     'water': '#8CC8CF',
@@ -121,11 +125,10 @@ fig1 = px.scatter(
     color='biome_label',
     color_discrete_map=biome_colors,
     hover_data={
-        'sample_id': True,
-        'sub-biome': True,
-        'UMAP1': False,
-        'UMAP2': False,
-    },
+    'sample_id': True,
+    'sub-biome': True,   
+    'UMAP1': False,
+    'UMAP2': False},
     title="Sub-biome embeddings",
     height=800,
     width=1000
@@ -141,7 +144,7 @@ fig2 = px.scatter(
     color_discrete_map=biome_colors,
     hover_data={
         'sample_id': True,
-        'sub-biome': True,
+        'keywords': True, 
         'UMAP1': False,
         'UMAP2': False,
     },
@@ -162,7 +165,8 @@ fig3 = px.scatter(
     color_discrete_map=biome_colors,
     hover_data={
         'sample_id': True,
-        'sub-biome': True,
+        'sub-biome': True, 
+        'keywords': True, 
         'UMAP1': False,
         'UMAP2': False,
     },

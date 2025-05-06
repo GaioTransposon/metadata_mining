@@ -167,6 +167,13 @@ print(f"🏁 All embedding runs completed in {overall_elapsed/60:.2f} minutes")
 ####
 
 
+# averaged embeddings of sub-biomes + keywords 
+
+import os
+import numpy as np
+import h5py
+
+# Paths
 work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
 
 subbiomes_path = os.path.join(work_dir, 'embeddings/GPT_sub_biomes_embeddings.h5')
@@ -203,7 +210,8 @@ with h5py.File(subbiomes_path, 'r') as subf, h5py.File(keywords_path, 'r') as ke
     dt = h5py.string_dtype(encoding='utf-8')
     with h5py.File(output_path, 'w') as outf:
         outf.create_dataset('sample_ids', shape=(0,), maxshape=(None,), dtype=dt)
-        outf.create_dataset('texts', shape=(0,), maxshape=(None,), dtype=dt)
+        outf.create_dataset('sub_texts', shape=(0,), maxshape=(None,), dtype=dt)
+        outf.create_dataset('key_texts', shape=(0,), maxshape=(None,), dtype=dt)
         outf.create_dataset('embeddings', shape=(0, 1536), maxshape=(None, 1536), dtype='f4')
 
         for i in range(0, len(common_ids), batch_size):
@@ -221,23 +229,22 @@ with h5py.File(subbiomes_path, 'r') as subf, h5py.File(keywords_path, 'r') as ke
             key_texts = [s.decode('utf-8') if isinstance(s, bytes) else str(s) for s in key_texts]
 
             avg_embeds = (sub_embeds + key_embeds) / 2
-            combined_texts = [f"{sub} | {key}" for sub, key in zip(sub_texts, key_texts)]
 
             # Resize and write
             n = outf['sample_ids'].shape[0]
             outf['sample_ids'].resize(n + len(batch_ids), axis=0)
-            outf['texts'].resize(n + len(batch_ids), axis=0)
+            outf['sub_texts'].resize(n + len(batch_ids), axis=0)
+            outf['key_texts'].resize(n + len(batch_ids), axis=0)
             outf['embeddings'].resize(n + len(batch_ids), axis=0)
 
             outf['sample_ids'][n:] = np.array(batch_ids, dtype=object)
-            outf['texts'][n:] = np.array(combined_texts, dtype=object)
+            outf['sub_texts'][n:] = np.array(sub_texts, dtype=object)
+            outf['key_texts'][n:] = np.array(key_texts, dtype=object)
             outf['embeddings'][n:] = avg_embeds
 
             print(f" → Processed batch {i // batch_size +1} ({len(batch_ids)} samples)")
 
 print(f"✅ Saved averaged embeddings to {output_path}")
-
-
 
 
 ####
