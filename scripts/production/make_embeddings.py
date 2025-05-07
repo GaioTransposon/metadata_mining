@@ -250,6 +250,44 @@ print(f"✅ Saved averaged embeddings to {output_path}")
 ####
 
 
+# create file of sample ids intersection across 3 h5 files: 
+    
+
+# --------- Helper: Load sample IDs only ---------
+def get_sample_ids(filepath):
+    with h5py.File(filepath, 'r') as f:
+        sample_ids_raw = f['sample_ids'][:]
+        sample_ids = sample_ids_raw.astype(str)
+    return set(sample_ids)
+
+# --------- Paths ---------
+work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon/embeddings")
+
+subbiomes_path = os.path.join(work_dir, 'GPT_sub_biomes_embeddings.h5')
+keywords_path = os.path.join(work_dir, 'GPT_keywords_embeddings.h5')
+sb_keywords_path = os.path.join(work_dir, 'GPT_sub_biomes_keywords_embeddings.h5')
+
+output_path = os.path.join(work_dir, 'common_sample_ids_of_embeddings')
+
+# --------- Compute intersection ---------
+print("Loading sample IDs...")
+ids_subbiomes = get_sample_ids(subbiomes_path)
+ids_sb_keywords = get_sample_ids(sb_keywords_path)
+ids_keywords = get_sample_ids(keywords_path)
+
+common_sample_ids = ids_subbiomes & ids_sb_keywords & ids_keywords
+print(f"Common sample IDs across all files: {len(common_sample_ids)}")
+
+# --------- Save to disk ---------
+common_sample_ids_array = np.array(list(common_sample_ids))
+np.save(output_path, common_sample_ids_array)
+print(f"Saved intersection list to {output_path}")
+
+
+
+####
+
+
 
 def count_samples_in_h5(h5_path):
     with h5py.File(h5_path, 'r') as f:
@@ -266,5 +304,12 @@ work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasPro
 count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_sub_biomes_embeddings.h5')) # 2036583
 count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_keywords_embeddings.h5')) # 2056410
 count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_sub_biomes_keywords_embeddings.h5')) # 2036583
+
+
+
+
+####
+
+
 
 
