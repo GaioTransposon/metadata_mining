@@ -14,8 +14,6 @@ import pandas as pd
 import numpy as np
 import h5py
 import random
-import umap
-import plotly.express as px
 import time
 
 # --------- Load biome labels ---------
@@ -28,7 +26,7 @@ def load_biome_labels(biome_labels_path):
                 biomes[parts[0]] = parts[1]
     return biomes
 
-# --------- Load embeddings for selected sample IDs ---------
+
 def load_embeddings_h5(filepath, biome_labels, selected_sample_ids):
     selected_set = set(selected_sample_ids)
 
@@ -85,7 +83,6 @@ def load_embeddings_h5(filepath, biome_labels, selected_sample_ids):
 
 
 
-
 # --------- Paths ---------
 work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon/embeddings")
 biome_labels_path = os.path.join(os.path.expanduser('~'), 'cloudstor/Gaio/MicrobeAtlasProject/Hackathon/GPT_biomes.txt')
@@ -97,7 +94,7 @@ sb_keywords_path = os.path.join(work_dir, 'GPT_sub_biomes_keywords_embeddings.h5
 common_ids_path = os.path.join(work_dir, 'common_sample_ids_of_embeddings.npy')
 
 # --------- Parameters ---------
-samples_per_biome = 500  # adjust as needed
+samples_per_biome = 5000  # adjust as needed
 random_seed = 42
 
 # --------- Load common sample IDs ---------
@@ -132,13 +129,43 @@ for biome, ids in biome_to_ids.items():
 
 print(f"Final selected samples: {len(final_selected_ids)}")
 
+
+###
+# Check number of samples per biome (originally)
+print("\nSample counts per biome:")
+for biome, ids in biome_to_ids.items():
+    print(f"{biome}: {len(ids)}")
+###
+
+
 # --------- Load filtered embeddings ---------
 print("Loading filtered embeddings...")
+start = time.time()
 df_subbiomes, X_subbiomes = load_embeddings_h5(subbiomes_path, biome_labels, final_selected_ids)
 df_keywords, X_keywords = load_embeddings_h5(keywords_path, biome_labels, final_selected_ids)
 df_sb_keywords, X_sb_keywords = load_embeddings_h5(sb_keywords_path, biome_labels, final_selected_ids)
 
 print("Embeddings loaded and ready for clustering.")
+print(f"Done in {time.time() - start:.2f} seconds.")
+
+
+
+
+# nspb 500 --> 24 sec
+# nspb 1000 --> 36 sec
+# nspb 2000 --> 61 sec
+# nspb 5000 --> 134 sec 
+
+
+
+# nspb before :( : 
+# 500 --> 25.34 sec
+# 1000 --> 24.70 sec 
+# 2000 --> 26.74 sec
+# 4000 --> 24.94 sec
+# 8000 --> 26.03 sec
+# 80000 --> 26.42 sec
+# 300000 --> 26.31 sec
 
 
 
@@ -246,10 +273,4 @@ print(f"Subbiomes + keywords samples: {len(df_sb_keywords)}")
 
 
 
-
-
-
-
-
-
-
+    

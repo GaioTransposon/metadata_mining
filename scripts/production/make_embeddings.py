@@ -7,6 +7,164 @@ Created on Tue Apr 29 15:35:04 2025
 """
 
 
+# =============================================================================
+# 
+# import os
+# import openai
+# import h5py
+# import numpy as np
+# import time
+# import json
+# import itertools
+# 
+# 
+# 
+# 
+# # ===== CONFIGURATION =====
+# work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
+# api_key_path = os.path.join(os.path.expanduser('~'), "Desktop/keys/my_api_key_embeddings")
+# input_files = [
+#     ('GPT_sub_biomes.txt', 'embeddings/GPT_sub_biomes_embeddings.h5', 'state_file_sub_biomes.txt', False),
+#     ('GPT_keywords.txt', 'embeddings/GPT_keywords_embeddings.h5', 'state_file_keywords.txt', True)
+# ]
+# 
+# batch_size = 1000  # API batch size
+# file_slice_size = 10000  # how many samples to load per slice
+# max_requests_per_round = 100  # requests before waiting
+# wait_time = 60  # seconds to wait
+# embedding_dim = 1536
+# 
+# # ===== SETUP API =====
+# with open(api_key_path, 'r') as f:
+#     openai_client = openai.OpenAI(api_key=f.read().strip())
+# 
+# # ===== HELPER FUNCTIONS =====
+# def read_samples_slice(file_path, start, end, keywords=False):
+#     samples = {}
+#     with open(file_path, 'r', encoding='utf-8') as f:
+#         for line in itertools.islice(f, start, end):
+#             parts = line.strip().split('\t')
+#             if len(parts) != 2:
+#                 continue
+#             sample_id, text = parts
+#             if keywords:
+#                 text = text.strip('{}').replace(',', ' ')
+#             samples[sample_id] = text.strip()
+#     return samples
+# 
+# def get_embeddings(samples_dict):
+#     embeddings_dict = {}
+#     sample_ids = list(samples_dict.keys())
+#     descriptions = list(samples_dict.values())
+# 
+#     request_count = 0
+#     for i in range(0, len(descriptions), batch_size):
+#         chunk = descriptions[i:i + batch_size]
+#         sample_ids_chunk = sample_ids[i:i + batch_size]
+#         start_time = time.time()
+#         try:
+#             response = openai_client.embeddings.create(
+#                 input=chunk,
+#                 model="text-embedding-3-small"
+#             )
+#             embeddings = [item.embedding for item in response.data]
+#             for j, sample_id in enumerate(sample_ids_chunk):
+#                 embeddings_dict[sample_id] = {
+#                     'embedding': embeddings[j],
+#                     'text': samples_dict[sample_id]
+#                 }
+#             request_count += 1
+#             elapsed = time.time() - start_time
+#             print(f" → Batch {request_count} ({len(sample_ids_chunk)} samples) took {elapsed:.2f}s")
+#             if request_count % max_requests_per_round == 0:
+#                 print(f" → Reached {request_count} requests, waiting {wait_time}s...")
+#                 time.sleep(wait_time)
+#         except Exception as e:
+#             print(f"Failed batch {sample_ids_chunk[0]}–{sample_ids_chunk[-1]}: {e}")
+#     return embeddings_dict
+# 
+# def update_state_file(state_file, index):
+#     with open(state_file, 'w') as f:
+#         json.dump({'last_sample': index}, f)
+# 
+# def get_current_index(state_file):
+#     if os.path.exists(state_file):
+#         with open(state_file, 'r') as f:
+#             state = json.load(f)
+#             return state.get('last_sample', 0)
+#     return 0
+# 
+# def process_file(input_file, output_file, state_file, keywords):
+#     input_path = os.path.join(work_dir, input_file)
+#     output_path = os.path.join(work_dir, output_file)
+#     state_path = os.path.join(work_dir, 'embeddings', state_file)
+#     os.makedirs(os.path.dirname(output_path), exist_ok=True)
+#     os.makedirs(os.path.dirname(state_path), exist_ok=True)
+# 
+#     start_idx = get_current_index(state_path)
+#     total_processed = 0
+#     total_start_time = time.time()
+# 
+#     while True:
+#         slice_start = start_idx
+#         slice_end = slice_start + file_slice_size
+#         samples = read_samples_slice(input_path, slice_start, slice_end, keywords)
+#         if not samples:
+#             print(f"✅ All samples processed for {input_file}")
+#             break
+#         print(f"Processing samples {slice_start}–{slice_end -1} ({len(samples)})")
+# 
+#         slice_start_time = time.time()
+#         embeddings = get_embeddings(samples)
+#         if not embeddings:
+#             print("⚠️ No embeddings generated, skipping slice")
+#             break
+# 
+#         ids = list(embeddings.keys())
+#         texts = [embeddings[s]['text'] for s in ids]
+#         emb_array = np.vstack([embeddings[s]['embedding'] for s in ids])
+#         dt = h5py.string_dtype(encoding='utf-8')
+# 
+#         if os.path.exists(output_path):
+#             with h5py.File(output_path, 'r+') as h5f:
+#                 for name, data, shape in [('sample_ids', ids, (None,)), ('texts', texts, (None,)), ('embeddings', emb_array, (None, embedding_dim))]:
+#                     if name not in h5f:
+#                         maxshape = (None,) if name != 'embeddings' else (None, embedding_dim)
+#                         dtype = dt if name != 'embeddings' else 'f4'
+#                         h5f.create_dataset(name, data=data, maxshape=maxshape, dtype=dtype)
+#                     else:
+#                         h5f[name].resize(h5f[name].shape[0] + len(ids), axis=0)
+#                         h5f[name][-len(ids):] = data
+#         else:
+#             with h5py.File(output_path, 'w') as h5f:
+#                 h5f.create_dataset('sample_ids', data=ids, maxshape=(None,), dtype=dt)
+#                 h5f.create_dataset('texts', data=texts, maxshape=(None,), dtype=dt)
+#                 h5f.create_dataset('embeddings', data=emb_array, maxshape=(None, embedding_dim), dtype='f4')
+#         
+#         slice_elapsed = time.time() - slice_start_time
+#         print(f" → Slice done in {slice_elapsed/60:.2f} min")
+# 
+#         start_idx = slice_end
+#         total_processed += len(ids)
+#         update_state_file(state_path, start_idx)
+#     
+#     total_elapsed = time.time() - total_start_time
+#     print(f"✅ Finished {input_file}: {total_processed} samples in {total_elapsed/60:.2f} min")
+# 
+# # ===== RUN PIPELINE =====
+# overall_start_time = time.time()
+# 
+# for infile, outfile, statefile, keywords in input_files:
+#     process_file(infile, outfile, statefile, keywords)
+#     print(f"✅ Completed {infile}\n")
+# 
+# overall_elapsed = time.time() - overall_start_time
+# print(f"🏁 All embedding runs completed in {overall_elapsed/60:.2f} minutes")
+# 
+# # 🏁 speed for keywords: : 1076410 samples in 60.78 min
+# =============================================================================
+
+
 
 import os
 import openai
@@ -15,9 +173,6 @@ import numpy as np
 import time
 import json
 import itertools
-
-
-
 
 # ===== CONFIGURATION =====
 work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
@@ -48,38 +203,53 @@ def read_samples_slice(file_path, start, end, keywords=False):
             sample_id, text = parts
             if keywords:
                 text = text.strip('{}').replace(',', ' ')
-            samples[sample_id] = text.strip()
+            text = text.strip()
+            # If text is empty or NA, mark as None to fill with np.nan later
+            if text.upper() == 'NA' or text == '':
+                samples[sample_id] = None
+            else:
+                samples[sample_id] = text
     return samples
 
 def get_embeddings(samples_dict):
     embeddings_dict = {}
     sample_ids = list(samples_dict.keys())
-    descriptions = list(samples_dict.values())
+    descriptions = [samples_dict[sid] if samples_dict[sid] is not None else '' for sid in sample_ids]
 
     request_count = 0
     for i in range(0, len(descriptions), batch_size):
-        chunk = descriptions[i:i + batch_size]
-        sample_ids_chunk = sample_ids[i:i + batch_size]
-        start_time = time.time()
-        try:
-            response = openai_client.embeddings.create(
-                input=chunk,
-                model="text-embedding-3-small"
-            )
-            embeddings = [item.embedding for item in response.data]
-            for j, sample_id in enumerate(sample_ids_chunk):
-                embeddings_dict[sample_id] = {
-                    'embedding': embeddings[j],
-                    'text': samples_dict[sample_id]
-                }
-            request_count += 1
-            elapsed = time.time() - start_time
-            print(f" → Batch {request_count} ({len(sample_ids_chunk)} samples) took {elapsed:.2f}s")
-            if request_count % max_requests_per_round == 0:
-                print(f" → Reached {request_count} requests, waiting {wait_time}s...")
-                time.sleep(wait_time)
-        except Exception as e:
-            print(f"Failed batch {sample_ids_chunk[0]}–{sample_ids_chunk[-1]}: {e}")
+        chunk_ids = sample_ids[i:i + batch_size]
+        chunk_texts = descriptions[i:i + batch_size]
+        valid_indices = [j for j, txt in enumerate(chunk_texts) if txt != '']
+
+        # Initialize embeddings with np.nan for all
+        chunk_embeddings = [np.full(embedding_dim, np.nan) for _ in chunk_ids]
+
+        if valid_indices:
+            valid_texts = [chunk_texts[j] for j in valid_indices]
+            start_time = time.time()
+            try:
+                response = openai_client.embeddings.create(
+                    input=valid_texts,
+                    model="text-embedding-3-small"
+                )
+                returned_embeddings = [item.embedding for item in response.data]
+                for idx, emb in zip(valid_indices, returned_embeddings):
+                    chunk_embeddings[idx] = emb
+                request_count += 1
+                elapsed = time.time() - start_time
+                print(f" → Batch {request_count} ({len(chunk_ids)} samples) took {elapsed:.2f}s")
+                if request_count % max_requests_per_round == 0:
+                    print(f" → Reached {request_count} requests, waiting {wait_time}s...")
+                    time.sleep(wait_time)
+            except Exception as e:
+                print(f"Failed batch {chunk_ids[0]}–{chunk_ids[-1]}: {e}")
+
+        for sid, emb, txt in zip(chunk_ids, chunk_embeddings, chunk_texts):
+            embeddings_dict[sid] = {
+                'embedding': emb,
+                'text': txt if txt != '' else 'NA'
+            }
     return embeddings_dict
 
 def update_state_file(state_file, index):
@@ -139,14 +309,14 @@ def process_file(input_file, output_file, state_file, keywords):
                 h5f.create_dataset('sample_ids', data=ids, maxshape=(None,), dtype=dt)
                 h5f.create_dataset('texts', data=texts, maxshape=(None,), dtype=dt)
                 h5f.create_dataset('embeddings', data=emb_array, maxshape=(None, embedding_dim), dtype='f4')
-        
+
         slice_elapsed = time.time() - slice_start_time
         print(f" → Slice done in {slice_elapsed/60:.2f} min")
 
         start_idx = slice_end
         total_processed += len(ids)
         update_state_file(state_path, start_idx)
-    
+
     total_elapsed = time.time() - total_start_time
     print(f"✅ Finished {input_file}: {total_processed} samples in {total_elapsed/60:.2f} min")
 
@@ -160,18 +330,13 @@ for infile, outfile, statefile, keywords in input_files:
 overall_elapsed = time.time() - overall_start_time
 print(f"🏁 All embedding runs completed in {overall_elapsed/60:.2f} minutes")
 
-# 🏁 speed for keywords: : 1076410 samples in 60.78 min
-
-
 
 ####
 
 
 # averaged embeddings of sub-biomes + keywords 
 
-import os
-import numpy as np
-import h5py
+
 
 # Paths
 work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
@@ -228,7 +393,25 @@ with h5py.File(subbiomes_path, 'r') as subf, h5py.File(keywords_path, 'r') as ke
             sub_texts = [s.decode('utf-8') if isinstance(s, bytes) else str(s) for s in sub_texts]
             key_texts = [s.decode('utf-8') if isinstance(s, bytes) else str(s) for s in key_texts]
 
-            avg_embeds = (sub_embeds + key_embeds) / 2
+            # old: 
+            #avg_embeds = (sub_embeds + key_embeds) / 2
+            
+            # new: 
+            # Initialize averaged array
+            avg_embeds = np.where(
+                np.isnan(sub_embeds) & np.isnan(key_embeds),
+                np.nan,
+                np.where(
+                    np.isnan(sub_embeds),
+                    key_embeds,
+                    np.where(
+                        np.isnan(key_embeds),
+                        sub_embeds,
+                        (sub_embeds + key_embeds) / 2
+                    )
+                )
+            )
+
 
             # Resize and write
             n = outf['sample_ids'].shape[0]
@@ -250,38 +433,42 @@ print(f"✅ Saved averaged embeddings to {output_path}")
 ####
 
 
-# create file of sample ids intersection across 3 h5 files: 
-    
-
-# --------- Helper: Load sample IDs only ---------
-def get_sample_ids(filepath):
-    with h5py.File(filepath, 'r') as f:
-        sample_ids_raw = f['sample_ids'][:]
-        sample_ids = sample_ids_raw.astype(str)
-    return set(sample_ids)
-
-# --------- Paths ---------
-work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon/embeddings")
-
-subbiomes_path = os.path.join(work_dir, 'GPT_sub_biomes_embeddings.h5')
-keywords_path = os.path.join(work_dir, 'GPT_keywords_embeddings.h5')
-sb_keywords_path = os.path.join(work_dir, 'GPT_sub_biomes_keywords_embeddings.h5')
-
-output_path = os.path.join(work_dir, 'common_sample_ids_of_embeddings')
-
-# --------- Compute intersection ---------
-print("Loading sample IDs...")
-ids_subbiomes = get_sample_ids(subbiomes_path)
-ids_sb_keywords = get_sample_ids(sb_keywords_path)
-ids_keywords = get_sample_ids(keywords_path)
-
-common_sample_ids = ids_subbiomes & ids_sb_keywords & ids_keywords
-print(f"Common sample IDs across all files: {len(common_sample_ids)}")
-
-# --------- Save to disk ---------
-common_sample_ids_array = np.array(list(common_sample_ids))
-np.save(output_path, common_sample_ids_array)
-print(f"Saved intersection list to {output_path}")
+# =============================================================================
+# # Not necessary anymore? 
+# 
+# # create file of sample ids intersection across 3 h5 files: 
+#     
+# 
+# # --------- Helper: Load sample IDs only ---------
+# def get_sample_ids(filepath):
+#     with h5py.File(filepath, 'r') as f:
+#         sample_ids_raw = f['sample_ids'][:]
+#         sample_ids = sample_ids_raw.astype(str)
+#     return set(sample_ids)
+# 
+# # --------- Paths ---------
+# work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon/embeddings")
+# 
+# subbiomes_path = os.path.join(work_dir, 'GPT_sub_biomes_embeddings.h5')
+# keywords_path = os.path.join(work_dir, 'GPT_keywords_embeddings.h5')
+# sb_keywords_path = os.path.join(work_dir, 'GPT_sub_biomes_keywords_embeddings.h5')
+# 
+# output_path = os.path.join(work_dir, 'common_sample_ids_of_embeddings')
+# 
+# # --------- Compute intersection ---------
+# print("Loading sample IDs...")
+# ids_subbiomes = get_sample_ids(subbiomes_path)
+# ids_sb_keywords = get_sample_ids(sb_keywords_path)
+# ids_keywords = get_sample_ids(keywords_path)
+# 
+# common_sample_ids = ids_subbiomes & ids_sb_keywords & ids_keywords
+# print(f"Common sample IDs across all files: {len(common_sample_ids)}")
+# 
+# # --------- Save to disk ---------
+# common_sample_ids_array = np.array(list(common_sample_ids))
+# np.save(output_path, common_sample_ids_array)
+# print(f"Saved intersection list to {output_path}")
+# =============================================================================
 
 
 
