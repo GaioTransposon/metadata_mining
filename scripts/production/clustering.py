@@ -13,10 +13,11 @@ import os
 import pandas as pd
 import numpy as np
 import h5py
-import random
 import time
+import umap
+import plotly.express as px
 
-# --------- Load biome labels ---------
+# --------- Helper: Load biome labels ---------
 def load_biome_labels(biome_labels_path):
     biomes = {}
     with open(biome_labels_path, 'r', encoding='utf-8') as f:
@@ -26,13 +27,13 @@ def load_biome_labels(biome_labels_path):
                 biomes[parts[0]] = parts[1]
     return biomes
 
-
+# --------- Helper: Load embeddings from h5 ---------
 def load_embeddings_h5(filepath, biome_labels, selected_sample_ids):
     selected_set = set(selected_sample_ids)
 
     with h5py.File(filepath, 'r') as f:
         sample_ids_raw = f['sample_ids'][:]
-        sample_ids = sample_ids_raw.astype(str)
+        sample_ids = np.array([s.decode('utf-8') if isinstance(s, bytes) else str(s) for s in sample_ids_raw])
 
         # Find indices of selected sample IDs
         selected_indices = [i for i, sid in enumerate(sample_ids) if sid in selected_set]
@@ -81,96 +82,75 @@ def load_embeddings_h5(filepath, biome_labels, selected_sample_ids):
 
     return df, embeddings
 
-
-
 # --------- Paths ---------
-work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon/embeddings")
-biome_labels_path = os.path.join(os.path.expanduser('~'), 'cloudstor/Gaio/MicrobeAtlasProject/Hackathon/GPT_biomes.txt')
+base_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
+work_dir = os.path.join(base_dir, "embeddings")
+sampling_dir = os.path.join(work_dir, "sampling")
+biome_labels_path = os.path.join(base_dir, 'GPT_biomes.txt')
 
-subbiomes_path = os.path.join(work_dir, 'GPT_sub_biomes_embeddings.h5')
+subbiomes_path = os.path.join(work_dir, 'GPT_sub_biomes_embeddings_aligned.h5')
 keywords_path = os.path.join(work_dir, 'GPT_keywords_embeddings.h5')
 sb_keywords_path = os.path.join(work_dir, 'GPT_sub_biomes_keywords_embeddings.h5')
 
-common_ids_path = os.path.join(work_dir, 'common_sample_ids_of_embeddings.npy')
+# --------- List available sampling files ---------
+sampling_files = [f for f in os.listdir(sampling_dir) if f.endswith('.txt')]
+if not sampling_files:
+    print("❌ No sampling files found in the sampling directory.")
+    exit(1)
 
-# --------- Parameters ---------
-samples_per_biome = 5000  # adjust as needed
-random_seed = 42
+print("Available sampling files:")
+for i, fname in enumerate(sampling_files, 1):
+    print(f"{i}) {fname}")
 
-# --------- Load common sample IDs ---------
-print(f"Loading common sample IDs from {common_ids_path}...")
-common_sample_ids = np.load(common_ids_path)
-print(f"Loaded {len(common_sample_ids)} common sample IDs.")
+choice = input("Enter the number of the sampling file you want to use: ")
+try:
+    index = int(choice) - 1
+    if index < 0 or index >= len(sampling_files):
+        raise IndexError
+except (ValueError, IndexError):
+    print("❌ Invalid selection.")
+    exit(1)
+
+chosen_file = os.path.join(sampling_dir, sampling_files[index])
+print(f"✅ You selected: {sampling_files[index]}")
+
+# --------- Load selected sample IDs ---------
+with open(chosen_file, 'r') as f:
+    selected_sample_ids = [line.strip() for line in f.readlines()]
+print(f"Loaded {len(selected_sample_ids)} sample IDs from {sampling_files[index]}")
 
 # --------- Load biome labels ---------
 biome_labels = load_biome_labels(biome_labels_path)
 
-# --------- Subsample sample IDs per biome ---------
-print("Subsampling sample IDs per biome...")
-random.seed(random_seed)
-np.random.seed(random_seed)
-
-# Build biome → sample_id list
-biome_to_ids = {}
-for sid in common_sample_ids:
-    biome = biome_labels.get(sid, 'unknown')
-    if biome not in biome_to_ids:
-        biome_to_ids[biome] = []
-    biome_to_ids[biome].append(sid)
-
-# Select N random samples per biome
-final_selected_ids = []
-for biome, ids in biome_to_ids.items():
-    if len(ids) <= samples_per_biome:
-        chosen = ids
-    else:
-        chosen = random.sample(ids, samples_per_biome)
-    final_selected_ids.extend(chosen)
-
-print(f"Final selected samples: {len(final_selected_ids)}")
-
-
-###
-# Check number of samples per biome (originally)
-print("\nSample counts per biome:")
-for biome, ids in biome_to_ids.items():
-    print(f"{biome}: {len(ids)}")
-###
-
-
 # --------- Load filtered embeddings ---------
-print("Loading filtered embeddings...")
+print("\nLoading filtered embeddings...")
 start = time.time()
-df_subbiomes, X_subbiomes = load_embeddings_h5(subbiomes_path, biome_labels, final_selected_ids)
-df_keywords, X_keywords = load_embeddings_h5(keywords_path, biome_labels, final_selected_ids)
-df_sb_keywords, X_sb_keywords = load_embeddings_h5(sb_keywords_path, biome_labels, final_selected_ids)
+df_subbiomes, X_subbiomes = load_embeddings_h5(subbiomes_path, biome_labels, selected_sample_ids)
+elapsed1 = time.time() - start
+print(f"✅ Sub-biomes embeddings loaded in {elapsed1:.2f} seconds.")
 
-print("Embeddings loaded and ready for clustering.")
-print(f"Done in {time.time() - start:.2f} seconds.")
+start = time.time()
+df_keywords, X_keywords = load_embeddings_h5(keywords_path, biome_labels, selected_sample_ids)
+elapsed2 = time.time() - start
+print(f"✅ Keywords embeddings loaded in {elapsed2:.2f} seconds.")
 
+start = time.time()
+df_sb_keywords, X_sb_keywords = load_embeddings_h5(sb_keywords_path, biome_labels, selected_sample_ids)
+elapsed3 = time.time() - start
+print(f"✅ Sub-biomes + keywords embeddings loaded in {elapsed3:.2f} seconds.")
 
-
-
-# nspb 500 --> 24 sec
-# nspb 1000 --> 36 sec
-# nspb 2000 --> 61 sec
-# nspb 5000 --> 134 sec 
-
-
-
-# nspb before :( : 
-# 500 --> 25.34 sec
-# 1000 --> 24.70 sec 
-# 2000 --> 26.74 sec
-# 4000 --> 24.94 sec
-# 8000 --> 26.03 sec
-# 80000 --> 26.42 sec
-# 300000 --> 26.31 sec
+print("\n✅ All embeddings loaded and ready for clustering.")
 
 
 
 
 
+
+
+###################
+
+
+# clustering: 
 
 
 
@@ -198,8 +178,26 @@ def make_scatter_plot(df, title, hover_fields, biome_colors, out_path):
     fig.update_traces(marker=dict(size=7, opacity=0.7))
     fig.update_layout(legend_title_text='Biome Label')
     fig.write_html(out_path)
-    print(f"Saved plot to {out_path}")
+    print(f"✅ Saved plot to {out_path}")
     return fig
+
+# --------- Helper: Filter out NaN rows ---------
+def filter_nan_rows(X, df, label):
+    nan_mask = np.isnan(X).any(axis=1)
+    num_nans = np.sum(nan_mask)
+    if num_nans > 0:
+        print(f"⚠ Skipping {num_nans} samples due to NaNs in {label} embeddings")
+    X_clean = X[~nan_mask]
+    df_clean = df.loc[~nan_mask].reset_index(drop=True)
+    return X_clean, df_clean
+
+# --------- Helper: Print per-biome counts ---------
+def print_biome_counts(df, label):
+    print(f"\nSample counts per biome after filtering for {label}:")
+    biome_counts = df['biome_label'].value_counts()
+    for biome, count in biome_counts.items():
+        print(f"  {biome}: {count}")
+    print(f"  Total: {len(df)} samples")
 
 # --------- Define biome colors ---------
 biome_colors = {
@@ -210,67 +208,84 @@ biome_colors = {
     'soil': '#CBBF82'
 }
 
+# --------- Filter NaNs before UMAP ---------
+X_subbiomes_clean, df_subbiomes_clean = filter_nan_rows(X_subbiomes, df_subbiomes, 'sub-biomes')
+X_keywords_clean, df_keywords_clean = filter_nan_rows(X_keywords, df_keywords, 'keywords')
+X_sb_keywords_clean, df_sb_keywords_clean = filter_nan_rows(X_sb_keywords, df_sb_keywords, 'sub-biomes + keywords')
+
+# --------- Print biome balance ---------
+print_biome_counts(df_subbiomes_clean, 'sub-biomes')
+print_biome_counts(df_keywords_clean, 'keywords')
+print_biome_counts(df_sb_keywords_clean, 'sub-biomes + keywords')
+
 # --------- Run UMAP reductions ---------
+total_start = time.time()
+
 start = time.time()
-print("Running UMAP on sub-biomes...")
-df_subbiomes = run_umap(X_subbiomes, df_subbiomes)
-print(f"Done in {time.time() - start:.2f} seconds.")
+print("\nRunning UMAP on sub-biomes...")
+df_subbiomes_clean = run_umap(X_subbiomes_clean, df_subbiomes_clean)
+print(f"✅ Sub-biomes UMAP done in {time.time() - start:.2f} seconds.")
 
 start = time.time()
 print("Running UMAP on keywords...")
-df_keywords = run_umap(X_keywords, df_keywords)
-print(f"Done in {time.time() - start:.2f} seconds.")
+df_keywords_clean = run_umap(X_keywords_clean, df_keywords_clean)
+print(f"✅ Keywords UMAP done in {time.time() - start:.2f} seconds.")
 
 start = time.time()
-print("Running UMAP on subbiomes + keywords...")
-df_sb_keywords = run_umap(X_sb_keywords, df_sb_keywords)
-print(f"Done in {time.time() - start:.2f} seconds.")
+print("Running UMAP on sub-biomes + keywords...")
+df_sb_keywords_clean = run_umap(X_sb_keywords_clean, df_sb_keywords_clean)
+print(f"✅ Sub-biomes + keywords UMAP done in {time.time() - start:.2f} seconds.")
+
+
+# --------- Extract nspb and seed from sampling file name ---------
+sampling_basename = os.path.splitext(sampling_files[index])[0]  # e.g., sampling_n5000_seed22
+suffix = sampling_basename.replace('sampling_', '')  # e.g., n5000_seed22
+suffix = suffix.replace('seed', 'rs')  
 
 
 # --------- Define output paths ---------
-out1 = os.path.join(work_dir, 'umap_subbiomes.html')
-out2 = os.path.join(work_dir, 'umap_keywords.html')
-out3 = os.path.join(work_dir, 'umap_sb_keywords.html')
+out1 = os.path.join(work_dir, f'{suffix}_umap_subbiomes.html')
+out2 = os.path.join(work_dir, f'{suffix}_umap_keywords.html')
+out3 = os.path.join(work_dir, f'{suffix}_umap_sb_keywords.html')
+
 
 # --------- Create and save plots ---------
+start = time.time()
 fig1 = make_scatter_plot(
-    df_subbiomes,
+    df_subbiomes_clean,
     title="Sub-biome embeddings",
     hover_fields={'sample_id': True, 'sub-biome': True, 'UMAP1': False, 'UMAP2': False},
     biome_colors=biome_colors,
     out_path=out1
 )
+print(f"✅ Sub-biome plot saved in {time.time() - start:.2f} seconds.")
 
+start = time.time()
 fig2 = make_scatter_plot(
-    df_keywords,
+    df_keywords_clean,
     title="Keyword embeddings",
     hover_fields={'sample_id': True, 'keywords': True, 'UMAP1': False, 'UMAP2': False},
     biome_colors=biome_colors,
     out_path=out2
 )
+print(f"✅ Keyword plot saved in {time.time() - start:.2f} seconds.")
 
+start = time.time()
 fig3 = make_scatter_plot(
-    df_sb_keywords,
-    title="Subbiomes + keyword (avg) embeddings",
+    df_sb_keywords_clean,
+    title="Sub-biomes + keyword (avg) embeddings",
     hover_fields={'sample_id': True, 'sub-biome': True, 'keywords': True, 'UMAP1': False, 'UMAP2': False},
     biome_colors=biome_colors,
     out_path=out3
 )
+print(f"✅ Sub-biomes + keywords plot saved in {time.time() - start:.2f} seconds.")
 
 # --------- Optional: Show plots interactively ---------
 fig1.show()
 fig2.show()
 fig3.show()
 
-# --------- Print sample counts ---------
-print(f"Subbiomes samples: {len(df_subbiomes)}")
-print(f"Keywords samples: {len(df_keywords)}")
-print(f"Subbiomes + keywords samples: {len(df_sb_keywords)}")
+# --------- Final summary ---------
+total_elapsed = time.time() - total_start
+print(f"\n✅ Total clustering and plotting time: {total_elapsed/60:.2f} minutes")
 
-
-
-
-
-
-
-    
