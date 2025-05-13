@@ -289,3 +289,85 @@ fig3.show()
 total_elapsed = time.time() - total_start
 print(f"\n✅ Total clustering and plotting time: {total_elapsed/60:.2f} minutes")
 
+
+
+
+
+
+from sklearn.cluster import MiniBatchKMeans
+from sklearn.metrics import silhouette_score
+import numpy as np
+import matplotlib.pyplot as plt
+import plotly.express as px
+
+# --------- Helper: Find optimal number of clusters using silhouette score ---------
+def find_optimal_k(X, min_k=5, max_k=100, step=5):
+    best_k = min_k
+    best_score = -1
+    scores = []
+
+    print("\nEstimating optimal number of clusters using silhouette score...")
+    for k in range(min_k, min(max_k, X.shape[0]), step):
+        kmeans = MiniBatchKMeans(n_clusters=k, random_state=42, batch_size=1000)
+        labels = kmeans.fit_predict(X)
+        if len(set(labels)) > 1:  # silhouette requires at least 2 clusters
+            score = silhouette_score(X, labels)
+            print(f"  k={k}: silhouette score = {score:.3f}")
+            scores.append((k, score))
+            if score > best_score:
+                best_score = score
+                best_k = k
+
+    if not scores:
+        raise ValueError("Failed to compute silhouette score for any k")
+
+    # Optional: Plot silhouette scores
+    plt.figure(figsize=(8, 5))
+    plt.plot([k for k, _ in scores], [s for _, s in scores], marker='o')
+    plt.title('Silhouette Score vs Number of Clusters')
+    plt.xlabel('Number of clusters')
+    plt.ylabel('Silhouette score')
+    plt.show()
+
+    print(f"✅ Best k determined: {best_k} with silhouette score {best_score:.3f}")
+    return best_k
+
+# --------- Helper: Cluster with best k and plot ---------
+def cluster_and_plot(X, df, umap_x='UMAP1', umap_y='UMAP2', label_column='sub-biome', out_path=None):
+    # Normalize embeddings
+    X_normalized = X / np.linalg.norm(X, axis=1, keepdims=True)
+
+    # Find optimal k
+    best_k = find_optimal_k(X_normalized, min_k=5, max_k=100, step=5)
+
+    # Run final clustering
+    kmeans = MiniBatchKMeans(n_clusters=best_k, random_state=42, batch_size=1000)
+    cluster_labels = kmeans.fit_predict(X_normalized)
+    df['cluster_id'] = cluster_labels
+
+    # Plot using plotly
+    fig = px.scatter(
+        df,
+        x=umap_x, y=umap_y,
+        color='cluster_id',
+        color_continuous_scale='Viridis',
+        hover_data={'sample_id': True, label_column: True, 'cluster_id': True},
+        title=f"{label_column.capitalize()} clustered into {best_k} clusters (auto-detected)",
+        height=800,
+        width=1000
+    )
+
+    if out_path:
+        fig.write_html(out_path)
+        print(f"✅ Clustered plot saved to {out_path}")
+
+    fig.show()
+    return df, kmeans
+
+# --------- Usage example with your sub-biomes ---------
+df_subbiomes_clean, kmeans_model = cluster_and_plot(
+    X_subbiomes_clean,
+    df_subbiomes_clean,
+    out_path=os.path.join(work_dir, f'{suffix}_subbiomes_clusters_auto.html')
+)
+
