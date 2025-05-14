@@ -176,23 +176,27 @@ print(f"Remaining unmatched after all steps: {unmatched_total} ({(unmatched_tota
 
 
 
-
-
-
 # -------------------------------------------
 # 5. Persistent Comment Game on unmatched samples
 # -------------------------------------------
 
 COMMENT_FILE = '/Users/danielagaio/cloudstor/Gaio/MicrobeAtlasProject/Hackathon/comment_dict.json'
 
-# Load existing comments if the file exists
-if os.path.exists(COMMENT_FILE):
-    with open(COMMENT_FILE, 'r') as f:
-        comment_dict = json.load(f)
-    print(f"\nLoaded {len(comment_dict)} previously commented samples.")
-else:
-    comment_dict = {}
-    print("\nNo previous comments found. Starting fresh.")
+def load_comment_dict():
+    if os.path.exists(COMMENT_FILE):
+        with open(COMMENT_FILE, 'r') as f:
+            return json.load(f)
+    else:
+        print("\nNo previous comments found. Starting fresh.")
+        return {}
+
+def save_comment_dict(comment_dict):
+    with open(COMMENT_FILE, 'w') as f:
+        json.dump(comment_dict, f, indent=2)
+
+# Load existing comments
+comment_dict = load_comment_dict()
+print(f"\nLoaded {len(comment_dict)} previously commented samples.")
 
 # Make the list stable and reproducible
 random.seed(42)
@@ -205,7 +209,7 @@ print(f"Type 'q' or 'exit' at any time to quit.\n")
 
 for sample_id, sub_biome in unmatched_list:
     if sample_id in comment_dict:
-        continue  # Already commented
+        continue
 
     merged = sample_to_merged.get(sample_id, "Merged text not found")
 
@@ -214,83 +218,95 @@ for sample_id, sub_biome in unmatched_list:
     print(f"Taxonomic Assignment: {merged}")
     print("-" * 80)
 
-    # Ensure clean user input on a new line
     user_input = input("\nYour comment (or 'q' to quit): ").strip()
-
     if user_input.lower() in ['q', 'exit']:
         print("\nExiting comment game...")
         break
 
-    # Save to dict
     comment_dict[sample_id] = {
         'sub_biome': sub_biome,
         'taxonomic_assign': merged,
         'my_comment': user_input
     }
 
-    # Save immediately
-    with open(COMMENT_FILE, 'w') as f:
-        json.dump(comment_dict, f, indent=2)
-
+    save_comment_dict(comment_dict)
     print(f"Comment saved. Total comments so far: {len(comment_dict)}")
-
 
 print(f"\n=== COMMENT GAME ENDED ===")
 print(f"Total commented samples: {len(comment_dict)} (saved to '{COMMENT_FILE}')")
 
+# -------------------------------------------
+# 6. Comment Dictionary Statistics
+# -------------------------------------------
 
-
-
-
-
-
-
-
-# Load existing comments
-if not os.path.exists(COMMENT_FILE):
-    print("No comments file found.")
-else:
-    with open(COMMENT_FILE, 'r') as f:
-        comment_dict = json.load(f)
-
+def show_comment_stats(comment_dict):
     print(f"\n=== COMMENT DICTIONARY STATS ===")
     total_comments = len(comment_dict)
     print(f"Total commented samples: {total_comments}")
 
-    # Extract all comments
     all_comments = [entry['my_comment'] for entry in comment_dict.values()]
-
-    # Count unique comments
     comment_counts = Counter(all_comments)
 
     print("\nComment distribution:")
     for comment, count in comment_counts.most_common():
         percent = (count / total_comments) * 100
         print(f"- {comment}: {count} samples ({percent:.2f}%)")
-        
-        
-        
-        
 
+show_comment_stats(comment_dict)
 
+# -------------------------------------------
+# 7. Filter Samples by Comment Category (example: 'nh')
+# -------------------------------------------
 
-# Load existing comments
-if not os.path.exists(COMMENT_FILE):
-    print("No comments file found.")
-else:
-    with open(COMMENT_FILE, 'r') as f:
-        comment_dict = json.load(f)
+# nh: GPT-subbiome is lacking host
+# w: wording; taxonomic assignment doesn’t match with sub-biome although they mean the same
+# nm: no match 
 
-    # Filter comments containing 'nm' (case-insensitive)
-    filtered_nm = {sample_id: info for sample_id, info in comment_dict.items() if 'nm' in info['my_comment'].lower()}
+def filter_by_comment_keyword(comment_dict, keyword):
+    filtered = {sample_id: info for sample_id, info in comment_dict.items() if keyword.lower() in info['my_comment'].lower()}
+    print(f"\n=== SAMPLES WITH '{keyword}' IN COMMENTS ===")
+    print(f"Total: {len(filtered)} samples\n")
 
-    print(f"\n=== SAMPLES WITH 'nm' IN COMMENTS ===")
-    print(f"Total: {len(filtered_nm)} samples\n")
-
-    for sample_id, info in filtered_nm.items():
+    for sample_id, info in filtered.items():
         print(f"Sample ID: {sample_id}")
         print(f"Sub-Biome: {info['sub_biome']}")
         print(f"Taxonomic Assignment: {info['taxonomic_assign']}")
         print(f"My Comment: {info['my_comment']}")
         print('-' * 80)
 
+# Example call to filter 'nh'
+filter_by_comment_keyword(comment_dict, 'nh')
+
+# -------------------------------------------
+# 8. Correct Comment for a Given Sample ID
+# -------------------------------------------
+
+def correct_comment(comment_dict):
+    sample_id_to_edit = input("\nEnter the SAMPLE ID you want to correct (or 'q' to quit): ").strip()
+
+    if sample_id_to_edit.lower() in ['q', 'exit']:
+        print("Exited.")
+        return
+
+    if sample_id_to_edit not in comment_dict:
+        print(f"Sample ID '{sample_id_to_edit}' not found in the comments dictionary.")
+        return
+
+    entry = comment_dict[sample_id_to_edit]
+    print(f"\nCurrent info for {sample_id_to_edit}:")
+    print(f"Sub-Biome: {entry['sub_biome']}")
+    print(f"Taxonomic Assignment: {entry['taxonomic_assign']}")
+    print(f"Current Comment: {entry['my_comment']}")
+
+    new_comment = input("\nEnter your NEW comment: ").strip()
+    confirm = input(f"Are you sure you want to replace '{entry['my_comment']}' with '{new_comment}'? (y/n): ").strip().lower()
+
+    if confirm == 'y':
+        comment_dict[sample_id_to_edit]['my_comment'] = new_comment
+        save_comment_dict(comment_dict)
+        print(f"\nComment updated for {sample_id_to_edit}.")
+    else:
+        print("Cancelled. No changes made.")
+
+# Example usage
+# correct_comment(comment_dict)
