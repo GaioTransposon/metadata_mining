@@ -1,21 +1,74 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue May 13 16:26:01 2025
+Created on Wed May 14 15:21:07 2025
 
 @author: danielagaio
 """
 
 
 
+# -------------------------------------------
+# Libraries & Setup
+# -------------------------------------------
 import pandas as pd
 import re
-from tqdm import tqdm
 import random
+import string
+from tqdm import tqdm
+from nltk.stem import WordNetLemmatizer
+import inflect
+from rapidfuzz import fuzz
+from functools import lru_cache
+import nltk
+import json
+import os
+from collections import Counter
 
-# -------------------------
-# 1. Load GPT_biomes.txt and filter to 'animal' or 'plant'
-# -------------------------
+nltk.download('wordnet')
+nltk.download('omw-1.4')
+
+lemmatizer = WordNetLemmatizer()
+p = inflect.engine()
+
+# -------------------------------------------
+# Helper Functions
+# -------------------------------------------
+def clean_text(text):
+    if not isinstance(text, str) or text.strip() == '':
+        return ''
+    return text.translate(str.maketrans('', '', string.punctuation)).lower().strip()
+
+@lru_cache(maxsize=None)
+def lemmatize_and_singularize_cached(text):
+    text = clean_text(text)
+    return ' '.join([p.singular_noun(lemmatizer.lemmatize(word)) or word for word in text.split()])
+
+@lru_cache(maxsize=None)
+def pluralize_text_cached(text):
+    text = clean_text(text)
+    return ' '.join([p.plural(word) for word in text.split()])
+
+def print_readable_samples(results, title, n=30):
+    print(f"\n=== {title} ===")
+    if not results:
+        print("No matches found.\n")
+        return
+    for i, (sample_id, sub_biome, merged) in enumerate(random.sample(results, min(n, len(results))), 1):
+        print(f"{i}. SAMPLE ID: {sample_id}\n   SUB-BIOME: {sub_biome}\n   MERGED TEXT: {merged}\n{'-'*80}")
+
+def print_non_matches(non_matches, title, n=30):
+    print(f"\n=== {title} ===")
+    if not non_matches:
+        print("All entries matched.\n")
+        return
+    for i, (sample_id, sub_biome) in enumerate(random.sample(list(non_matches), min(n, len(non_matches))), 1):
+        merged = sample_to_merged.get(sample_id, "Merged text not found")
+        print(f"{i}. SAMPLE ID: {sample_id}\n   SUB-BIOME: {sub_biome}\n   MERGED TEXT: {merged}\n{'-'*80}")
+
+# -------------------------------------------
+# 1. Load and Filter Data
+# -------------------------------------------
 gpt_biomes_fp = '/Users/danielagaio/cloudstor/Gaio/MicrobeAtlasProject/Hackathon/GPT_biomes.txt'
 mapping_fp = '/Users/danielagaio/cloudstor/Gaio/MicrobeAtlasProject/sample_taxid_mapping_clean_fixed_matlas2024.tsv'
 gpt_sub_biomes_fp = '/Users/danielagaio/cloudstor/Gaio/MicrobeAtlasProject/Hackathon/GPT_sub_biomes.txt'
@@ -24,153 +77,220 @@ df_biomes = pd.read_csv(gpt_biomes_fp, sep='\t', header=None, names=['sample_id'
 df_biomes_filtered = df_biomes[df_biomes['biome'].isin(['animal', 'plant'])]
 sample_ids_biomes = df_biomes_filtered['sample_id'].unique()
 
-# -------------------------
-# 2. Load GPT_sub_biomes.txt and filter by sample_ids from step 1
-# -------------------------
 df_sub_biomes = pd.read_csv(gpt_sub_biomes_fp, sep='\t', header=None, names=['sample_id', 'sub_biome'])
 df_sub_biomes_filtered = df_sub_biomes[df_sub_biomes['sample_id'].isin(sample_ids_biomes)].copy()
 
-# -------------------------
-# 3. Load Taxonomic mappings, filter, merge, clean
-# -------------------------
 df_mapping = pd.read_csv(mapping_fp, sep='\t')
 df_mapping_filtered = df_mapping[df_mapping.iloc[:, 0].isin(sample_ids_biomes)].copy()
-
-# Merge taxonomic mapping columns into 'merged'
 df_mapping_filtered['merged'] = df_mapping_filtered.iloc[:, 1:].astype(str).apply(lambda row: ' '.join(row), axis=1)
+df_mapping_filtered['merged'] = df_mapping_filtered['merged'].apply(lambda x: x.replace('nan', '').strip())
+df_mapping_filtered = df_mapping_filtered[df_mapping_filtered['merged'] != '']
 
-# Track before cleaning
-total_before_nan_removal = len(df_mapping_filtered)
+# Sync to common sample_ids
+common_sample_ids = set(df_sub_biomes_filtered['sample_id']).intersection(df_mapping_filtered.iloc[:, 0])
+df_sub_biomes_filtered = df_sub_biomes_filtered[df_sub_biomes_filtered['sample_id'].isin(common_sample_ids)]
+df_mapping_filtered = df_mapping_filtered[df_mapping_filtered.iloc[:, 0].isin(common_sample_ids)]
 
-# Remove rows where 'merged' is only 'nan nan nan...'
-df_mapping_filtered['merged_clean'] = df_mapping_filtered['merged'].apply(lambda x: x.replace('nan', '').strip())
-nan_only_sample_ids = df_mapping_filtered[df_mapping_filtered['merged_clean'] == ''][df_mapping_filtered.columns[0]].tolist()
-df_mapping_filtered = df_mapping_filtered[df_mapping_filtered['merged_clean'] != ''].copy()
-df_mapping_filtered['merged'] = df_mapping_filtered['merged_clean']
-df_mapping_filtered.drop(columns=['merged_clean'], inplace=True)
-
-total_after_nan_removal = len(df_mapping_filtered)
-removed_nans = total_before_nan_removal - total_after_nan_removal
-
-# -------------------------
-# 4. Sync both df_sub_biomes_filtered and df_mapping_filtered to only common sample_ids
-# -------------------------
-common_sample_ids = set(df_sub_biomes_filtered['sample_id']).intersection(set(df_mapping_filtered.iloc[:, 0]))
-df_sub_biomes_filtered = df_sub_biomes_filtered[df_sub_biomes_filtered['sample_id'].isin(common_sample_ids)].copy()
-df_mapping_filtered = df_mapping_filtered[df_mapping_filtered.iloc[:, 0].isin(common_sample_ids)].copy()
-
-# -------------------------
-# 5. Remove 'species' from merged text
-# -------------------------
+# Clean up 'species'
 df_mapping_filtered['merged'] = df_mapping_filtered['merged'].str.replace('species', '', case=False, regex=False)
 df_sub_biomes_filtered['sub_biome'] = df_sub_biomes_filtered['sub_biome'].str.replace('species', '', case=False, regex=False)
 
-# Create dict of sample_id -> merged_text
 sample_to_merged = df_mapping_filtered.set_index(df_mapping_filtered.columns[0])['merged'].astype(str).to_dict()
 
-# -------------------------
-# 6. Matching logic
-# -------------------------
-results_full = []
-results_partial = []
+# -------------------------------------------
+# 2. Matching Logic (Full & Partial)
+# -------------------------------------------
+results_full, results_partial = [], []
 
-for _, row in tqdm(df_sub_biomes_filtered.iterrows(), total=len(df_sub_biomes_filtered), desc="Sample-wise matching"):
+for _, row in tqdm(df_sub_biomes_filtered.iterrows(), total=len(df_sub_biomes_filtered), desc="Sample-wise matching (improved)"):
     sample_id = row['sample_id']
-    sub_biome = row['sub_biome']
-    
-    if not isinstance(sub_biome, str) or sample_id not in sample_to_merged:
-        continue
-    
-    merged_text = sample_to_merged[sample_id]
-    
-    # Full match (whole phrase with word boundaries)
-    pattern_full = r'\b' + re.escape(sub_biome.strip()) + r'\b'
-    if re.search(pattern_full, merged_text):
-        results_full.append((sample_id, sub_biome, merged_text))
-        continue
-    
-    # Partial match (any word as whole word)
-    if any(re.search(r'\b' + re.escape(word) + r'\b', merged_text, flags=re.IGNORECASE) for word in sub_biome.strip().split()):
-        results_partial.append((sample_id, sub_biome, merged_text))
+    sub_biome_raw = row['sub_biome']
+    merged_text = sample_to_merged.get(sample_id, "")
 
-# Deduplicate
+    if not isinstance(sub_biome_raw, str) or not merged_text:
+        continue
+
+    sub_biome_clean = clean_text(sub_biome_raw.replace('-', ' '))
+    merged_clean = clean_text(merged_text)
+
+    if re.search(rf'\b{re.escape(sub_biome_clean)}\b', merged_clean):
+        results_full.append((sample_id, sub_biome_raw, merged_text))
+    elif any(re.search(rf'\b{re.escape(word)}\b', merged_clean) for word in sub_biome_clean.split()):
+        results_partial.append((sample_id, sub_biome_raw, merged_text))
+
 results_full = list(set(results_full))
 results_partial = list(set(results_partial))
 
-# -------------------------
-# Reporting functions
-# -------------------------
-def print_readable_samples(results, title, n=30):
-    print(f"\n=== {title} ===")
-    if not results:
-        print("No matches found.\n")
-        return
-    sample_results = random.sample(results, min(n, len(results)))
-    for i, (sample_id, sub_biome, merged) in enumerate(sample_results, 1):
-        print(f"{i}. SAMPLE ID: {sample_id}\n   SUB-BIOME: {sub_biome}\n   MERGED TEXT: {merged}\n{'-'*80}")
-
-def print_non_matches(non_matches, title, n=30):
-    print(f"\n=== {title} ===")
-    if not non_matches:
-        print("All entries matched.\n")
-        return
-    sample_results = random.sample(list(non_matches), min(n, len(non_matches)))
-    for i, (sample_id, sub_biome) in enumerate(sample_results, 1):
-        merged = sample_to_merged.get(sample_id, "Merged text not found")
-        print(f"{i}. SAMPLE ID: {sample_id}\n   SUB-BIOME: {sub_biome}\n   MERGED TEXT: {merged}\n{'-'*80}")
-
-# -------------------------
-# Reporting matches and non-matches
-# -------------------------
-print_readable_samples(results_full, "FULL MATCHES (whole phrase match)")
-print_readable_samples(results_partial, "PARTIAL MATCHES (any word as whole word match)")
-
-matched_full_set = set((sample_id, sub_biome) for sample_id, sub_biome, _ in results_full)
-matched_partial_set = set((sample_id, sub_biome) for sample_id, sub_biome, _ in results_partial)
+# -------------------------------------------
+# 3. Fuzzy & Normalized Matching for Non-Partial Matches
+# -------------------------------------------
+matched_partial_set = set((s, sb) for s, sb, _ in results_partial)
 all_attempts_set = set(zip(df_sub_biomes_filtered['sample_id'], df_sub_biomes_filtered['sub_biome']))
-
-non_full_matches = all_attempts_set - matched_full_set
 non_partial_matches = all_attempts_set - matched_partial_set
 
-print_non_matches(non_full_matches, "NON-FULL MATCHES (no exact full phrase match)")
-print_non_matches(non_partial_matches, "NON-PARTIAL MATCHES (no whole word match)")
+df_non_partial = pd.DataFrame(list(non_partial_matches), columns=['sample_id', 'sub_biome'])
+df_non_partial['merged'] = df_non_partial['sample_id'].map(sample_to_merged)
+df_non_partial['sub_biome_singular'] = df_non_partial['sub_biome'].map(lemmatize_and_singularize_cached)
+df_non_partial['sub_biome_plural'] = df_non_partial['sub_biome'].map(pluralize_text_cached)
+df_non_partial['merged_norm'] = df_non_partial['merged'].map(lemmatize_and_singularize_cached)
 
-# -------------------------
-# Summary statistics
-# -------------------------
-total_attempts = len(df_sub_biomes_filtered)
-percent_full = (len(results_full) / total_attempts) * 100 if total_attempts > 0 else 0
-percent_partial = (len(results_partial) / total_attempts) * 100 if total_attempts > 0 else 0
-percent_removed_nans = (removed_nans / total_before_nan_removal) * 100 if total_before_nan_removal > 0 else 0
+results_norm_partial, results_norm_fuzzy = [], []
 
-print(f"\nTotal samples in taxonomic mappings (after GPT biome filtering): {total_before_nan_removal}")
-print(f"Samples with only 'nan' merged text (removed early): {removed_nans} ({percent_removed_nans:.2f}%)")
-print(f"Samples remaining after 'nan' removal and syncing: {len(df_mapping_filtered)}")
+for _, row in tqdm(df_non_partial.iterrows(), total=len(df_non_partial), desc="Partial+Fuzzy matching"):
+    sample_id, merged_norm = row['sample_id'], row['merged_norm']
+    forms_to_try = [row['sub_biome_singular'], row['sub_biome_plural']]
 
-print(f"\nTotal samples attempted for matching: {total_attempts}")
-print(f"Percentage of FULL matches: {percent_full:.2f}%")
-print(f"Percentage of PARTIAL matches: {percent_partial:.2f}%")
+    if any(re.search(rf'\b{re.escape(word)}\b', merged_norm) for form in forms_to_try if form for word in form.split()):
+        results_norm_partial.append((sample_id, row['sub_biome'], row['merged']))
+    elif fuzz.token_set_ratio(row['sub_biome_singular'], merged_norm) >= 85:
+        results_norm_fuzzy.append((sample_id, row['sub_biome'], row['merged'], fuzz.token_set_ratio(row['sub_biome_singular'], merged_norm)))
+
+rescued_norm_partial_set = set((s, sb) for s, sb, _ in results_norm_partial)
+rescued_norm_fuzzy_set = set((s, sb) for s, sb, _, _ in results_norm_fuzzy)
+rescued_all_set = rescued_norm_partial_set.union(rescued_norm_fuzzy_set)
+
+still_unmatched_after_all = non_partial_matches - rescued_all_set
+
+# -------------------------------------------
+# 4. Reporting Summary
+# -------------------------------------------
+total_samples = len(df_sub_biomes_filtered)
+full_matches = len(results_full)
+partial_matches = len(results_partial)
+rescued_total = len(rescued_all_set)
+unmatched_total = len(still_unmatched_after_all)
+
+print(f"\n=== SUMMARY REPORT ===")
+print(f"Total samples attempted: {total_samples}")
+print(f"Full matches (whole phrase): {full_matches} ({(full_matches / total_samples) * 100:.2f}%)")
+print(f"Partial matches (any word): {partial_matches} ({(partial_matches / total_samples) * 100:.2f}%)")
+print(f"Rescued from unmatched partial (normalized/fuzzy): {rescued_total} ({(rescued_total / len(non_partial_matches) * 100):.2f}%)")
+print(f"Remaining unmatched after all steps: {unmatched_total} ({(unmatched_total / total_samples) * 100:.2f}%)")
+
+# print_readable_samples(results_full, "FULL MATCHES")
+# print_readable_samples(results_partial, "PARTIAL MATCHES")
+# print_readable_samples(results_norm_partial, "RESCUED PARTIAL (normalized matching)")
+# print_readable_samples(results_norm_fuzzy, "RESCUED FUZZY (score >=85)")
+# print_non_matches(still_unmatched_after_all, "STILL UNMATCHED AFTER ALL STEPS")
 
 
 
-# -------------------------
-# Save clean prepared dataframe for GPT API matching later
-# -------------------------
-# Merge df_sub_biomes_filtered and df_mapping_filtered on 'sample_id'
-df_final = pd.merge(
-    df_sub_biomes_filtered[['sample_id', 'sub_biome']],
-    df_mapping_filtered[[df_mapping_filtered.columns[0], 'merged']],
-    left_on='sample_id',
-    right_on=df_mapping_filtered.columns[0]
-)
-
-# Remove possible duplicate column
-df_final = df_final[['sample_id', 'sub_biome', 'merged']]
-
-# Save to CSV (choose your preferred path)
-df_final.to_csv('/Users/danielagaio/cloudstor/Gaio/MicrobeAtlasProject/Hackathon/gpt_matching_ready_dataset.csv', index=False)
-
-print(f"\nSaved {len(df_final)} cleaned samples ready for GPT matching to 'gpt_matching_ready_dataset.csv'.")
 
 
+
+
+# -------------------------------------------
+# 5. Persistent Comment Game on unmatched samples
+# -------------------------------------------
+
+COMMENT_FILE = '/Users/danielagaio/cloudstor/Gaio/MicrobeAtlasProject/Hackathon/comment_dict.json'
+
+# Load existing comments if the file exists
+if os.path.exists(COMMENT_FILE):
+    with open(COMMENT_FILE, 'r') as f:
+        comment_dict = json.load(f)
+    print(f"\nLoaded {len(comment_dict)} previously commented samples.")
+else:
+    comment_dict = {}
+    print("\nNo previous comments found. Starting fresh.")
+
+# Make the list stable and reproducible
+random.seed(42)
+unmatched_list = list(still_unmatched_after_all)
+random.shuffle(unmatched_list)
+
+print(f"\n=== COMMENT GAME START ===")
+print(f"Total unmatched samples to review: {len(unmatched_list)}")
+print(f"Type 'q' or 'exit' at any time to quit.\n")
+
+for sample_id, sub_biome in unmatched_list:
+    if sample_id in comment_dict:
+        continue  # Already commented
+
+    merged = sample_to_merged.get(sample_id, "Merged text not found")
+
+    print(f"\nSample ID: {sample_id}")
+    print(f"Sub-Biome: {sub_biome}")
+    print(f"Taxonomic Assignment: {merged}")
+    print("-" * 80)
+
+    # Ensure clean user input on a new line
+    user_input = input("\nYour comment (or 'q' to quit): ").strip()
+
+    if user_input.lower() in ['q', 'exit']:
+        print("\nExiting comment game...")
+        break
+
+    # Save to dict
+    comment_dict[sample_id] = {
+        'sub_biome': sub_biome,
+        'taxonomic_assign': merged,
+        'my_comment': user_input
+    }
+
+    # Save immediately
+    with open(COMMENT_FILE, 'w') as f:
+        json.dump(comment_dict, f, indent=2)
+
+    print(f"Comment saved. Total comments so far: {len(comment_dict)}")
+
+
+print(f"\n=== COMMENT GAME ENDED ===")
+print(f"Total commented samples: {len(comment_dict)} (saved to '{COMMENT_FILE}')")
+
+
+
+
+
+
+
+
+
+# Load existing comments
+if not os.path.exists(COMMENT_FILE):
+    print("No comments file found.")
+else:
+    with open(COMMENT_FILE, 'r') as f:
+        comment_dict = json.load(f)
+
+    print(f"\n=== COMMENT DICTIONARY STATS ===")
+    total_comments = len(comment_dict)
+    print(f"Total commented samples: {total_comments}")
+
+    # Extract all comments
+    all_comments = [entry['my_comment'] for entry in comment_dict.values()]
+
+    # Count unique comments
+    comment_counts = Counter(all_comments)
+
+    print("\nComment distribution:")
+    for comment, count in comment_counts.most_common():
+        percent = (count / total_comments) * 100
+        print(f"- {comment}: {count} samples ({percent:.2f}%)")
+        
+        
+        
+        
+
+
+
+# Load existing comments
+if not os.path.exists(COMMENT_FILE):
+    print("No comments file found.")
+else:
+    with open(COMMENT_FILE, 'r') as f:
+        comment_dict = json.load(f)
+
+    # Filter comments containing 'nm' (case-insensitive)
+    filtered_nm = {sample_id: info for sample_id, info in comment_dict.items() if 'nm' in info['my_comment'].lower()}
+
+    print(f"\n=== SAMPLES WITH 'nm' IN COMMENTS ===")
+    print(f"Total: {len(filtered_nm)} samples\n")
+
+    for sample_id, info in filtered_nm.items():
+        print(f"Sample ID: {sample_id}")
+        print(f"Sub-Biome: {info['sub_biome']}")
+        print(f"Taxonomic Assignment: {info['taxonomic_assign']}")
+        print(f"My Comment: {info['my_comment']}")
+        print('-' * 80)
 
