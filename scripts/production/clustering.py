@@ -83,7 +83,7 @@ def load_embeddings_h5(filepath, biome_labels, selected_sample_ids):
     return df, embeddings
 
 # --------- Paths ---------
-base_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
+base_dir = os.path.join(os.path.expanduser('~'), "Desktop/MicrobeAtlasProject/Hackathon")
 work_dir = os.path.join(base_dir, "embeddings")
 sampling_dir = os.path.join(work_dir, "sampling")
 biome_labels_path = os.path.join(base_dir, 'GPT_biomes.txt')
@@ -370,4 +370,115 @@ df_subbiomes_clean, kmeans_model = cluster_and_plot(
     df_subbiomes_clean,
     out_path=os.path.join(work_dir, f'{suffix}_subbiomes_clusters_auto.html')
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import os
+import h5py
+import numpy as np
+import pandas as pd
+from sklearn.cluster import KMeans
+
+# --------- Settings ---------
+embeddings_h5_path = os.path.expanduser("~/cloudstor/Gaio/MicrobeAtlasProject/Hackathon/embeddings/GPT_sub_biomes_embeddings.h5")
+output_csv = "sub_biome_to_cluster_kmeans1000.csv"
+n_clusters = 1000
+
+# --------- Load embeddings and texts ---------
+print(f"🔹 Opening embeddings file: {embeddings_h5_path}")
+with h5py.File(embeddings_h5_path, 'r') as f:
+    print(f"Available datasets: {list(f.keys())}")
+    
+    embeddings = f['embeddings'][:]
+    sample_ids = f['sample_ids'][:]
+    
+    if 'sub_texts' in f:
+        texts = f['sub_texts'][:]
+    elif 'texts' in f:
+        texts = f['texts'][:]
+    else:
+        raise KeyError("Neither 'sub_texts' nor 'texts' found in the H5 file.")
+
+# Decode text fields
+print("🔹 Decoding texts and sample IDs...")
+texts = np.array([txt.decode('utf-8') if isinstance(txt, bytes) else txt for txt in texts])
+sample_ids = np.array([sid.decode('utf-8') if isinstance(sid, bytes) else sid for sid in sample_ids])
+
+print(f"✅ Loaded {len(texts)} embeddings and texts.")
+
+
+
+
+
+
+# --------- Run clustering ---------
+
+from sklearn.cluster import MiniBatchKMeans
+from tqdm import tqdm
+
+n_clusters = 1000
+batch_size = 10000
+
+print(f"🔹 Running MiniBatchKMeans (manual loop with progress) on {embeddings.shape[0]} embeddings...")
+
+kmeans = MiniBatchKMeans(
+    n_clusters=n_clusters,
+    batch_size=batch_size,
+    random_state=42,
+    init='k-means++',
+    max_iter=1  # We will manually handle epochs
+)
+
+# Initialize
+kmeans.partial_fit(embeddings[:batch_size])
+
+# Loop through batches
+n_batches = int(np.ceil(embeddings.shape[0] / batch_size))
+
+for epoch in range(10):  # number of epochs over data
+    print(f"Epoch {epoch+1}/10")
+    for i in tqdm(range(n_batches)):
+        start = i * batch_size
+        end = min((i + 1) * batch_size, embeddings.shape[0])
+        batch = embeddings[start:end]
+        kmeans.partial_fit(batch)
+
+# Predict all
+cluster_labels = kmeans.predict(embeddings)
+
+print("✅ MiniBatchKMeans clustering done.")
+
+
+
+
+# --------- Create mapping DataFrame ---------
+print("🔹 Creating mapping DataFrame...")
+df = pd.DataFrame({
+    'sample_id': sample_ids,
+    'sub_biome': texts,
+    'cluster': cluster_labels
+})
+
+# --------- Optional: save only unique sub-biome to cluster ---------
+df_unique = df[['sub_biome', 'cluster']].drop_duplicates()
+
+# --------- Save ---------
+df_unique.to_csv(output_csv, index=False)
+print(f"✅ Saved mapping to {output_csv}")
+
+
+
+
 
