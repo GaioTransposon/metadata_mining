@@ -7,6 +7,11 @@ Created on Wed Jun  5 16:11:19 2024
 """
 
 
+# runs as: 
+# python ~/github/metadata_mining/scripts/check_metadata_sizes.py --split_dirs '~/MicrobeAtlasProject/sample_info_split_dirs/'
+
+
+
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,12 +19,18 @@ import tiktoken
 import numpy as np
 from sklearn.utils import resample
 from matplotlib.backends.backend_pdf import PdfPages
+import argparse
+
 
 
 # PART 1: Overall look at metadata files size distribution: 
 
+parser = argparse.ArgumentParser(description="Analyze metadata size reductions")
+parser.add_argument("--split_dirs", required=True, help="Path to directory containing metadata files split across subdirectories ")
+args = parser.parse_args()
 
-base_dir = os.path.expanduser("~/MicrobeAtlasProject/sample_info_split_dirs/")
+base_dir = os.path.expanduser(args.base_dir)
+
 
 
 file_data = []

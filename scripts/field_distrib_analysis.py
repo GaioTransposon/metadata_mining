@@ -7,11 +7,17 @@ Created on Thu Jul 11 17:30:42 2024
 """
 
 
+# runs as: 
+# python ~/github/metadata_mining/scripts/field_distrib_analysis.py --split_dirs '~/MicrobeAtlasProject/sample_info_split_dirs/'
+
+
+
 import os
 import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import argparse
 
 # -----------------------------
 # Files and Paths
@@ -32,7 +38,14 @@ with open(input_gold_dict, 'rb') as file:
     gold_dict = pickle.load(file)
 
 # metadata files 
-base_dir = os.path.join(work_dir, "sample_info_split_dirs/")  
+parser = argparse.ArgumentParser(description="Analyze metadata size reductions")
+parser.add_argument("--split_dirs", required=True, help="Path to directory containing metadata files split across subdirectories ")
+args = parser.parse_args()
+
+
+base_dir = os.path.expanduser(args.split_dirs)
+
+
 
 # optionally filter
 specified_biome = None  # options: None, "animal", "water", "plant", "soil", "other"
