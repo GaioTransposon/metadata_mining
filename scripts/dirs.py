@@ -8,13 +8,20 @@ Created on Wed May 24 14:27:39 2023
 
 
 # run as: 
-# python github/metadata_mining/scripts/dirs.py --input_file '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info' --output_dir '~/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs' --figure_path '~/cloudstor/Gaio/MicrobeAtlasProject/files_distribution_in_dirs.pdf'
+    
+# python ~/github/metadata_mining/scripts/dirs.py --input_file '~/MicrobeAtlasProject/sample.info.gz' --output_dir '~/MicrobeAtlasProject/sample.info_split_dirs' --figure_path '~/MicrobeAtlasProject/files_distribution_in_dirs.pdf'
+# run test: 
+# python ~/github/metadata_mining/scripts/dirs.py --input_file '~/MicrobeAtlasProject/sample.info_test.gz' --output_dir '~/MicrobeAtlasProject/sample.info_split_dirs_test' --figure_path '~/MicrobeAtlasProject/files_distribution_in_dirs_test.pdf'
+
+
 
 import os
 import time
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
+import gzip
+
 
 def plot_directory_histogram(directory_path, figure_path=None):
     directory_counts = []
@@ -61,8 +68,13 @@ figure_path = os.path.expanduser(args.figure_path) if args.figure_path else None
 
 start_time = time.time()
 
-with open(input_file, 'r') as file:
-    lines = file.readlines()
+if input_file.endswith('.gz'):
+    with gzip.open(input_file, 'rt') as file:
+        lines = file.readlines()
+else:
+    with open(input_file, 'r') as file:
+        lines = file.readlines()
+
 
 sample_text = ''
 sample_count = 0
