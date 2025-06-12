@@ -19,12 +19,14 @@ from matplotlib.backends.backend_pdf import PdfPages
 # PART 1: Overall look at metadata files size distribution: 
 
 
-base_dir = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs/"
+base_dir = os.path.expanduser("~/MicrobeAtlasProject/sample_info_split_dirs/")
+
 
 file_data = []
 
 # Walk through the directories to find 'clean.txt' files and gather their path and size
 for dirpath, dirnames, filenames in os.walk(base_dir):
+    print(dirpath)
     if any(fname.endswith("clean.txt") for fname in filenames):
         for fname in filenames:
             if fname.endswith("clean.txt"):
@@ -94,8 +96,6 @@ plt.show()
 # PART 2: Analysis of reduction based on file size (bytes) reduction: 
 
 
-
-base_dir = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs/"
 
 original_files_data = []
 clean_files_data = []
@@ -201,7 +201,7 @@ results, avg_original_tokens, avg_clean_tokens = bootstrap_token_reduction_iqr(o
 mean_reduction = np.mean(results)
 ci_lower, ci_upper = np.percentile(results, [2.5, 97.5])
 
-print(f"Estimated token reduction percentage: {mean_reduction:.2f}%")
+print(f"Estimated token reduction percentage due to the cleaning: {mean_reduction:.2f}%")
 print(f"95% Confidence Interval: [{ci_lower:.2f}%, {ci_upper:.2f}%]")
 
 # # run with n_iterations 100, sample_size=100
