@@ -20,18 +20,12 @@ from multiprocessing import Process, cpu_count
 # # $ ulimit -n 200000 <-- it's an estimation derived from: 
 # # 40 (dirs and cpus at a time) * 3800 (files per dir) = 152000 --> round up: 200000
 # # then run on local: 
-# python /Users/dgaio/github/metadata_mining/scripts/clean_and_envo_translate.py \
-#     --path_to_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject" \
+# python ~/github/metadata_mining/scripts/clean_and_envo_translate.py \
+#     --path_to_dir "~/MicrobeAtlasProject" \
 #     --ontology_dict "ontologies_dict.pkl" \
-#     --metadata_dirs "sample.info_split_dirs" \
+#     --metadata_dirs "sample_info_split_dir" \ 
 #     --max_processes 8
-##
-# # or on atlas: 
-# python github/metadata_mining/scripts/clean_and_envo_translate.py \
-#     --path_to_dir "MicrobeAtlasProject" \
-#     --ontology_dict "ontologies_dict.pkl" \
-#     --metadata_dirs "sample.info_split_dirs" \
-#     --max_processes 40
+# # or on atlas: --max_processes 40
 ##############################################################################
 
 
@@ -116,14 +110,14 @@ def main():
     parser.add_argument("--max_processes", type=int, default=5, help="Maximum number of concurrent processes - these are cpus hence directories, in this case")
     args = parser.parse_args()
 
-    ontology_dict_path = os.path.join(args.path_to_dir, args.ontology_dict)
+    ontology_dict_path = os.path.join(os.path.expanduser(args.path_to_dir), args.ontology_dict)
     with open(ontology_dict_path, 'rb') as f:
         ontology_dict = pickle.load(f)
 
     # Modify the ontology dictionary
     modified_ontology_dict = modify_ontology_dict(ontology_dict)
 
-    base_dir = os.path.join(args.path_to_dir, args.metadata_dirs)
+    base_dir = os.path.join(os.path.expanduser(args.path_to_dir), args.metadata_dirs)
     base_log_file_path = os.path.join(base_dir, "log_clean_and_envo_translate")
 
     all_dir_names = [dir_name for dir_name in os.listdir(base_dir) if dir_name.startswith("dir_")]

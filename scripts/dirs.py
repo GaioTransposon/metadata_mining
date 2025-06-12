@@ -9,9 +9,9 @@ Created on Wed May 24 14:27:39 2023
 
 # run as: 
     
-# python ~/github/metadata_mining/scripts/dirs.py --input_file '~/MicrobeAtlasProject/sample.info.gz' --output_dir '~/MicrobeAtlasProject/sample.info_split_dirs' --figure_path '~/MicrobeAtlasProject/files_distribution_in_dirs.pdf'
+# python ~/github/metadata_mining/scripts/dirs.py --input_file '~/MicrobeAtlasProject/sample.info.gz' --output_dir '~/MicrobeAtlasProject/sample_info_split_dirs' --figure_path '~/MicrobeAtlasProject/files_distribution_in_dirs.pdf'
 # run test: 
-# python ~/github/metadata_mining/scripts/dirs.py --input_file '~/MicrobeAtlasProject/sample.info_test.gz' --output_dir '~/MicrobeAtlasProject/sample.info_split_dirs_test' --figure_path '~/MicrobeAtlasProject/files_distribution_in_dirs_test.pdf'
+# python ~/github/metadata_mining/scripts/dirs.py --input_file '~/MicrobeAtlasProject/sample.info_test.gz' --output_dir '~/MicrobeAtlasProject/sample_info_split_dirs_test' --figure_path '~/MicrobeAtlasProject/files_distribution_in_dirs_test.pdf'
 
 
 
