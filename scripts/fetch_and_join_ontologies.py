@@ -89,9 +89,14 @@ def fetch_label_info(url: str) -> dict:
     result = result[mask]
 
     # Convert to dictionary
+    #old: label_info_dict = result.set_index('label')['Joint_Info'].to_dict()
     label_info_dict = result.set_index('label')['Joint_Info'].to_dict()
 
+    source_name = url.split("listTerms/")[-1].split("?")[0]
+    print(f"✔ Retrieved {len(label_info_dict)} entries from {source_name}")
+
     return label_info_dict
+
 
 
 def main(wanted_ontologies, output_dir, output_file):
@@ -117,7 +122,8 @@ def main(wanted_ontologies, output_dir, output_file):
     combined_dict = dict(sorted(combined_dict.items()))
 
     # Save to the desired format (e.g., JSON)
-    output_path = os.path.join(output_dir, output_file + ".pkl")
+    output_path = os.path.join(os.path.expanduser(output_dir), output_file + ".pkl")
+
 
     with open(output_path, 'wb') as f:
         pickle.dump(combined_dict, f)
@@ -138,10 +144,10 @@ if __name__ == '__main__':
 
 
 
-# python /Users/dgaio/github/metadata_mining/scripts/fetch_and_join_ontologies.py \
-#     --wanted_ontologies FOODON ENVO UBERON PO \    # NCBITaxon on Ontobee is empty! 
-#     --output_dir "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject" \
+# python ~/github/metadata_mining/scripts/fetch_and_join_ontologies.py \
+#     --wanted_ontologies FOODON ENVO UBERON PO \    
+#     --output_dir "~/MicrobeAtlasProject" \
 #     --output_file "ontologies_dict"
 
-# # on atlas
-# python github/metadata_mining/scripts/fetch_and_join_ontologies.py --wanted_ontologies FOODON ENVO UBERON PO --output_dir "MicrobeAtlasProject" --output_file "ontologies_dict"
+# nb: # NCBITaxon on Ontobee is empty! 
+
