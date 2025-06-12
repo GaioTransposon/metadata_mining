@@ -16,18 +16,23 @@ import numpy as np
 # -----------------------------
 # Files and Paths
 # ----------------------------- 
-home_dir = os.getenv('HOME')
-work_dir = os.path.join(home_dir, "cloudstor/Gaio/MicrobeAtlasProject")  # UZH: MicrobeAtlasProject
+#home_dir = os.getenv('HOME')
+#work_dir = os.path.join(home_dir, "/MicrobeAtlasProject")  
+work_dir = os.path.expanduser("~/MicrobeAtlasProject/")
+
 
 # -----------------------------
 # Ground truth loading & processing
 # -----------------------------    
-input_gold_dict = os.path.join(home_dir, "github/metadata_mining/source_data/gold_dict.pkl")
+#input_gold_dict = os.path.join(home_dir, "github/metadata_mining/source_data/gold_dict.pkl")
+input_gold_dict = os.path.expanduser("github/metadata_mining/source_data/gold_dict.pkl")
+
+
 with open(input_gold_dict, 'rb') as file:
     gold_dict = pickle.load(file)
 
 # metadata files 
-base_dir = os.path.join(work_dir, "sample.info_split_dirs/")  
+base_dir = os.path.join(work_dir, "sample_info_split_dirs/")  
 
 # optionally filter
 specified_biome = None  # options: None, "animal", "water", "plant", "soil", "other"
@@ -338,16 +343,18 @@ plt.subplots_adjust(hspace=0.3, top=0.95)  # Added top parameter to create more 
 
 
 # Save figure
-plt.savefig('metadata_fields_by_biome.png', dpi=300, bbox_inches='tight')
+my_png = os.path.join(work_dir, "metadata_fields_by_biome_test.png")  
+plt.savefig(my_png, dpi=300, bbox_inches='tight')
 
 # Show the plot
 plt.show()
 
 
-# # save to csv:
-# most_popular_full.to_csv('most_popular_full_matches.csv', index=False)
-# most_popular_partial.to_csv('most_popular_partial_matches.csv', index=False)
-
+# save to csv:
+mostpopfull = os.path.join(work_dir, "most_popular_full_matches.csv")  
+most_popular_full.to_csv(mostpopfull, index=False)
+mostpoppart = os.path.join(work_dir, "most_popular_partial_matches.csv")  
+most_popular_full.to_csv(mostpoppart, index=False)
 
 
 
