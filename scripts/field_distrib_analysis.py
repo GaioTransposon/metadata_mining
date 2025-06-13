@@ -22,16 +22,18 @@ import argparse
 # -----------------------------
 # Files and Paths
 # ----------------------------- 
-#home_dir = os.getenv('HOME')
-#work_dir = os.path.join(home_dir, "/MicrobeAtlasProject")  
-work_dir = os.path.expanduser("~/MicrobeAtlasProject/")
+docker_data_path = "/data"
+local_data_path = os.path.expanduser("~/MicrobeAtlasProject")
+work_dir = docker_data_path if os.path.exists(docker_data_path) else local_data_path
 
 
 # -----------------------------
 # Ground truth loading & processing
 # -----------------------------    
-#input_gold_dict = os.path.join(home_dir, "github/metadata_mining/source_data/gold_dict.pkl")
-input_gold_dict = os.path.expanduser("github/metadata_mining/source_data/gold_dict.pkl")
+docker_path = "/source_data/gold_dict.pkl"
+local_path = os.path.expanduser("~/github/metadata_mining/source_data/gold_dict.pkl")
+
+input_gold_dict = docker_path if os.path.exists(docker_path) else local_path
 
 
 with open(input_gold_dict, 'rb') as file:
