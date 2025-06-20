@@ -1,13 +1,27 @@
-# Container 1: Metadata Splitting and Cleaning
+## 📚 Table of Contents
 
-This Docker container is part of the **MicrobeAtlasProject** pipeline. It provides a consistent environment to run all scripts related to processing and cleaning environmental metadata, including coordinate parsing, ontology translation, and exploratory analysis.
+- [Introduction](#-introduction)
+- [Requirements](#-requirements)
+- [Run Container 1](#-run-container-1-)
+  - [1. Split the Metadata File](#1-split-the-metadata-file-)
+  - [2. Fetch Ontologies](#2-fetch-ontologies-)
+  - [3. Clean Metadata Files](#3-clean-metadata-files-and-replace-ontology-codes-with-labels--)
+  - [4. Check Metadata Size Reduction](#4-check-metadata-size-reduction-)
+  - [5. Analyze Metadata Fields Distribution](#5-analyze-metadata-fields-distribution-)
+  - [6. Parse Latitude and Longitude](#6-parse-latitude-and-longitude-)
+
+
+---
+## Introduction: 
+
+#### some text introducing the containers. Add figure. 
 
 ---
 
 ## 📦 Requirements: 
 
 
-### 1) clone the repo into your home directory:
+### 1) Clone the repo into your home directory:
 
 ```
 cd ~
@@ -60,10 +74,16 @@ open -a Docker
 docker build -t metadmin .
 ```
 
+# Container 1: Metadata Splitting and Cleaning
+
+This Docker container is part of the **MicrobeAtlasProject** pipeline. It provides a consistent environment to run all scripts related to processing and cleaning environmental metadata, including coordinate parsing, ontology translation, and exploratory analysis.
+
+
+
 ---
 
 
-## 🚀 Run the container: 
+## 🚀 Run Container 1: 
 
 ### 1. Split the metadata file 🧾 into individual files: 
 
