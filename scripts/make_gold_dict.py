@@ -7,22 +7,31 @@ Created on Thu May  2 14:46:32 2024
 """
 
 
-# # run as: 
-# python ~/github/metadata_mining/scripts/confirm_biome_game.py 
-
+# run as:
+# python ~/github/metadata_mining/scripts/make_gold_dict.py
 
 import pandas as pd
 import os
 import pickle
 import random
 
-# Paths and filenames
-path_to_dirs = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/sample.info_split_dirs"
-GOLD_DICT_PATH = "/Users/dgaio/github/metadata_mining/source_data/gold_dict.pkl"
-CSV_PATH = "/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/training_data_pmids_based.csv"
+# -----------------------------
+# Determine whether running in Docker or local
+# -----------------------------
 
+docker_data_path = "/data"
+local_data_path = os.path.expanduser("~/MicrobeAtlasProject")
+path_to_dirs = os.path.join(docker_data_path, "sample_info_split_dirs") if os.path.exists(docker_data_path) else os.path.join(local_data_path, "sample_info_split_dirs")
 
+docker_source_path = "/source_data"
+local_source_path = os.path.expanduser("~/github/metadata_mining/source_data")
+GOLD_DICT_PATH = os.path.join(docker_source_path, "gold_dict.pkl") if os.path.exists(docker_source_path) else os.path.join(local_source_path, "gold_dict.pkl")
+
+CSV_PATH = os.path.join(docker_data_path, "training_data_pmids_based.csv") if os.path.exists(docker_data_path) else os.path.join(local_data_path, "training_data_pmids_based.csv")
+
+# Now you can continue with the rest of the script
 df = pd.read_csv(CSV_PATH)
+
 
 def save_gold_data(data, filename=GOLD_DICT_PATH):
     with open(filename, "wb") as f:
