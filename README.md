@@ -158,4 +158,56 @@ docker run --rm \
   | sed 's/ *$//' \
   > ~/github/metadata_mining/middle_dir/sample.coordinates.reparsed.filtered_fresh
 ```
- 
+
+
+# Container 2: Benchmark Annotation via Interactive Interface
+
+This container supports the creation and manual curation of a gold standard dictionary (also referred to as benchmark) (gold_dict.pkl), which maps selected sample IDs to: a biome (animal, plant, soil, water, other), a more specific sample origin (sub-biome), latitude/longitude coordinates, a short location description. This container includes two interactive scripts: 
+- make_gold_dict.py: read the metadata from each sample and annotate samples yourself.
+- edit_gold_dict.py: modify or correct existing entries (when you realise you made a mistake).
+
+⚠️ These scripts use input() prompts, so they must be run inside an interactive Docker session as running them directly with conda run or piping won't work properly.
+
+
+---
+
+
+## 🚀 Run Container 2: 
+
+Launch Docker container interactively:
+
+```
+docker run -it --rm \
+  -v ~/MicrobeAtlasProject:/data \
+  -v ~/github/metadata_mining/source_data:/source_data \
+  -v ~/github/metadata_mining/scripts:/app/scripts \
+  metadmin_benchmark \
+  bash
+```
+
+Activate the environment inside the container:
+
+```
+conda activate metadmin_env
+```
+
+To create the benchmark from scratch or to conitnue from where you left (yes, it auto-saves):
+
+```
+python /app/scripts/make_gold_dict.py
+```
+
+To edit entries in the existing dictionary:
+
+```
+python /app/scripts/edit_gold_dict.py
+```
+
+To exit either session just type:
+```exit```
+
+💾 In both cases your changes are automatically saved to /source_data/gold_dict.pkl, which is mounted from your local system.
+
+
+
+
