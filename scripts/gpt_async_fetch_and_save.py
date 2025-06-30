@@ -9,230 +9,209 @@ Created on Wed May 22 14:07:58 2024
 # run as: 
 # python github/metadata_mining/scripts/gpt_async_fetch_and_save.py
 
+from __future__ import annotations
 
-import re
+
+"""Fetch completed OpenAI batch-job outputs and save them to CSV.
+
+✔ Works with openai-python ≥ 1.0
+✔ Skips jobs whose output files are older than 30 days
+✔ Avoids re-downloading CSVs that are already present
+✔ Logs failed/expired jobs for manual re-submission if needed
+"""
+
+
 import csv
+import glob
 import json
 import os
-import glob
-from openai import OpenAI
+import re
+import time
+from datetime import datetime
+from pathlib import Path
+from typing import Iterable, List, Set
+
+from openai import NotFoundError, OpenAI  # SDK ≥ 1.0
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Helper functions
+# ──────────────────────────────────────────────────────────────────────────────
 
 
-
-def init_openai_client(api_key_path):
-    with open(api_key_path, "r") as file:
-        api_key = file.read().strip()
+def init_openai_client(api_key_path: str) -> OpenAI:
+    """Return a configured OpenAI client instance."""
+    with open(api_key_path, "r", encoding="utf-8") as fh:
+        api_key = fh.read().strip()
     return OpenAI(api_key=api_key)
 
 
-def retrieve_results(client, batch_job_id):
+def retrieve_results(client: OpenAI, batch_job_id: str) -> str | None:
     batch_job = client.batches.retrieve(batch_job_id)
-    print('\n', batch_job, '\n')
-    result_file_id = batch_job.output_file_id
-    if result_file_id is not None:
-        result = client.files.content(result_file_id).content
-        return result.decode('utf-8')  # Decode bytes to string
-    else:
-        print('Batch not completed yet')
+    print("\n", batch_job, "\n")
+
+    # Skip if output is older than 30 days
+    if batch_job.completed_at and (time.time() - batch_job.completed_at > 30 * 24 * 3600):
+        print(f"{batch_job_id} → completed more than 30 days ago — skipping.")
         return None
 
+    # Handle all-complete failure batches
+    if batch_job.status == "completed":
+        if batch_job.output_file_id:
+            file_content = client.files.content(batch_job.output_file_id)
+            return file_content.text
+        elif batch_job.error_file_id:
+            error_file = client.files.content(batch_job.error_file_id)
+            error_text = error_file.text
+            print(f"{batch_job_id} → completed with errors only.")
+            error_log_path = Path.home() / "MicrobeAtlasProject" / f"{batch_job_id}_error.jsonl"
+            with open(error_log_path, "w") as f:
+                f.write(error_text)
+            print(f"Saved error file to {error_log_path}")
+            return None
+        else:
+            print(f"{batch_job_id} → completed but has no output or error file.")
+            return None
 
-def convert_jsonl_content_to_csv(jsonl_content, output_csv_path, failed_samples_path):
-    lines = jsonl_content.splitlines()
-    with open(output_csv_path, 'w', newline='') as csvfile, open(failed_samples_path, 'a') as failed_file:
-        writer = csv.writer(csvfile)
-        writer.writerow(['sample_id', 'biome_label', 'geo_location', 'keywords', 'sub_biome'])
+    print(f"{batch_job_id} → still in progress.")
+    return None
+
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# CSV helpers
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def convert_jsonl_content_to_csv(jsonl_content: str, output_csv_path: Path, failed_samples_path: Path) -> None:
+    """Convert *JSON* batch responses to a tidy CSV."""
+    lines: List[str] = jsonl_content.splitlines()
+
+    with open(output_csv_path, "w", newline="") as csv_file, open(failed_samples_path, "a") as failed_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(["sample_id", "biome_label", "geo_location", "keywords", "sub_biome"])
+
         for line in lines:
             try:
-                json_obj = json.loads(line)
-                content_data = json.loads(json_obj['response']['body']['choices'][0]['message']['content'])
-                writer.writerow([
-                    content_data.get('sample-id', 'N/A'),
-                    content_data.get('biome-label', 'N/A'),
-                    content_data.get('geo-location', 'N/A'),
-                    content_data.get('keywords', 'N/A'),
-                    content_data.get('sub-biome', 'N/A')
-                ])
-            except Exception as e:
-                failed_file.write(f"Failed to process line: {line}\nError: {str(e)}\n")
+                obj = json.loads(line)
+                content = json.loads(obj["response"]["body"]["choices"][0]["message"]["content"])
+                writer.writerow(
+                    [
+                        content.get("sample-id", "N/A"),
+                        content.get("biome-label", "N/A"),
+                        content.get("geo-location", "N/A"),
+                        content.get("keywords", "N/A"),
+                        content.get("sub-biome", "N/A"),
+                    ]
+                )
+            except Exception as exc:  # Broad catch is OK for batch post-mortem
+                failed_file.write(f"Failed to process line: {line}\nError: {exc}\n")
 
-def parse_inline_responses(lines, output_csv_path):
-    sample_pattern = re.compile(r'(ERS|SRS|DRS)\d+(_{2,4}).*')
 
-    with open(output_csv_path, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(['sample_id', 'biome_label', 'geo_location', 'keywords', 'sub_biome'])
+INLINE_SAMPLE_RE = re.compile(r"(ERS|SRS|DRS)\d+(_{2,4}).*")
+
+
+def parse_inline_responses(lines: Iterable[str], output_csv_path: Path) -> None:
+    """Parse *inline* responses produced by your custom prompt."""
+    with open(output_csv_path, "w", newline="") as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(["sample_id", "biome_label", "geo_location", "keywords", "sub_biome"])
 
         for line in lines:
-            match = sample_pattern.search(line)
+            match = INLINE_SAMPLE_RE.search(line)
             if match:
-                matched_sample = match.group()
-                parts = re.split(r'_{2,4}', matched_sample)
+                parts = re.split(r"_{2,4}", match.group())
                 writer.writerow(parts)
             else:
                 print(f"Failed to parse line: {line}")
 
 
-def get_existing_batch_ids(directory):
-    pattern = f"{directory}/gpt_clean_output*batch*.csv"
-    files = glob.glob(pattern)
-    existing_ids = set()
-    for file in files:
-        batch_id = file.split('_batch')[-1].split('.csv')[0].split('_dt')[0]
-        existing_ids.add('batch_' + batch_id)
-    return existing_ids
+# ──────────────────────────────────────────────────────────────────────────────
+# Utility helpers
+# ──────────────────────────────────────────────────────────────────────────────
 
 
-def log_failed_batch(directory, batch_job_id):
-    failed_log_path = os.path.join(directory, "failed_async_batches.txt")
-    with open(failed_log_path, "a") as file:
-        file.write(batch_job_id + "\n")
+def get_existing_batch_ids(directory: Path) -> Set[str]:
+    pattern = directory / "gpt_clean_output*batch*.csv"
+    return {
+        "batch_" + Path(p).stem.split("_batch")[-1].split("_dt")[0]
+        for p in glob.glob(str(pattern))
+    }
 
-# Main execution
-api_key_file = os.path.expanduser("~/my_api_key")
-client = init_openai_client(api_key_file)
 
-directory = "MicrobeAtlasProject"  
-failed_samples_path = os.path.join(directory, "failed_async_samples.txt")
+def log_failed_batch(directory: Path, batch_job_id: str) -> None:
+    with open(directory / "failed_async_batches.txt", "a") as fh:
+        fh.write(batch_job_id + "\n")
 
-existing_batch_ids = get_existing_batch_ids(directory)
-print(existing_batch_ids)
 
-with open(f"{directory}/batch_job_info.json", "r") as f:
-    batch_info_list = json.load(f)
+# ──────────────────────────────────────────────────────────────────────────────
+# Main script logic
+# ──────────────────────────────────────────────────────────────────────────────
 
-for batch_info in batch_info_list:
-    batch_job_id = batch_info["batch_job_id"]
-    output_format = batch_info["output_format"]  # Fetching output format from JSON file
-    print('batch_job_id', batch_job_id)
 
-    if batch_job_id not in existing_batch_ids:
+def main() -> None:  # noqa: C901 – a little long but readable
+    home = Path.home()
+    api_key_file = home / "Desktop/keys/my_api_key"
+    project_dir = home / "MicrobeAtlasProject"
+    failed_samples_path = project_dir / "failed_async_samples.txt"
+
+    print(api_key_file)
+    client = init_openai_client(str(api_key_file))
+
+    existing_csvs = get_existing_batch_ids(project_dir)
+    print(existing_csvs)
+
+    # Read batch-job metadata recorded at submission time
+    with open(project_dir / "batch_job_info.json", "r") as fh:
+        batch_info_list = json.load(fh)
+
+    for info in batch_info_list:
+        batch_id = info["batch_job_id"]
+        fmt = info["output_format"]
+
+        print("batch_job_id", batch_id)
+
+        if batch_id in existing_csvs:
+            print(f"CSV for {batch_id} already exists – skipping.")
+            continue
+
+        content = retrieve_results(client, batch_id)
+        if not content:
+            log_failed_batch(project_dir, batch_id)
+            continue
+
+        # Build output filename
+        out_csv = (
+            project_dir
+            / (
+                f"gpt_clean_output_nspb{info['nspb']}_chunking{info['chunking']}"
+                f"_chunksize{info['chunksize']}_model{info['model']}_temp{info['temperature']}"
+                f"_maxtokens{info['max_tokens']}_topp{info['top_p']}_freqp{info['frequency_penalty']}"
+                f"_presp{info['presence_penalty']}_rs{info['rs']}_format{fmt}"
+                f"_batch{batch_id.split('_')[-1]}_dt{info['datetime']}.csv"
+            )
+        )
+
         try:
-            result_content = retrieve_results(client, batch_job_id)
+            if fmt == "json":
+                convert_jsonl_content_to_csv(content, out_csv, failed_samples_path)
+            elif fmt == "inline":
+                lines: List[str] = [
+                    json.loads(line)["response"]["body"]["choices"][0]["message"]["content"]
+                    for line in content.splitlines()
+                    if line.strip()
+                ]
+                parse_inline_responses(lines, out_csv)
+            print("Batch completed – results saved to", out_csv)
+        except Exception as exc:  # log and continue with next batch
+            print(f"Error processing batch {batch_id}: {exc}")
+            log_failed_batch(project_dir, batch_id)
 
-            if result_content:
-                
-                #output_csv_path = f"{directory}/gpt_output_{batch_info['batch_job_id']}.csv"
-                output_csv_path = f"{directory}/gpt_clean_output_nspb{batch_info['nspb']}_chunking{batch_info['chunking']}_chunksize{batch_info['chunksize']}_model{batch_info['model']}_temp{batch_info['temperature']}_maxtokens{batch_info['max_tokens']}_topp{batch_info['top_p']}_freqp{batch_info['frequency_penalty']}_presp{batch_info['presence_penalty']}_rs{batch_info['rs']}_format{batch_info['output_format']}_batch{batch_job_id.split('_')[-1]}_dt{batch_info['datetime']}.csv"
-                
 
-                if output_format == 'json':
-                    convert_jsonl_content_to_csv(result_content, output_csv_path, failed_samples_path)
-                elif output_format == 'inline':
-                    result_content = result_content.split('\n')
-                    content_list = []
-                    for i in result_content: 
-                        if i.strip(): 
-                            data = json.loads(i)
-                            content = data['response']['body']['choices'][0]['message']['content']
-                            content_list.append(content)
-
-                    parse_inline_responses(content_list, output_csv_path)
-
-                print("Batch completed and results saved to CSV.")
-            else:
-                print("Please wait until the batch job is completed.")
-        except Exception as e:
-            print(f"Error processing batch {batch_job_id}: {str(e)}. Logging failed batch.")
-            log_failed_batch(directory, batch_job_id)
-    else:
-        print(f"CSV file for batch {batch_job_id} already exists. Skipping creation.")
+if __name__ == "__main__":
+    main()
 
 
 
-
-
-# =============================================================================
-# 
-# import json
-# import csv
-# import os
-# import glob
-# from openai import OpenAI
-# 
-# def init_openai_client(api_key_path):
-#     with open(api_key_path, "r") as file:
-#         api_key = file.read().strip()
-#     return OpenAI(api_key=api_key)
-# 
-# def retrieve_results(client, batch_job_id):
-#     batch_job = client.batches.retrieve(batch_job_id)
-#     print('\n', batch_job, '\n')
-#     result_file_id = batch_job.output_file_id
-#     if result_file_id is not None:
-#         result = client.files.content(result_file_id).content
-#         return result.decode('utf-8')  # Decode bytes to string
-#     else:
-#         print('Batch not completed yet')
-#         return None
-# 
-# def convert_jsonl_content_to_csv(jsonl_content, output_csv_path, failed_samples_path):
-#     lines = jsonl_content.splitlines()
-#     with open(output_csv_path, 'w', newline='') as csvfile, open(failed_samples_path, 'a') as failed_file:
-#         writer = csv.writer(csvfile)
-#         writer.writerow(['sample_id', 'biome_label', 'geo_location', 'keywords', 'sub_biome'])
-#         for line in lines:
-#             try:
-#                 json_obj = json.loads(line)
-#                 content_data = json.loads(json_obj['response']['body']['choices'][0]['message']['content'])
-# 
-#                 writer.writerow([
-#                     content_data.get('sample-id', 'N/A'),
-#                     content_data.get('biome-label', 'N/A'),
-#                     content_data.get('geo-location', 'N/A'),
-#                     content_data.get('keywords', 'N/A'),
-#                     content_data.get('sub-biome', 'N/A')
-#                 ])
-#             except Exception as e:
-#                 # Log the line and the exception to a failure log
-#                 failed_file.write(f"Failed to process line: {line}\nError: {str(e)}\n")
-# 
-# def get_existing_batch_ids(directory):
-#     pattern = f"{directory}/gpt_clean_output*batch*.csv"
-#     files = glob.glob(pattern)
-#     existing_ids = set()
-#     for file in files:
-#         batch_id = file.split('_batch')[-1].split('.csv')[0].split('_dt')[0]
-#         existing_ids.add('batch_' + batch_id) 
-#     return existing_ids
-# 
-# def log_failed_batch(directory, batch_job_id):
-#     failed_log_path = os.path.join(directory, "failed_async_batches.txt")
-#     with open(failed_log_path, "a") as file:
-#         file.write(batch_job_id + "\n")
-# 
-# # Main execution
-# api_key_file = os.path.expanduser("~/my_api_key")
-# client = init_openai_client(api_key_file)
-# 
-# directory = "MicrobeAtlasProject"  # Example directory
-# failed_samples_path = os.path.join(directory, "failed_async_samples.txt")
-# 
-# existing_batch_ids = get_existing_batch_ids(directory)
-# print(existing_batch_ids)
-# 
-# # Load batch job information
-# with open(f"{directory}/batch_job_info.json", "r") as f:
-#     batch_info_list = json.load(f)
-# 
-# for batch_info in batch_info_list:
-#     batch_job_id = batch_info["batch_job_id"]
-#     print('batch_job_id', batch_job_id)
-#     if batch_job_id not in existing_batch_ids:
-#         try:
-#             result_json = retrieve_results(client, batch_job_id)
-#             if result_json:
-#                 output_csv_path = f"{directory}/gpt_clean_output_nspb{batch_info['nspb']}_chunking{batch_info['chunking']}_chunksize{batch_info['chunksize']}_model{batch_info['model']}_temp{batch_info['temperature']}_maxtokens{batch_info['max_tokens']}_topp{batch_info['top_p']}_freqp{batch_info['frequency_penalty']}_presp{batch_info['presence_penalty']}_rs{batch_info['rs']}_batch{batch_job_id.split('_')[-1]}_dt{batch_info['datetime']}.csv"
-#                 convert_jsonl_content_to_csv(result_json, output_csv_path, failed_samples_path)
-#                 print("Batch completed and results saved to CSV.")
-#             else:
-#                 print("Please wait until the batch job is completed.")
-#         except Exception as e:
-#             print(f"Error processing batch {batch_job_id}: {str(e)}. Logging failed batch.")
-#             log_failed_batch(directory, batch_job_id)
-#     else:
-#         print(f"CSV file for batch {batch_job_id} already exists. Skipping creation.")
-# =============================================================================
 
 
 

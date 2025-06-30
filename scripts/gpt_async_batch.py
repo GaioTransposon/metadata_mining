@@ -6,9 +6,10 @@ Created on Tue May  7 14:36:00 2024
 @author: dgaio
 """
 
-# NB: works with latest openai (not 0.28)
+
+# NB: gpt_async_batch.py works with latest openai (not 0.28)
 # pip uninstall openai
-# pip install openai 
+# pip install openai==1.93.0  
 
 # script: gpt_async_batch.py
 
@@ -60,8 +61,9 @@ def prepare_batch_tasks(df, system_prompt, model, temperature, max_tokens, top_p
         
         if output_format == 'json':
             task["body"]["response_format"] = {"type": "json_object"}
+            print('Output will be in json format')
         elif output_format == 'inline':
-            print('I know you know it s an online format')
+            print('Output will be in inline format')
         
         
         tasks.append(task)
@@ -176,17 +178,18 @@ if __name__ == "__main__":
     
 
 
+
 #####
 # test with json: 
 
 # python github/metadata_mining/scripts/metadata_preparation.py \
 #     --work_dir "MicrobeAtlasProject" \
 #     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 50 \
+#     --n_samples_per_biome 5 \
 #     --chunking "no" \
 #     --chunk_size 3000 \
 #     --seed 22 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
+#     --directory_with_split_metadata "sample_info_split_dirs" \
 #     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json.txt" \
 #     --encoding_name "cl100k_base"
     
@@ -194,7 +197,7 @@ if __name__ == "__main__":
 # python /Users/dgaio/github/metadata_mining/scripts/gpt_async_batch.py \
 #     --work_dir "MicrobeAtlasProject" \
 #     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt_json.txt" \
-#     --api_key_path "my_api_key" \
+#     --api_key_path "Desktop/keys/my_api_key" \
 #     --model "gpt-3.5-turbo-1106" \
 #     --temperature 1.00 \
 #     --max_tokens 4096 \
@@ -210,19 +213,19 @@ if __name__ == "__main__":
 # python github/metadata_mining/scripts/metadata_preparation.py \
 #     --work_dir "MicrobeAtlasProject" \
 #     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
-#     --n_samples_per_biome 50 \
+#     --n_samples_per_biome 5 \
 #     --chunking "no" \
 #     --chunk_size 3000 \
 #     --seed 22 \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
+#     --directory_with_split_metadata "sample_info_split_dirs" \
 #     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
 #     --encoding_name "cl100k_base"
-    
+
 # twice the below: 
 # python /Users/dgaio/github/metadata_mining/scripts/gpt_async_batch.py \
 #     --work_dir "MicrobeAtlasProject" \
 #     --system_prompt_file "github/metadata_mining/source_data/openai_system_prompt.txt" \
-#     --api_key_path "my_api_key" \
+#     --api_key_path "Desktop/keys/my_api_key" \
 #     --model "gpt-3.5-turbo-1106" \
 #     --temperature 1.00 \
 #     --max_tokens 4096 \
@@ -231,3 +234,14 @@ if __name__ == "__main__":
 #     --presence_penalty 1.5 \
 #     --output_format 'inline'
 #####
+
+
+
+
+
+
+
+
+
+
+

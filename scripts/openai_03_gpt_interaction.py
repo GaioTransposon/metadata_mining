@@ -96,57 +96,124 @@ class GPTInteractor:
 
 
         
+# =============================================================================
+#     def gpt_request(self, content_string):
+#         
+#         self.check_rate_limit()
+#     
+#         if not self.system_prompt:
+#             logging.error("System prompt is not available. Aborting request.")
+#             return None
+#     
+#         # Count the number of samples in the content_string
+#         sample_count = content_string.count('sample_ID=')
+#     
+#         # Customize the system prompt based on the number of samples
+#         if sample_count == 1:
+#             customized_prompt = self.system_prompt.replace('microbial metagenomic samples', 'microbial metagenomic sample').replace('from their metadata texts', 'from its metadata text')
+#             #print('myprompt_1', customized_prompt)
+#         else:
+#             customized_prompt = self.system_prompt.replace('microbial metagenomic samples', f"{sample_count} microbial metagenomic samples")
+#             #print('myprompt_>1', customized_prompt)
+#     
+#         openai.api_key = self.api_key
+#     
+#         try:
+#             #print(content_string)
+#             # make the API request
+#             response = openai.ChatCompletion.create(
+#                 model=self.model,
+#                 messages=[
+#                     {"role": "system", "content": customized_prompt},
+#                     {"role": "user", "content": content_string}
+#                 ],
+#                 temperature=self.temperature,
+#                 max_tokens=self.max_tokens,
+#                 top_p=self.top_p,
+#                 frequency_penalty=self.frequency_penalty,
+#                 presence_penalty=self.presence_penalty
+#             )
+#     
+#             # Record the timestamp of this successful request
+#             self.request_times.append(time.time())
+#             self.api_request_count += 1
+#             print("####################")
+#             print('Api request count: ', self.api_request_count)
+#             print("####################")
+#         
+#             return response
+#     
+#         except openai.error.RateLimitError:
+#             logging.error("Rate limit exceeded.")
+#             return "RATE_LIMIT_EXCEEDED"
+#         except Exception as e:
+#             logging.error(f"GPT request failed: {e}")
+#             return None
+# =============================================================================
+
+
+
+    # ------------------------------------------------------------------
+    # Works on openai-python ≥ 1.0   (tested on 1.9.x and 1.10.x)
+    # ------------------------------------------------------------------
     def gpt_request(self, content_string):
-        
+        """
+        Send one chat request and return the full response object.
+    
+        Compatible with   openai >= 1.0   (uses openai.chat.completions.create).
+        """
+    
         self.check_rate_limit()
     
         if not self.system_prompt:
             logging.error("System prompt is not available. Aborting request.")
             return None
     
-        # Count the number of samples in the content_string
-        sample_count = content_string.count('sample_ID=')
-    
-        # Customize the system prompt based on the number of samples
-        if sample_count == 1:
-            customized_prompt = self.system_prompt.replace('microbial metagenomic samples', 'microbial metagenomic sample').replace('from their metadata texts', 'from its metadata text')
-            #print('myprompt_1', customized_prompt)
+        # ── tailor the system prompt to singular / plural ──────────────
+        n_samples = content_string.count("sample_ID=")
+        if n_samples == 1:
+            customized_prompt = (
+                self.system_prompt
+                .replace("microbial metagenomic samples", "microbial metagenomic sample")
+                .replace("from their metadata texts", "from its metadata text")
+            )
         else:
-            customized_prompt = self.system_prompt.replace('microbial metagenomic samples', f"{sample_count} microbial metagenomic samples")
-            #print('myprompt_>1', customized_prompt)
+            customized_prompt = self.system_prompt.replace(
+                "microbial metagenomic samples",
+                f"{n_samples} microbial metagenomic samples"
+            )
     
         openai.api_key = self.api_key
     
         try:
-            #print(content_string)
-            # make the API request
-            response = openai.ChatCompletion.create(
-                model=self.model,
-                messages=[
+            response = openai.chat.completions.create(
+                model             = self.model,
+                messages          = [
                     {"role": "system", "content": customized_prompt},
-                    {"role": "user", "content": content_string}
+                    {"role": "user",   "content": content_string}
                 ],
-                temperature=self.temperature,
-                max_tokens=self.max_tokens,
-                top_p=self.top_p,
-                frequency_penalty=self.frequency_penalty,
-                presence_penalty=self.presence_penalty
+                temperature        = self.temperature,
+                max_tokens         = self.max_tokens,
+                top_p              = self.top_p,
+                frequency_penalty  = self.frequency_penalty,
+                presence_penalty   = self.presence_penalty,
             )
     
-            # Record the timestamp of this successful request
+            # bookkeeping ───────────────────────────────────────────────
             self.request_times.append(time.time())
             self.api_request_count += 1
             print("####################")
-            print('Api request count: ', self.api_request_count)
+            print("API request count:", self.api_request_count)
             print("####################")
-        
-            return response
     
-        except openai.error.RateLimitError:
+            return response                                             # full object
+    
+        except openai.RateLimitError:
             logging.error("Rate limit exceeded.")
             return "RATE_LIMIT_EXCEEDED"
-        except Exception as e:
-            logging.error(f"GPT request failed: {e}")
+    
+        except Exception as exc:
+            logging.error(f"GPT request failed: {exc}")
             return None
 
 
@@ -185,13 +252,18 @@ class GPTInteractor:
         with open(saved_filepath, 'a') as file:  # 'a' for append mode
             for response in gpt_responses:
                 try:
-                    content = response['choices'][0]['message']['content']
+                    # old (for openai==0.28)
+                    #content = response['choices'][0]['message']['content']
+                    content = response.choices[0].message.content
+
                     file.write(content + "\n\n")
                 except KeyError:
                     file.write("ERROR: Malformed response\n\n")
                     logging.error("Malformed response encountered: {}".format(response))
     
         logging.info(f"Appended GPT responses to: {saved_filepath}")
+
+
 
 
     

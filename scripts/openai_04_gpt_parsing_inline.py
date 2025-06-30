@@ -35,7 +35,10 @@ class GPTOutputParsing:
         for response in gpt_responses:
             try:
                 # Accessing the content of the first choice in each response
-                content = response.choices[0].message['content']
+               # old (openai==0.28)
+                #content = response.choices[0].message['content']
+                content = response.choices[0].message.content
+
                 contents.extend(content.split('\n'))  # Splitting by newline to get individual lines
             except (KeyError, AttributeError, IndexError) as e:
                 logging.error(f"Error extracting content from response: {e}")
@@ -88,14 +91,6 @@ class GPTOutputParsing:
 
         return self.parsed_data
 
-
-
-# =============================================================================
-# parser = GPTOutputParsing("/Users/dgaio/cloudstor/Gaio/MicrobeAtlasProject/")
-# parsed_data = parser.run(responses)
-# 
-# print(parsed_data)
-# =============================================================================
 
 
 # =============================================================================
