@@ -6,6 +6,18 @@ Created on Tue Oct 24 20:56:33 2023
 @author: dgaio
 """
 
+
+
+# run as: 
+    
+# python ~/github/metadata_mining/scripts/fetch_and_join_ontologies.py \
+#     --wanted_ontologies FOODON ENVO UBERON PO \    
+#     --output_dir "~/MicrobeAtlasProject" \
+#     --output_file "ontologies_dict"
+
+# nb: # NCBITaxon on Ontobee is empty! 
+
+
 # Description: 
 # reads original ontologies
 # parses them, and outputs a dictionary of ontology terms in numeric format as keys 
@@ -144,10 +156,5 @@ if __name__ == '__main__':
 
 
 
-# python ~/github/metadata_mining/scripts/fetch_and_join_ontologies.py \
-#     --wanted_ontologies FOODON ENVO UBERON PO \    
-#     --output_dir "~/MicrobeAtlasProject" \
-#     --output_file "ontologies_dict"
 
-# nb: # NCBITaxon on Ontobee is empty! 
 

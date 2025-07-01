@@ -8,7 +8,7 @@ Created on Wed Dec  6 13:58:00 2023
 
 
 
-# NB: in order to run it needs `pip install openai==0.28`
+# NB: in order to run it needs `pip install openai`
 
 import argparse
 import time
@@ -21,6 +21,13 @@ from openai_02_metadata_fetching import MetadataFetching
 from openai_02_metadata_processing import MetadataProcessor
 from openai_03_gpt_interaction import GPTInteractor
 #from openai_04_gpt_parsing import GPTOutputParsing
+
+
+
+
+
+
+
 
 
 
@@ -54,7 +61,6 @@ def parse_arguments():
     return parser.parse_args()
 
 
-
 def main():
     
     
@@ -66,7 +72,7 @@ def main():
     input_gold_dict = os.path.join(home_dir, args.input_gold_dict)
     system_prompt_file = os.path.join(home_dir, args.system_prompt_file)
     api_key_path = os.path.join(home_dir, args.api_key_path)
-    
+
     
     # Phase 0: set up a logging system 
     setup_logging()

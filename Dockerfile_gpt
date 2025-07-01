@@ -1,0 +1,23 @@
+# Use a Miniconda3 base image
+FROM continuumio/miniconda3
+
+# Set working directory
+WORKDIR /app
+
+# Copy environment file and scripts
+COPY metadmin_env.yml .
+COPY scripts/ ./scripts/
+
+# Create the conda environment
+RUN conda env create -f metadmin_env.yml
+
+# Activate env for future RUN steps and entry
+SHELL ["conda", "run", "-n", "metadmin_env", "/bin/bash", "-c"]
+
+# Install latest OpenAI package
+RUN pip install --upgrade pip && \
+    pip install openai==1.93.0
+
+# Default command when container runs
+CMD [ "bash" ]
+
