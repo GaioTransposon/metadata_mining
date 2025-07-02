@@ -1,6 +1,14 @@
 #! /usr/bin/python3
 
 import json, re, sys
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--reversal_file', required=True)
+parser.add_argument('--metadata_file', required=True)
+args = parser.parse_args()
+
+
 
 latitudeDegreeRegexes = list()
 latitudeMinuteRegexes = list()
@@ -98,7 +106,13 @@ print(f"learning about samples that have an accidental lat-lon reversal ...", en
 
 samplesWithLatLonReversal = set()
 
-with open ("samples_with_lat_lon_reversal.tsv") as inFile:
+
+
+
+# Christian's: 
+# with open ("samples_with_lat_lon_reversal.tsv") as inFile:
+    
+with open(args.reversal_file) as inFile:
 	for line in inFile:
 		components = line.strip().split()
 		sample = components[0]
@@ -106,7 +120,10 @@ with open ("samples_with_lat_lon_reversal.tsv") as inFile:
 
 print(f"done.", file = sys.stderr)
 
-with open ("/map/cvm_data/temp/metadata.out") as inFile:
+# Christian's: 
+#with open ("/map/cvm_data/temp/metadata.out") as inFile:
+    
+with open(args.metadata_file) as inFile:
 	for line in inFile:
 		components = line.strip().split(', meta {')
 		jsonData = "{" + components[1]

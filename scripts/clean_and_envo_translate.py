@@ -103,11 +103,13 @@ def process_file(file_path, modified_ontology_dict, log_file_path):
 def main():
     start_time = time.time()
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--path_to_dir", required=True)
-    parser.add_argument("--ontology_dict", required=True)
-    parser.add_argument("--metadata_dirs", required=True)
-    parser.add_argument("--max_processes", type=int, default=5, help="Maximum number of concurrent processes - these are cpus hence directories, in this case")
+
+    parser = argparse.ArgumentParser(description='Clean metadata and translate ontology codes to labels')
+    parser.add_argument('--path_to_dir', default='.', help='Path to working directory (default: current directory)')
+    parser.add_argument('--ontology_dict', required=True, help='Ontology dictionary file (.pkl)')
+    parser.add_argument('--metadata_dirs', required=True, help='Directory name(s) containing metadata files')
+    parser.add_argument('--max_processes', type=int, default=1, help='Number of parallel processes (default: 1)')
+
     args = parser.parse_args()
 
     ontology_dict_path = os.path.join(os.path.expanduser(args.path_to_dir), args.ontology_dict)

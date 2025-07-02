@@ -12,7 +12,6 @@ Created on Tue Oct 24 20:56:33 2023
     
 # python ~/github/metadata_mining/scripts/fetch_and_join_ontologies.py \
 #     --wanted_ontologies FOODON ENVO UBERON PO \    
-#     --output_dir "~/MicrobeAtlasProject" \
 #     --output_file "ontologies_dict"
 
 # nb: # NCBITaxon on Ontobee is empty! 
@@ -147,12 +146,18 @@ def main(wanted_ontologies, output_dir, output_file):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Fetch and Join Ontologies')
     parser.add_argument('--wanted_ontologies', nargs='+', help='List of wanted ontologies, separated by white space')
-    parser.add_argument('--output_dir', help='Directory to save the output')
     parser.add_argument('--output_file', help='Name of the output dictionary without extension')
+
+    parser.add_argument(
+        '--output_dir',
+        default='.',                       # default = CWD
+        help='Directory to save the output (default: current working dir)'
+    )
 
     args = parser.parse_args()
 
     main(args.wanted_ontologies, args.output_dir, args.output_file)
+
 
 
 

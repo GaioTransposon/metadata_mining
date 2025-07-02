@@ -15,19 +15,17 @@ import os
 import pickle
 import random
 
-# -----------------------------
-# Determine whether running in Docker or local
-# -----------------------------
 
-docker_data_path = "/data"
-local_data_path = os.path.expanduser("~/MicrobeAtlasProject")
-path_to_dirs = os.path.join(docker_data_path, "sample_info_split_dirs") if os.path.exists(docker_data_path) else os.path.join(local_data_path, "sample_info_split_dirs")
+# ------------------------------------------------------------------
+# All data live in the current working directory (cwd).
+#   • In Docker:  /MicrobeAtlasProject  (set by WORKDIR)
+#   • On host:    ~/MicrobeAtlasProject (if you run locally)
+# ------------------------------------------------------------------
+WORK_DIR      = os.getcwd()                    # usually /MicrobeAtlasProject
+CSV_PATH      = os.path.join(WORK_DIR, "training_data_pmids_based.csv")
+GOLD_DICT_PATH = os.path.join(WORK_DIR, "gold_dict.pkl")
+SPLIT_DIR      = os.path.join(WORK_DIR, "sample_info_split_dirs")
 
-docker_source_path = "/source_data"
-local_source_path = os.path.expanduser("~/github/metadata_mining/source_data")
-GOLD_DICT_PATH = os.path.join(docker_source_path, "gold_dict.pkl") if os.path.exists(docker_source_path) else os.path.join(local_source_path, "gold_dict.pkl")
-
-CSV_PATH = os.path.join(docker_data_path, "training_data_pmids_based.csv") if os.path.exists(docker_data_path) else os.path.join(local_data_path, "training_data_pmids_based.csv")
 
 # Now you can continue with the rest of the script
 df = pd.read_csv(CSV_PATH)
@@ -49,7 +47,7 @@ def load_gold_data(filename=GOLD_DICT_PATH):
 
 def fetch_metadata_from_sample(sample):
     folder_name = f"dir_{sample[-3:]}"
-    folder_path = os.path.join(path_to_dirs, folder_name)  
+    folder_path = os.path.join(SPLIT_DIR, folder_name)  
     metadata_file_path = os.path.join(folder_path, f"{sample}_clean.txt")
     with open(metadata_file_path, 'r') as f:
         metadata = f.read()

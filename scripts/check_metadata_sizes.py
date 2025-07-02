@@ -25,9 +25,15 @@ import argparse
 
 # PART 1: Overall look at metadata files size distribution: 
 
-parser = argparse.ArgumentParser(description="Analyze metadata size reductions")
-parser.add_argument("--split_dirs", required=True, help="Path to directory containing metadata files split across subdirectories ")
+parser = argparse.ArgumentParser(description='Check metadata file sizes before and after cleaning.')
+parser.add_argument(
+    '--split_dirs',
+    default='sample_info_split_dirs_test',
+    help='Directory containing split metadata files (default: sample_info_split_dirs_test)'
+)
+
 args = parser.parse_args()
+
 
 base_dir = os.path.expanduser(args.split_dirs)
 print(base_dir)

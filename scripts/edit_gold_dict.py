@@ -7,21 +7,18 @@ Created on Thu Nov  2 11:43:50 2023
 """
 
 
+
 import os
 import pickle
 
-# -----------------------------
-# Determine whether running in Docker or locally
-# -----------------------------
-
-docker_data_path = "/data"
-local_data_path = os.path.expanduser("~/MicrobeAtlasProject")
-METADATA_DIRECTORY = os.path.join(docker_data_path, "sample_info_split_dirs") if os.path.exists(docker_data_path) else os.path.join(local_data_path, "sample_info_split_dirs")
-
-docker_source_path = "/source_data"
-local_source_path = os.path.expanduser("~/github/metadata_mining/source_data")
-GOLD_DICT_PATH = os.path.join(docker_source_path, "gold_dict.pkl") if os.path.exists(docker_source_path) else os.path.join(local_source_path, "gold_dict.pkl")
-
+# ------------------------------------------------------------------
+# All data live in the current working directory (cwd).
+#   • In Docker:  /MicrobeAtlasProject  (set by WORKDIR)
+#   • On host:    ~/MicrobeAtlasProject (if run locally)
+# ------------------------------------------------------------------
+WORK_DIR          = os.getcwd()
+METADATA_DIRECTORY = os.path.join(WORK_DIR, "sample_info_split_dirs")
+GOLD_DICT_PATH     = os.path.join(WORK_DIR, "gold_dict.pkl")
 
 
 def fetch_metadata_from_sample(sample):

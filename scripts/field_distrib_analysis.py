@@ -9,8 +9,8 @@ Created on Thu Jul 11 17:30:42 2024
 
 # runs as: 
 # python ~/github/metadata_mining/scripts/field_distrib_analysis.py \
-#     --gold_dict github/metadata_mining/data/gold_dict.pkl \
-#     --work_dir MicrobeAtlasProject \
+#     --gold_dict ~/MicrobeAtlasProject/gold_dict.pkl \
+#     --work_dir ~/MicrobeAtlasProject \
 #     --split_dir sample_info_split_dirs
 
 
@@ -26,26 +26,40 @@ import argparse
 # Argument Parsing
 # ----------------------------- 
 parser = argparse.ArgumentParser(description="Process metadata field matches.")
-parser.add_argument('--gold_dict', type=str, required=True,
-                    help="Path to the gold_dict.pkl file, relative to $HOME or absolute")
-parser.add_argument('--work_dir', type=str, required=True,
-                    help="Base directory where output files are written to, relative to $HOME or absolute")
-parser.add_argument('--split_dir', type=str, required=True,
-                    help="Directory containing sample metadata files, relative to $HOME or absolute")
+parser.add_argument(
+    '--gold_dict',
+    default='gold_dict.pkl',
+    help='Path to gold standard dictionary (default: gold_dict.pkl)'
+)
+
+parser.add_argument(
+    '--work_dir',
+    default='.',
+    help='Working directory for split metadata files (default: current directory)'
+)
+
+parser.add_argument(
+    '--split_dir',
+    default='sample_info_split_dirs',
+    help='Directory name containing split metadata files (default: sample_info_split_dirs)'
+)
 args = parser.parse_args()
+
+
 
 
 # -----------------------------
 # Files and Paths
 # ----------------------------- 
-home_dir = os.getenv('HOME')
-input_gold_dict = os.path.join(home_dir, args.gold_dict)
-work_dir = os.path.join(home_dir, args.work_dir)
+work_dir = os.path.abspath(args.work_dir)          # "." → /MicrobeAtlasProject
+input_gold_dict = os.path.join(work_dir, args.gold_dict)
 split_dir = os.path.join(work_dir, args.split_dir)
 
 print(split_dir)
 print(work_dir)
 print(input_gold_dict)
+
+
 
 # -----------------------------
 # Ground truth loading & processing
