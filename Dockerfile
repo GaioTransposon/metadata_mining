@@ -1,18 +1,25 @@
-# Use Miniconda as base
+# 1. Use Miniconda3 as the base image
 FROM continuumio/miniconda3
 
-# Set working directory in the container
+# 2. Set working directory in the container
 WORKDIR /app
 
-# Copy project files into container
+# 3. Copy only what's needed for environment first (for better Docker layer caching)
+COPY metadmin_env.yml /app/
+
+# 4. Create the conda environment
+RUN conda env create -f /app/metadmin_env.yml
+
+# 5. Copy the rest of the project files (scripts, data, etc.)
 COPY . /app
 
-# Create Conda environment
-RUN conda env create -f metadmin_env.yml
-
-# Activate environment by default
+# 6. Activate the conda environment for all subsequent RUN and CMD commands
 SHELL ["conda", "run", "-n", "metadmin_env", "/bin/bash", "-c"]
 
-# Set the entry point (shell by default, can be changed per container)
+# 7. Install additional Python dependencies (e.g., OpenAI client)
+RUN pip install --upgrade pip && \
+    pip install openai==1.93.0
+
+# 8. Default command (interactive shell)
 CMD ["bash"]
 
