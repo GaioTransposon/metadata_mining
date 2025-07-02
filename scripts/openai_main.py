@@ -25,12 +25,6 @@ from openai_03_gpt_interaction import GPTInteractor
 
 
 
-
-
-
-
-
-
 # =======================================================
 # Main Execution
 # =======================================================
@@ -63,15 +57,26 @@ def parse_arguments():
 
 def main():
     
+
+
+    # -------------------------------------------------
+    # Resolve all important paths (relative to work_dir)
+    # -------------------------------------------------
+    args = parse_arguments()
     
-    args = parse_arguments()  
+    # The script runs from /MicrobeAtlasProject in Docker, so "." = CWD
+    work_dir = os.path.abspath(args.work_dir)
     
-    # PATHS
-    home_dir = os.getenv('HOME')
-    work_dir = os.path.join(home_dir, args.work_dir)
-    input_gold_dict = os.path.join(home_dir, args.input_gold_dict)
-    system_prompt_file = os.path.join(home_dir, args.system_prompt_file)
-    api_key_path = os.path.join(home_dir, args.api_key_path)
+    # Assume all other paths are relative to work_dir
+    input_gold_dict     = os.path.join(work_dir, args.input_gold_dict)
+    system_prompt_file  = os.path.join(work_dir, args.system_prompt_file)
+    api_key_path        = os.path.join(work_dir, args.api_key_path)
+    
+    # (Optional) Debug output
+    print("work_dir         :", work_dir)
+    print("input_gold_dict  :", input_gold_dict)
+    print("system_prompt_file:", system_prompt_file)
+    print("api_key_path     :", api_key_path)
 
     
     # Phase 0: set up a logging system 
@@ -332,27 +337,25 @@ if __name__ == "__main__":
 # test for container 
 
 # python github/metadata_mining/scripts/openai_main.py \
-#     --work_dir "MicrobeAtlasProject" \
-#     --input_gold_dict "github/metadata_mining/source_data/gold_dict.pkl" \
+#     --work_dir . \
+#     --input_gold_dict gold_dict.pkl \
 #     --n_samples_per_biome 5 \
-#     --chunking "no" \
+#     --chunking no \
 #     --chunk_size 2000 \
 #     --seed 22 \
-#     --directory_with_split_metadata "sample_info_split_dirs" \
-#     --system_prompt_file "github/metadata_mining/source_data/openai_system_better_prompt_json.txt" \
-#     --encoding_name "cl100k_base" \
-#     --api_key_path "Desktop/keys/my_api_key" \
-#     --model "gpt-3.5-turbo-1106" \
+#     --directory_with_split_metadata sample_info_split_dirs \
+#     --system_prompt_file openai_system_better_prompt_json.txt \
+#     --encoding_name cl100k_base \
+#     --api_key_path my_api_key \
+#     --model gpt-3.5-turbo-1106 \
 #     --temperature 1.00 \
 #     --max_tokens 4096 \
 #     --top_p 0.75 \
 #     --frequency_penalty 0.25 \
 #     --presence_penalty 1.5 \
 #     --max_requests_per_minute 3500 \
-#     --opt_text "normal" \
-#     --output_format 'json'
-
-
+#     --opt_text normal \
+#     --output_format json
 
 
 
