@@ -6,6 +6,22 @@ Created on Mon May  6 16:57:36 2024
 @author: dgaio
 """
 
+
+
+# run as: 
+
+# python github/metadata_mining/scripts/metadata_preparation.py \
+#     --work_dir "MicrobeAtlasProject" \
+#     --input_gold_dict "gold_dict.pkl" \
+#     --n_samples_per_biome 5 \
+#     --chunking "no" \
+#     --chunk_size 3000 \
+#     --seed 22 \
+#     --directory_with_split_metadata "sample_info_split_dirs" \
+#     --system_prompt_file "openai_system_prompt.txt" \
+#     --encoding_name "cl100k_base"
+    
+    
 import argparse
 import time
 import os
@@ -63,14 +79,27 @@ def setup_logging():
 
 
 def main():
+    
+    # -------------------------------------------------
+    # Resolve all important paths (relative to work_dir)
+    # -------------------------------------------------
     args = parse_arguments()
     
-    home_dir = os.getenv('HOME')
-    work_dir = os.path.join(home_dir, args.work_dir)
-    input_gold_dict = os.path.join(home_dir, args.input_gold_dict)
-    #system_prompt_file = os.path.join(home_dir, args.system_prompt_file)
+    # The script runs from /MicrobeAtlasProject in Docker, so "." = CWD
+    work_dir = os.path.abspath(args.work_dir)
+    
+    # Assume all other paths are relative to work_dir
+    input_gold_dict     = os.path.join(work_dir, args.input_gold_dict)
+    system_prompt_file  = os.path.join(work_dir, args.system_prompt_file)
+    split_dir          = os.path.join(work_dir, args.directory_with_split_metadata)
+
+    print("work_dir         :", work_dir)
+    print("input_gold_dict  :", input_gold_dict)
+    print("system_prompt_file:", system_prompt_file)
+    print("split_dir         :", split_dir)
     
     
+
     setup_logging()
     
     # Metadata Fetching
