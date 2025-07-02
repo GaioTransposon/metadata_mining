@@ -29,8 +29,8 @@ parser = argparse.ArgumentParser(description="Analyze metadata size reductions")
 parser.add_argument("--split_dirs", required=True, help="Path to directory containing metadata files split across subdirectories ")
 args = parser.parse_args()
 
-base_dir = os.path.expanduser(args.base_dir)
-
+base_dir = os.path.expanduser(args.split_dirs)
+print(base_dir)
 
 
 file_data = []
