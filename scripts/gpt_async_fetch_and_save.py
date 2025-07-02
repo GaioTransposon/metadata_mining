@@ -32,6 +32,34 @@ from pathlib import Path
 from typing import Iterable, List, Set
 
 from openai import NotFoundError, OpenAI  # SDK ≥ 1.0
+import argparse
+
+
+# ------------------------------------------------------------------
+# CLI
+# ------------------------------------------------------------------
+cli = argparse.ArgumentParser(
+    description="Fetch completed OpenAI batch outputs and save tidy CSVs."
+)
+cli.add_argument(
+    "--work_dir",
+    default=".",
+    help="Base working directory (default = current dir; '/MicrobeAtlasProject' in Docker)",
+)
+cli.add_argument(
+    "--api_key_path",
+    required=True,
+    help="OpenAI API-key filename (relative to work_dir)",
+)
+args = cli.parse_args()
+
+WORK_DIR       = Path(os.path.abspath(args.work_dir))
+API_KEY_FILE   = WORK_DIR / args.api_key_path
+FAILED_SAMPLES = WORK_DIR / "failed_async_samples.txt"
+FAILED_SAMPLES.parent.mkdir(parents=True, exist_ok=True)
+
+
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Helper functions
@@ -63,7 +91,10 @@ def retrieve_results(client: OpenAI, batch_job_id: str) -> str | None:
             error_file = client.files.content(batch_job.error_file_id)
             error_text = error_file.text
             print(f"{batch_job_id} → completed with errors only.")
-            error_log_path = Path.home() / "MicrobeAtlasProject" / f"{batch_job_id}_error.jsonl"
+            
+            error_log_path = WORK_DIR / f"{batch_job_id}_error.jsonl"
+            error_log_path.parent.mkdir(parents=True, exist_ok=True)
+
             with open(error_log_path, "w") as f:
                 f.write(error_text)
             print(f"Saved error file to {error_log_path}")
@@ -149,10 +180,10 @@ def log_failed_batch(directory: Path, batch_job_id: str) -> None:
 
 
 def main() -> None:  # noqa: C901 – a little long but readable
-    home = Path.home()
-    api_key_file = home / "Desktop/keys/my_api_key"
-    project_dir = home / "MicrobeAtlasProject"
-    failed_samples_path = project_dir / "failed_async_samples.txt"
+    project_dir        = WORK_DIR
+    api_key_file       = API_KEY_FILE
+    failed_samples_path = FAILED_SAMPLES
+
 
     print(api_key_file)
     client = init_openai_client(str(api_key_file))
