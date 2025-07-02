@@ -1,26 +1,29 @@
+
 ## 📚 Table of Contents
+
 - [Introduction](#introduction)
-- [📦 Requirements](#️-requirements)
-- [Container 1: Metadata Splitting and Cleaning](#container-1-metadata-splitting-and-cleaning)
-  - [🚀 Run Container 1](#-run-container-1)
-    - [1. Split the metadata file](#1-split-the-metadata-file-)
-    - [2. Fetch ontologies](#2-fetch-ontologies-)
-    - [3. Clean metadata files and replace ontology codes with labels](#3-clean-metadata-files-and-replace-ontology-codes-with-labels-)
-    - [4. Check metadata size reduction](#4-check-metadata-size-reduction-)
-    - [5. Analyze metadata fields distribution](#5-analyze-metadata-fields-distribution-)
-    - [6. Parse latitude and longitude](#6-parse-latitude-and-longitude-)
-- [Container 2: Benchmark Annotation via Interactive Interface](#container-2-benchmark-annotation-via-interactive-interface)
-  - [🚀 Run Container 2](#-run-container-2)
-- [Container 3: GPT interaction](#container-3-gpt-interaction)
-  - [🚀 Run Container 3](#-run-container-3)
-    - [Synchronous GPT interaction](#synchronous-gpt-interaction)
-    - [Asynchronous GPT interaction (2 steps)](#asynchronous-gpt-interaction-2-steps)
-    - [Create Embeddings](#create-embeddings)
+- [Requirements](#requirements)
+- [Container 1: Metadata Splitting and Cleaning](#container-1)
+  - [🚀 Run Container 1](#run-container-1)
+    - [1. Split the Metadata File](#split-the-metadata-file)
+    - [2. Fetch Ontologies](#fetch-ontologies)
+    - [3. Clean Metadata Files](#clean-metadata-files)
+    - [4. Check Metadata Size Reduction](#check-metadata-size-reduction)
+    - [5. Analyze Metadata Fields Distribution](#analyze-metadata-fields-distribution)
+    - [6. Parse Latitude and Longitude](#parse-latitude-and-longitude)
+- [Container 2: Benchmark Annotation via Interactive Interface](#container-2)
+  - [🚀 Run Container 2](#run-container-2)
+- [Container 3: GPT Interaction](#container-3)
+  - [🚀 Run Container 3](#run-container-3)
+    - [1. Synchronous GPT Interaction](#synchronous-gpt-interaction)
+    - [2. Asynchronous GPT Interaction](#asynchronous-gpt-interaction)
+    - [3. Create Embeddings](#create-embeddings)
 
 
 
 
 ---
+<a name="introduction"></a>
 # Introduction: 
 
 some text introducing the containers. Add figure. 
@@ -33,7 +36,7 @@ The project is designed for scalability, reproducibility, and minimal manual int
 
 
 ---
-
+<a name="requirements"></a>
 ## 📦 Requirements: 
 
 
@@ -82,7 +85,7 @@ open -a Docker
 ```
 docker build -t metadmin .
 ```
-
+<a name="container-1"></a>
 ## Container 1: Metadata Splitting and Cleaning
 
 This Docker container is part of the **MicrobeAtlasProject** pipeline. It provides a consistent environment to run all scripts related to processing and cleaning environmental metadata, including coordinate parsing, ontology translation, and exploratory analysis.
@@ -91,9 +94,10 @@ This Docker container is part of the **MicrobeAtlasProject** pipeline. It provid
 
 ---
 
-
+<a name="run-container-1"></a>
 ### 🚀 Run Container 1: 
 
+<a name="split-the-metadata-file"></a>
 #### 1. Split the metadata file 🧾 into individual files: 
 
 ```
@@ -107,6 +111,7 @@ docker run -it --rm \
     --figure_path files_distribution_in_dirs_test.pdf
 ```
 
+<a name="fetch-ontologies"></a>
 #### 2. Fetch ontologies  🌐: 
 
 ```
@@ -119,6 +124,7 @@ docker run -it --rm \
     --output_file ontologies_dict
 ```
 
+<a name="clean-metadata-files"></a>
 #### 3. Clean metadata files and replace ontology codes with labels  🧼: 
 
 Increase the file descriptor limit first. By default, many operating systems limit how many files can be open at once. Since this script processes many files in parallel, you must increase the ulimit:
@@ -135,6 +141,7 @@ docker run -it --rm \
     --max_processes 8
 ```
 
+<a name="check-metadata-size-reduction"></a>
 #### 4. Check metadata size reduction 📉 : 
 
 This script compares file sizes before and after cleaning and estimates the token-level reduction after the cleaning. It calculates token reduction using bootstrap sampling (default: 100 iterations × 100 samples).
@@ -147,6 +154,7 @@ docker run -it --rm \
   python /app/scripts/check_metadata_sizes.py
 ```
 
+<a name="analyze-metadata-fields-distribution"></a>
 #### 5. Analyze metadata fields distribution 🧠 : 
 
 This script examines in which metadata fields the benchmark sub-biome information appears. It scans the cleaned metadata files and checks whether the sub-biome (e.g. human gut, sediment, leaf) is found fully or partially in each metadata field. This helps identify the most informative fields across samples and biomes. It outputs a plot and csv summaries with the top-matching fields, based on 1000 random files. 
@@ -160,6 +168,7 @@ docker run -it --rm \
     --gold_dict gold_dict.pkl 
 ```
 
+<a name="parse-latitude-and-longitude"></a>
 #### 6. Parse latitude and longitude 🌍: 
 
 ```
@@ -178,6 +187,7 @@ docker run --rm \
   > ~/MicrobeAtlasProject/sample.coordinates.reparsed.filtered_fresh
 ```
 
+<a name="container-2"></a>
 ## Container 2: Benchmark Annotation via Interactive Interface
 
 This container supports the creation and manual curation of a benchmark (also referred to as gold standard dictionary - gold_dict.pkl), which maps selected sample IDs to: 
@@ -195,7 +205,7 @@ This container includes two interactive scripts:
 
 ---
 
-
+<a name="run-container-2"></a>
 ### 🚀 Run Container 2: 
 
 Launch Docker container interactively:
@@ -237,7 +247,7 @@ To exit either session just type:
 
 ---
 
-
+<a name="container-3"></a>
 ## Container 3: GPT interaction
 
 This container handles all steps related to GPT-based annotation of metadata, including: synchronous or asynchronous interactions with the OpenAI API, preparing and submitting batch jobs (asynchronous runs), fetching responses (asynchronous runs), generating sub-biome embeddings from GPT outputs and from benchmark data. 
@@ -245,7 +255,7 @@ This container handles all steps related to GPT-based annotation of metadata, in
 ⚠️ Before running this container, you will need to acquire your API key and place it in ~/MicrobeAtlasProject. You could generate two separate keys: one for the chat completion (annotation of metadata), one for creating embeddings. In this pipeline the two are named: my_api_key and my_api_key_embeddings. The reason for this is keeping track of usage quotas for each task. 
 
 
-
+<a name="run-container-3"></a>
 ### 🚀 Run Container 3: 
 
 You can run either:
@@ -255,6 +265,7 @@ You can run either:
 
 Then, generate embeddings from GPT results and from benchmark data.
 
+<a name="synchronous-gpt-interaction"></a>
 #### Synchronous GPT interaction: 
 
 This script performs end-to-end metadata annotation in a single script using synchronous OpenAI API requests.
@@ -287,6 +298,7 @@ docker run -it --rm \
     --output_format json
 ```
 
+<a name="asynchronous-gpt-interaction"></a>
 #### Asynchronous GPT interaction (2 steps): 
 
 Use this if you want to take advantage of OpenAI's batch API for more efficient, large-scale requests.
@@ -342,6 +354,7 @@ docker run -it --rm \
 
 ```
 
+<a name="create-embeddings"></a>
 #### Create Embeddings: 
 
 This script creates text-embedding-3-small vectors from:
@@ -360,5 +373,4 @@ docker run -it --rm \
     --api_key_path my_api_key_embeddings \
     --gold_dict_path gold_dict.pkl
 ```
-
 
