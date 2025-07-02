@@ -28,9 +28,9 @@
 
 some text introducing the containers. Add figure. 
 
-This repository contains a modular, containerized pipeline for processing and annotating environmental sample metadata as part of the **MicrobeAtlasProject**. Each container encapsulates a specific set of tasks — from preprocessing metadata, interacting with GPT models,  generating embeddings, to GPT output evaluation. 
+This repository contains a modular, containerized pipeline for processing and annotating environmental sample metadata as part of the **MicrobeAtlasProject**. Each container encapsulates a specific set of tasks — as you see depicted below - from preprocessing metadata (red), creating a benchmark dataset (orange), interacting with GPT models and generating embeddings (purple), to GPT output evaluation (green). 
 
-![](docs/pipeline_overview.png) <!-- or a placeholder path -->
+![Pipeline overview](pipeline.png)
 
 The project is designed for scalability, reproducibility, and minimal manual intervention across large metadata corpora.
 
