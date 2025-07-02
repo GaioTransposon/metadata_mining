@@ -38,20 +38,44 @@ from packaging import version
 # --------------------------
 # Argument Parsing
 # --------------------------
-parser = argparse.ArgumentParser(description="Generate embeddings from sub-biome descriptions.")
-parser.add_argument('--directory_path', required=True, help='Path to main project directory (e.g., ~/MicrobeAtlasProject)')
-parser.add_argument('--api_key_path', required=True, help='Path to file containing your OpenAI API key')
-parser.add_argument('--gold_dict_path', required=True, help='Path to gold_dict.pkl file')
+
+
+
+# --------------------------
+# Argument Parsing
+# --------------------------
+parser = argparse.ArgumentParser(
+    description="Generate embeddings from sub-biome descriptions."
+)
+parser.add_argument(
+    "--directory_path",
+    default=".",
+    help="Base work directory (default: current directory, "
+         "which is /MicrobeAtlasProject in Docker)",
+)
+parser.add_argument(
+    "--api_key_path",
+    required=True,
+    help="File containing your OpenAI API key (relative to work dir)",
+)
+parser.add_argument(
+    "--gold_dict_path",
+    required=True,
+    help="gold_dict.pkl file (relative to work dir)",
+)
 args = parser.parse_args()
 
-# Expand ~ to full home directory
-directory_path = os.path.expanduser(args.directory_path)
-api_key_path = os.path.expanduser(args.api_key_path)
-gold_dict_path = os.path.expanduser(args.gold_dict_path)
+# --------------------------
+# Resolve paths
+# --------------------------
+work_dir        = os.path.abspath(args.directory_path)
+api_key_path    = os.path.join(work_dir, args.api_key_path)
+gold_dict_path  = os.path.join(work_dir, args.gold_dict_path)
 
-# Output directory for embeddings
-output_dir = os.path.join(directory_path, 'embeddings')
+output_dir      = os.path.join(work_dir, "embeddings")
 os.makedirs(output_dir, exist_ok=True)
+
+
 
 # Set OpenAI API key
 with open(api_key_path, "r") as file:
@@ -152,7 +176,8 @@ if not os.path.exists(output_file_path):
     print('📦 Gold dict embeddings saved to:', output_file_path)
 
 # Process all matching .txt or .csv files
-pattern = os.path.join(directory_path, 'gpt_clean_output*')     # when running for George (2nd curator) file: GH_collect* or GH_combined* (2nd round)
+pattern = os.path.join(work_dir, "gpt_clean_output*")  # when running for George (2nd curator) file: GH_collect* or GH_combined* (2nd round)
+
 file_list = glob.glob(pattern + '.txt') + glob.glob(pattern + '.csv')
 
 for file_path in file_list:
