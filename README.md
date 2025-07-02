@@ -26,14 +26,12 @@
 <a name="introduction"></a>
 # Introduction: 
 
-some text introducing the containers. Add figure. 
+This repository contains a modular, containerized pipeline for processing and annotating environmental sample metadata as part of the **MicrobeAtlasProject**. Each container encapsulates a specific set of tasks — as you see depicted below - from preprocessing metadata (C1 - 🔴 red), creating a benchmark dataset (C2 - 🟠 orange), interacting with GPT models and generating embeddings (C3 - 🟣 purple), to GPT output evaluation (C3 - 🟢 green). 
 
-This repository contains a modular, containerized pipeline for processing and annotating environmental sample metadata as part of the **MicrobeAtlasProject**. Each container encapsulates a specific set of tasks — as you see depicted below - from preprocessing metadata (C1 - red (<span style="color:red">red</span>)), creating a benchmark dataset (C2 - orange), interacting with GPT models and generating embeddings (C3 - purple), to GPT output evaluation (C3 - green). 
 
 ![Pipeline overview](pipeline.png)
 
-The project is designed for scalability, reproducibility, and minimal manual intervention across large metadata corpora.
-
+Let's start with the requirements!
 
 ---
 <a name="requirements"></a>

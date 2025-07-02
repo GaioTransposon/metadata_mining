@@ -8,66 +8,74 @@ Created on Mon Jul 22 17:50:30 2024
 
 
 
-# this script is run by run_validate_biomes_subbiomes.sh 
+# run as: 
+# python ~/github/metadata_mining/scripts/validate_biomes_subbiomes.py \
+#   --work_dir ~/MicrobeAtlasProject \
+#   --map_file gpt_file_label_map.tsv
+
 
 import os
 import pandas as pd
 import pickle
 import numpy as np
-import sys
 import re
 from itertools import combinations
-sys.path.append('/Users/danielagaio/github/metadata_mining/scripts')   # UZH: /Users/dgaio/github/metadata_mining/scripts
-from features_process import find_distinguishing_features, extract_labels_from_filename, edit_features, load_and_process_file, handle_malformed_lines, filter_common_keys
+from features_process import load_and_process_file, filter_common_keys
 from embeddings_functions import (load_embeddings, compare_embeddings, create_shuffled_background_distribution, sample_by_category)
 from stats_module import calculate_overlap_and_run_tests_biomes, compare_based_on_overlap_subbiomes, print_statistics, test_similarity_separation
 from output_writing import plot_biome_agreement, plot_actual_vs_background, plot_heatmap, save_figures_to_pdf, output_to_csv
 import argparse
+import sys
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(SCRIPT_DIR)
 
-# -----------------------------
-# Files and Paths
-# ----------------------------- 
 
-home_dir = os.getenv('HOME')
-work_dir = os.path.join(home_dir, "cloudstor/Gaio/MicrobeAtlasProject")  # UZH: MicrobeAtlasProject
-embeddings_dir = os.path.join(work_dir, "embeddings") 
-gold_dict_path = os.path.join(home_dir, "github/metadata_mining/source_data/gold_dict.pkl")
+
+
+# ------------------ NEW argument parsing ------------------
+parser = argparse.ArgumentParser(
+    description="Validate GPT-predicted biomes & sub-biomes."
+)
+parser.add_argument("--work_dir", default=".", help="Base working directory")
+parser.add_argument(
+    "--map_file",
+    required=True,
+    help="TSV with at least two columns: <filename> <label> "
+         "(optional 3rd column like test_type is ignored)",
+)
+args = parser.parse_args()
+
+WORK_DIR       = os.path.abspath(args.work_dir)
+EMBEDDINGS_DIR = os.path.join(WORK_DIR, "embeddings")
+GOLD_DICT_PATH = os.path.join(WORK_DIR, "gold_dict.pkl")
+
+
+# ------------- read TSV -------------
+map_path = os.path.join(WORK_DIR, args.map_file)
+
+df_map = pd.read_csv(map_path, sep="\t", comment="#", header=None, names=["filename", "label", "extra"], usecols=[0, 1])
+
+
+my_files       = df_map["filename"].tolist()
+my_labels      = df_map["label"].tolist()
+file_label_map = dict(zip(my_files, my_labels))
+
+
+print("\nFile and its label name:\n")
+for file, label in file_label_map.items():
+    print(f"{os.path.basename(file)} - {label}\n")
+
 
 
 # -----------------------------
 # Ground truth loading & processing
 # -----------------------------   
-with open(gold_dict_path, 'rb') as file:
+with open(GOLD_DICT_PATH, 'rb') as file:
     gold_dict = pickle.load(file)
 gold_dict_df = pd.DataFrame({'sample': list(gold_dict.keys()), 'biome': [v[1] for v in gold_dict.values()]})
-gold_dict_json_path = os.path.join(embeddings_dir, 'gold_dict_sbembeddings.json')
+gold_dict_json_path = os.path.join(EMBEDDINGS_DIR, 'gold_dict_sbembeddings.json')
 embeddings_gd = load_embeddings(gold_dict_json_path)
 
-
-# -----------------------------
-# Files processing
-# ----------------------------- 
-    
-parser = argparse.ArgumentParser(description='Process files and labels.')
-
-# Add arguments for files and labels. Expecting a list for each.
-parser.add_argument('--files', nargs='+', help='List of files', required=True)
-parser.add_argument('--labels', nargs='+', help='List of labels for the files', required=True)
-
-# Parse the arguments
-args = parser.parse_args()
-
-# Assign files and labels from arguments
-my_files = args.files
-my_labels = args.labels
-
-
-
-file_label_map = dict(zip(my_files, my_labels))
-
-print("\nFile and its label name:\n")
-for file, label in file_label_map.items():
-    print(f"{os.path.basename(file)} - {label}\n")
 
     
 # -----------------------------
@@ -75,7 +83,7 @@ for file, label in file_label_map.items():
 # ----------------------------- 
 
 # Load, process, and calculate agreements for data files
-full_dfs = [load_and_process_file(os.path.join(work_dir, f), gold_dict_df, label) for f, label in file_label_map.items()]
+full_dfs = [load_and_process_file(os.path.join(WORK_DIR, f), gold_dict_df, label) for f, label in file_label_map.items()]
 full_agreement_df = pd.concat(full_dfs, ignore_index=True)
 full_agreement_df['agreement'] = full_agreement_df['gpt_biome'] == full_agreement_df['biome']
 lenient_agreement_df = pd.concat(full_dfs, ignore_index=True)
@@ -88,7 +96,7 @@ lenient_agreement_df['agreement'] = lenient_agreement_df.apply(
 )
 
 
-full_result, lenient_result = plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map, work_dir)
+full_result, lenient_result = plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map, WORK_DIR)
 
 
 results_biome = pd.concat([
@@ -124,7 +132,7 @@ for gpt_file in my_files:
     
     gpt_file_ori = gpt_file
     gpt_file = re.sub(r'\.txt|\.csv', '_sbembeddings.json', gpt_file)
-    gpt_json_file_path = os.path.join(embeddings_dir, gpt_file) 
+    gpt_json_file_path = os.path.join(EMBEDDINGS_DIR, gpt_file) 
     embeddings_gpt = load_embeddings(gpt_json_file_path)
     
     # Filter embeddings to include only common keys
@@ -155,7 +163,7 @@ for gpt_file in my_files:
     ########################################
     # Gather info: 
     #avg_sim, median_sim, std_dev, percentiles, MWU_stat, MWU_p_value, filename, label
-    results_sub_biome = {
+    results_sub_biome_dict = {
     'Average Similarity': avg_sim,
     'Median Similarity': median_sim,
     'Standard Deviation': std_dev,
@@ -167,7 +175,10 @@ for gpt_file in my_files:
 }
     
     # Append the dictionary to the results list
-    results_list.append(results_sub_biome)
+    results_list.append(results_sub_biome_dict)
+    
+    
+
     
     ########################################
     # Plotting: 
@@ -194,7 +205,7 @@ for gpt_file in my_files:
     ########################################
     # Save both to a PDF
     gpt_base_file = gpt_file.replace('_sbembeddings.json', '')
-    save_figures_to_pdf([comparison_fig, heatmap_fig], gpt_base_file, embeddings_dir)
+    save_figures_to_pdf([comparison_fig, heatmap_fig], gpt_base_file, EMBEDDINGS_DIR)
 
     
 # concatenate data 
@@ -237,7 +248,10 @@ for file1, file2 in combinations(results.keys(), 2):
         'Filename2': file2
     }
 
+
     results_data.append(result_dict)
+    
+    
     
 results_df_stats = pd.DataFrame(results_data)
 results_df_stats['validation'] = 'sub-biome'
@@ -259,7 +273,7 @@ biomes_subbiomes['Label'] = biomes_subbiomes['Filename'].map(file_label_map)
 print(biomes_subbiomes)
 
 
-filename = os.path.join(work_dir, 'biome_subbiome_results.csv')
+filename = os.path.join(WORK_DIR, 'biome_subbiome_results.csv')
 output_to_csv(biomes_subbiomes, filename)
 
 
@@ -271,48 +285,8 @@ print(biomes_subbiomes_stats.columns)
 
 
 
-filename = os.path.join(work_dir, 'biome_subbiome_stats.csv')
+filename = os.path.join(WORK_DIR, 'biome_subbiome_stats.csv')
 output_to_csv(biomes_subbiomes_stats, filename)
-
-
-
-
-
-
-## For testing: 
-# =============================================================================
-# 
-# my_files=[
-#     "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051326.txt",
-#     "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp0.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API117_normal_dt202406051402.txt",
-#     "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp1.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051409.txt",
-#     "gpt_clean_output_nspb100_chunkingyes_chunksize2000_modelgpt-3.5-turbo-1106_temp2.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API118_normal_dt202406051415.txt",
-#     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_normal_dt202406051335.txt",
-#     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp2.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131512.txt",
-#     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131503.txt",
-#     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp0.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_API499_repeat_dt202406131455.txt",
-#     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch531mkNXTyMyYTSBJiWVwcLm7_dt202406071408.csv",
-#     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp0.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchyTdqYI5NQpzbGR0gNBO6HU6x_dt202406071410.csv",
-#     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp1.5_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batch9U6Gzkj2sLyTDWvTJooiQvtI_dt202406071411.csv",
-#     "gpt_clean_output_nspb100_chunkingno_chunksize2000_modelgpt-3.5-turbo-1106_temp2.0_maxtokens4096_topp0.75_freqp0.25_presp1.5_rs22_batchyP1BWiaONwk6peX6svVVuimq_dt202406071412.csv"
-# ]
-# 
-# 
-# my_labels=[
-#     "sync_chunkY_temp1.0",
-#     "sync_chunkY_temp0.5",
-#     "sync_chunkY_temp1.5",
-#     "sync_chunkY_temp2.0",
-#     "sync_chunkN_temp1.0",
-#     "sync_chunkN_temp2.0",
-#     "sync_chunkN_temp1.5",
-#     "sync_chunkN_temp0.5",
-#     "async_temp1.0",
-#     "async_temp0.5",
-#     "async_temp1.5",
-#     "async_temp2.0"
-# ]
-# =============================================================================
 
 
 
