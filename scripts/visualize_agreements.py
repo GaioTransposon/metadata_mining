@@ -7,6 +7,9 @@ Created on Mon Sep 30 16:02:23 2024
 """
 
 
+
+# this script only 
+
 import os 
 import pandas as pd
 import matplotlib.pyplot as plt
