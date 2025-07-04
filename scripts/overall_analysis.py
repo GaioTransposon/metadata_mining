@@ -11,9 +11,9 @@ Created on Tue Jul 16 15:37:48 2024
 
 # run as
 # python overall_analysis.py \
-#       --work_dir ~/MicrobeAtlasProject \
-#       --metadata_dir sample_info_split_dirs \
-#       --joao_file joao_biomes_parsed.csv
+#        --work_dir ~/MicrobeAtlasProject \
+#        --metadata_dir sample_info_split_dirs \
+#        --keyword_based_annot_file joao_biomes_parsed.csv
 
 
 
@@ -57,7 +57,7 @@ parser.add_argument(
     help="Relative path (inside work_dir) to the directory with per-sample metadata files.",
 )
 parser.add_argument(
-    "--joao_file",
+    "--keyword_based_annot_file",
     default="joao_biomes_parsed.csv",
     help="CSV (inside work_dir) with Joao’s biome assignments.",
 )
@@ -65,7 +65,7 @@ args = parser.parse_args()
 
 WORK_DIR       = os.path.abspath(args.work_dir)
 METADATA_DIR   = os.path.join(WORK_DIR, args.metadata_dir)
-JOAO_FILE_PATH = os.path.join(WORK_DIR, args.joao_file)
+JOAO_FILE_PATH = os.path.join(WORK_DIR, args.keyword_based_annot_file)
 GOLD_DICT_PATH = os.path.join(WORK_DIR, "gold_dict.pkl")
 
 # Add this script’s folder ( /app/scripts ) to PYTHONPATH so
