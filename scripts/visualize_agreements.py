@@ -8,8 +8,6 @@ Created on Mon Sep 30 16:02:23 2024
 
 
 
-# this script only 
-
 import os 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -19,7 +17,6 @@ from matplotlib.legend_handler import HandlerTuple
 from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap
 from datetime import datetime
 import time
-
 
 
 
@@ -301,64 +298,117 @@ plot_bars(df_subset, plots_dir, 'Output formats', 9)
 
 # Stats:
 
-def process_and_visualize(df, plots_dir, my_title, cell_font_size, labels_font):
+
+def process_and_visualize(
+        df,
+        plots_dir,
+        my_title,
+        cell_font_size=8,
+        labels_font=9,
+        debug=True):
+    """
+    Draw dual heat-maps for biome vs. sub-biome tests and save to PDF.
+    Raises or warns early if something is wrong with the data.
+    """
+
+    # ---------- 1️⃣  Basic cleaning ------------------------------------------------
     df = df.dropna()
-    columns_to_keep = ['Label1', 'Label2', 'P-value', 'Adjusted P-value', 'Test Type', 'validation']
-    df = df[columns_to_keep]
+    if df.empty:
+        raise ValueError(
+            "After dropna() the DataFrame is empty – nothing to plot. "
+            "Check for missing values in 'Label1', 'Label2', 'P-value', etc."
+        )
+
+    cols_needed = ['Label1', 'Label2', 'P-value', 'Adjusted P-value',
+                   'Test Type', 'validation']
+    missing_cols = [c for c in cols_needed if c not in df.columns]
+    if missing_cols:
+        raise KeyError(f"Missing expected columns: {missing_cols}")
+
+    # Make validation comparisons case- & space-insensitive
+    df['validation'] = df['validation'].str.strip().str.lower()
+
+    # ---------- 2️⃣  Quick stats printout -----------------------------------------
+    biome_rows      = (df['validation'] == 'biome').sum()
+    subbiome_rows   = (df['validation'] == 'sub-biome').sum()
+    if debug:
+        print(f"[DEBUG] rows after dropna: {len(df)} "
+              f"(biome={biome_rows}, sub-biome={subbiome_rows})")
+
+    if biome_rows == 0 and subbiome_rows == 0:
+        raise ValueError(
+            "No rows have validation == 'biome' or 'sub-biome'. "
+            "Check spelling/capitalisation in that column."
+        )
+
+    # ---------- 3️⃣  Build matrices ----------------------------------------------
     labels = pd.unique(df[['Label1', 'Label2']].to_numpy().flatten())
-    biome_matrix = pd.DataFrame(np.nan, index=labels, columns=labels)
-    subbiome_matrix = pd.DataFrame(np.nan, index=labels, columns=labels)
-    biome_annot = pd.DataFrame("", index=labels, columns=labels)
-    subbiome_annot = pd.DataFrame("", index=labels, columns=labels)
+    biome_matrix     = pd.DataFrame(np.nan, index=labels, columns=labels)
+    subbiome_matrix  = pd.DataFrame(np.nan, index=labels, columns=labels)
+    biome_annot      = pd.DataFrame("",     index=labels, columns=labels)
+    subbiome_annot   = pd.DataFrame("",     index=labels, columns=labels)
 
     for _, row in df.iterrows():
-        label1, label2 = row['Label1'], row['Label2']
-        adj_p_value = row['Adjusted P-value']
-        annotation = f"{row['P-value']:.2f};\n{adj_p_value:.2f}"
-        if row['validation'] == 'biome':
-            biome_matrix.at[label1, label2] = adj_p_value
-            biome_matrix.at[label2, label1] = adj_p_value
-            biome_annot.at[label1, label2] = annotation
-            biome_annot.at[label2, label1] = annotation
-        elif row['validation'] == 'sub-biome':
-            subbiome_matrix.at[label1, label2] = adj_p_value
-            subbiome_matrix.at[label2, label1] = adj_p_value
-            subbiome_annot.at[label1, label2] = annotation
-            subbiome_annot.at[label2, label1] = annotation
+        l1, l2 = row['Label1'], row['Label2']
+        ann    = f"{row['P-value']:.2f};\n{row['Adjusted P-value']:.2f}"
+        target = row['validation']
+        if target == 'biome':
+            biome_matrix.loc[l1, l2] = biome_matrix.loc[l2, l1] = row['Adjusted P-value']
+            biome_annot .loc[l1, l2] = biome_annot .loc[l2, l1] = ann
+        elif target == 'sub-biome':
+            subbiome_matrix.loc[l1, l2] = subbiome_matrix.loc[l2, l1] = row['Adjusted P-value']
+            subbiome_annot .loc[l1, l2] = subbiome_annot .loc[l2, l1] = ann
 
-    # Prepare color bins and colormaps
-    bins = [0, 0.01, 0.05, 0.2, 1.0]
-    biome_colors = sns.color_palette("Blues_r", n_colors=len(bins)-1)
-    subbiome_colors = sns.color_palette("Greens_r", n_colors=len(bins)-1)
-    biome_cmap = LinearSegmentedColormap.from_list("BiomeCmap", biome_colors, N=len(bins)-1)
-    subbiome_cmap = LinearSegmentedColormap.from_list("SubBiomeCmap", subbiome_colors, N=len(bins)-1)
-    norm = BoundaryNorm(bins, ncolors=len(bins)-1, clip=True)
+    if biome_matrix.isna().all().all() and subbiome_matrix.isna().all().all():
+        raise ValueError(
+            "Both matrices are still all-NaN after filling. "
+            "Double-check Label1/Label2 pairs against the 'validation' column."
+        )
 
-    plt.figure(figsize=(5.5, 5.5))
-    # Use separate heatmaps with masks for biome and sub-biome data
+    # ---------- 4️⃣  Plot ---------------------------------------------------------
+    bins           = [0, 0.01, 0.05, 0.2, 1.0]
+    biome_cmap     = LinearSegmentedColormap.from_list(
+                        "BiomeCmap", sns.color_palette("Blues_r",  len(bins)-1))
+    subbiome_cmap  = LinearSegmentedColormap.from_list(
+                        "SubBiomeCmap", sns.color_palette("Greens_r", len(bins)-1))
+    norm           = BoundaryNorm(bins, ncolors=len(bins)-1, clip=True)
+
+    fig = plt.figure(figsize=(5.5, 5.5))
+    ax  = plt.gca()  # so we can refer after savefig if needed
+
     mask_upper = np.triu(np.ones_like(biome_matrix, dtype=bool), k=1)
     mask_lower = np.tril(np.ones_like(biome_matrix, dtype=bool), k=-1)
-    sns.heatmap(biome_matrix, mask=~mask_lower, cmap=biome_cmap, annot=biome_annot, fmt="s", cbar=False,
-                linewidths=.5, linecolor='grey', xticklabels=labels, yticklabels=labels, square=True,
-                annot_kws={"size": cell_font_size}, norm=norm)
-    sns.heatmap(subbiome_matrix, mask=~mask_upper, cmap=subbiome_cmap, annot=subbiome_annot, fmt="s", cbar=False,
-                linewidths=.5, linecolor='grey', xticklabels=labels, yticklabels=labels, square=True,
-                annot_kws={"size": cell_font_size}, norm=norm)
+
+    sns.heatmap(
+        biome_matrix,   mask=~mask_lower, cmap=biome_cmap,
+        annot=biome_annot, fmt="s", cbar=False,
+        linewidths=.5, linecolor='grey', xticklabels=labels, yticklabels=labels,
+        square=True, annot_kws={"size": cell_font_size}, norm=norm)
+
+    sns.heatmap(
+        subbiome_matrix, mask=~mask_upper, cmap=subbiome_cmap,
+        annot=subbiome_annot, fmt="s", cbar=False,
+        linewidths=.5, linecolor='grey', xticklabels=labels, yticklabels=labels,
+        square=True, annot_kws={"size": cell_font_size}, norm=norm)
+
     plt.title(my_title, fontsize=labels_font)
-    plt.subplots_adjust(top=0.95, right=0.98, bottom=0.25)
     plt.xticks(rotation=45, ha='right', fontsize=labels_font)
-    plt.yticks(rotation=0, fontsize=labels_font)
-    plt.show()
-    
-    # Save the figure to a PDF file
+    plt.yticks(rotation=0,  fontsize=labels_font)
+    plt.tight_layout()
+
+    # ---------- 5️⃣  Save BEFORE show() ------------------------------------------
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    pdf_filename = os.path.join(plots_dir, f"stats_plot_{current_time}.pdf")
-    plt.savefig(pdf_filename, bbox_inches='tight')
-    print(f"Plot saved as {pdf_filename}")
-    time.sleep(1)  
+    if not os.path.isdir(plots_dir):
+        os.makedirs(plots_dir, exist_ok=True)
 
+    pdf_name = os.path.join(plots_dir, f"stats_plot_{current_time}.pdf")
+    fig.savefig(pdf_name, bbox_inches="tight")
+    if debug:
+        print(f"[DEBUG] plot written to: {pdf_name}")
 
-
+    plt.show()
+    plt.close(fig)        # free memory for batch runs
+    time.sleep(1)
 
 
 

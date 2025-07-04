@@ -7,14 +7,31 @@ Created on Tue Jul 16 15:37:48 2024
 """
 
 
-import sys
-import os
-import pickle
+
+
+# run as
+# python overall_analysis.py \
+#       --work_dir ~/MicrobeAtlasProject \
+#       --metadata_dir sample_info_split_dirs \
+#       --joao_file joao_biomes_parsed.csv
+
+
+
+import os, sys, glob, pickle, re, requests
 import pandas as pd
+import numpy  as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-import glob
+from bs4 import BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor
+from collections import defaultdict
 from scipy.stats import chi2_contingency
+from sklearn.metrics import (
+    cohen_kappa_score, accuracy_score,
+    precision_score, recall_score, f1_score,
+)
+
+import argparse
 
 home_dir = os.getenv('HOME')
 mypath = os.path.join(home_dir, "github/metadata_mining/scripts")
@@ -22,62 +39,78 @@ sys.path.append(mypath)
 
 from plot_biome_agreement import lenient_match
 from features_process import extract_labels_from_filename, load_and_process_file, find_distinguishing_features 
-import numpy as np
 import scipy.stats as stats
-import re
-import requests
-from bs4 import BeautifulSoup
-from concurrent.futures import ThreadPoolExecutor
-from collections import defaultdict
-from sklearn.metrics import cohen_kappa_score
 import matplotlib.gridspec as gridspec
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
+# ─────────────────────────────────────────────────────────────
+# 1  Argument parsing (NEW) 
+# ─────────────────────────────────────────────────────────────
+parser = argparse.ArgumentParser(
+    description="High-level comparison of GPT biome runs."
+)
+parser.add_argument(
+    "--work_dir", default=".", help="Project root that contains embeddings/, gold_dict.pkl, etc."
+)
+parser.add_argument(
+    "--metadata_dir",
+    default="sample.info_split_dirs",
+    help="Relative path (inside work_dir) to the directory with per-sample metadata files.",
+)
+parser.add_argument(
+    "--joao_file",
+    default="joao_biomes_parsed.csv",
+    help="CSV (inside work_dir) with Joao’s biome assignments.",
+)
+args = parser.parse_args()
 
-# -----------------------------
-# Files and Paths
-# -----------------------------
+WORK_DIR       = os.path.abspath(args.work_dir)
+METADATA_DIR   = os.path.join(WORK_DIR, args.metadata_dir)
+JOAO_FILE_PATH = os.path.join(WORK_DIR, args.joao_file)
+GOLD_DICT_PATH = os.path.join(WORK_DIR, "gold_dict.pkl")
 
-work_dir = os.path.join(home_dir, "cloudstor/Gaio/MicrobeAtlasProject")  # UZH: MicrobeAtlasProject
-METADATA_DIRECTORY = os.path.join(work_dir, "sample.info_split_dirs") 
+# Add this script’s folder ( /app/scripts ) to PYTHONPATH so
+#   `from plot_biome_agreement import …` continues to work.
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(SCRIPT_DIR)
 
+# ─────────────────────────────────────────────────────────────
+# 2  Locate GPT output files
+# ─────────────────────────────────────────────────────────────
+file_patterns = ["gpt_clean_output*.csv", "gpt_clean_output*.txt"]
+gpt_files = []
+for pat in file_patterns:
+    gpt_files.extend(glob.glob(os.path.join(WORK_DIR, pat)))
 
-# Find all 'gpt_clean_output' files that end with .csv or .txt
-file_patterns = ['gpt_clean_output*.csv', 'gpt_clean_output*.txt']
-my_files = []
-for pattern in file_patterns:
-    my_files.extend(glob.glob(os.path.join(work_dir, pattern)))
+print(f"\nFound {len(gpt_files)} GPT output files.\n")
 
-print('\nNumber of files: ', len(my_files), '\n')
+# ─────────────────────────────────────────────────────────────
+# 3  Joao’s biome calls
+# ─────────────────────────────────────────────────────────────
+joao_biomes_df = pd.read_csv(
+    JOAO_FILE_PATH, usecols=["sample", "biome"]
+).replace({"aquatic": "water", "unknown": "other"})
+joao_biomes_df["biome"].fillna("other", inplace=True)
 
+# ─────────────────────────────────────────────────────────────
+# 4  Ground-truth gold_dict
+# ─────────────────────────────────────────────────────────────
+with open(GOLD_DICT_PATH, "rb") as handle:
+    gold_dict = pickle.load(handle)
 
-# Joao's file:
-file_path = os.path.join(home_dir, "cloudstor/Gaio/MicrobeAtlasProject/joao_biomes_parsed.csv")  
-joao_biomes_df = pd.read_csv(file_path, usecols=['sample', 'biome'])
-joao_biomes_df['biome'] = joao_biomes_df['biome'].replace({'aquatic': 'water', 'unknown': 'other'})
-joao_biomes_df['biome'].fillna('other', inplace=True)
+gold_dict_df = pd.DataFrame(
+    {"sample": list(gold_dict.keys()), "biome": [v[1] for v in gold_dict.values()]}
+)
 
-
-# -----------------------------
-# Ground truth loading & processing
-# -----------------------------
-
-input_gold_dict = os.path.join(home_dir, "github/metadata_mining/source_data/gold_dict.pkl")
-with open(input_gold_dict, 'rb') as file:
-    gold_dict = pickle.load(file)
-gold_dict_df = pd.DataFrame({
-    'sample': [k for k, v in gold_dict.items()],
-    'biome': [v[1] for k, v in gold_dict.items()]})
 
 
 # -----------------------------
 # Distinguishing Features
 # -----------------------------
 
-distinguishing_tokens = find_distinguishing_features(my_files)
+distinguishing_tokens = find_distinguishing_features(gpt_files)
 
 # Extract and potentially edit labels
-file_label_map = {file: extract_labels_from_filename(file, distinguishing_tokens) for file in my_files}
+file_label_map = {file: extract_labels_from_filename(file, distinguishing_tokens) for file in gpt_files}
 
 
 # -----------------------------
@@ -95,7 +128,7 @@ def user_select_file(files):
 label_df_map = defaultdict(list)
 
 # Process each file, calculate agreement, and map to labels
-for file_path in my_files:
+for file_path in gpt_files:
     label = file_label_map[file_path]
     print(file_path)
     df = load_and_process_file(file_path, gold_dict_df, label)
@@ -555,148 +588,152 @@ print(f"\n95th percentile threshold: {percentile_95}")
 print(f"Number of samples above 95th percentile: {len(top_5_percent)}")
 
 
-################## Misclassified samples in detail 
-
-
-# Display top misclassified samples 
-top_misclassified = summary.sort_values(by='misclass_count', ascending=False).head(50)
-print("\nTop 50 misclassified samples from the full dataset:")
-print(top_misclassified)
-
-
-def fetch_metadata_from_sample(sample):
-    """Fetch and return metadata from a sample file based on the sample ID."""
-    folder_name = f"dir_{sample[-3:]}"  # Derives folder name from the last three characters of the sample ID
-    folder_path = os.path.join(METADATA_DIRECTORY, folder_name)
-    metadata_file_path = os.path.join(folder_path, f"{sample}_clean.txt")
-    with open(metadata_file_path, 'r') as file:
-        return file.read()
-
-
-sample_key = input("Enter the sample key to fetch metadata and misclassification count: ")
-
-sample_data = lenient_agreement_df[lenient_agreement_df['sample'] == sample_key]
-misclassifications = (~sample_data['agreement']).sum() 
-print(f"Sample '{sample_key}' was misclassified {misclassifications} times out of {len(sample_data)}.")
-
-metadata = fetch_metadata_from_sample(sample_key)
-print(f"\nMetadata for '{sample_key}':\n{metadata}")
-
-
-
-
-# SRS994677              water # anaerobic sludge ; should have gone to other 105/113
-# SRS2217033             animal # mock community 105/108
-# SRS4776621             soil # rhizosphere 94/95
-# SRS942824              soil # rhizosphere 109/110
-
-
-
-
-
-# -----------------------------
-# Quick test: Is metadata getting better with time? Based on sample ID 
-# -----------------------------
-
-# Filter to include only samples starting with ...
-srs_df = lenient_agreement_df[lenient_agreement_df['sample'] .str.startswith('SRS')]
-
-# Step 1: Extract numeric part 
-srs_df['sample_id_numeric'] = srs_df['sample'].str.extract('(\d+)').astype(int)
-
-# Step 2: Calculate quartiles and filter for the bottom 25% and top 25%sorted_df = srs_df.sort_values(by='sample_id_numeric')
-first_quartile = sorted_df['sample_id_numeric'].quantile(0.25)
-third_quartile = sorted_df['sample_id_numeric'].quantile(0.75)
-filtered_df = sorted_df[(sorted_df['sample_id_numeric'] <= first_quartile) | (sorted_df['sample_id_numeric'] >= third_quartile)]
-
-# Assign bins based on quartiles
-filtered_df['bin'] = ['old' if x <= first_quartile else 'young' for x in filtered_df['sample_id_numeric']]
-
-# Count the number of samples in each bin and balance the bins
-bin_counts = filtered_df['bin'].value_counts()
-min_count = bin_counts.min()
-balanced_df = filtered_df.groupby('bin').sample(n=min_count, random_state=42)
-
-# Step 3: Analyze the agreement rates
-agreement_analysis = balanced_df.groupby('bin')['agreement'].value_counts(normalize=True).unstack().fillna(0)
-
-print("Number of samples in each bin:")
-print(balanced_df['bin'].value_counts())
-print("\nAgreement analysis:")
-print(agreement_analysis)
-
-
-# -------------------------------
-# Quick test: Is metadata getting better with time? Based on published date
-# -------------------------------
-
-def get_published_date(sample_id):
-    url = f"https://www.ncbi.nlm.nih.gov/sra/?term={sample_id}"
-    try:
-        response = requests.get(url, timeout=10)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        published_info = soup.find(text="Published")
-        if published_info:
-            print('looking for ', sample_id)
-            return published_info.find_next().text
-        return "Not found"
-    except requests.RequestException:
-        return "Error"
-
-def fetch_published_dates(sample_ids):
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        results = list(executor.map(get_published_date, sample_ids))
-    return dict(zip(sample_ids, results))
-
-def extract_dates(published_dates):
-    date_pattern = r'\d{4}-\d{2}-\d{2}'
-    dates = {}
-    for sample_id, value in published_dates.items():
-        match = re.search(date_pattern, value)
-        dates[sample_id] = match.group(0) if match else "Date not found"
-    return dates
+# =============================================================================
+# ################## Study misclassified samples in detail 
+# 
+# 
+# # Display top misclassified samples 
+# top_misclassified = summary.sort_values(by='misclass_count', ascending=False).head(50)
+# print("\nTop 50 misclassified samples from the full dataset:")
+# print(top_misclassified)
+# 
+# 
+# def fetch_metadata_from_sample(sample):
+#     """Fetch and return metadata from a sample file based on the sample ID."""
+#     folder_name = f"dir_{sample[-3:]}"  # Derives folder name from the last three characters of the sample ID
+#     folder_path = os.path.join(METADATA_DIRECTORY, folder_name)
+#     metadata_file_path = os.path.join(folder_path, f"{sample}_clean.txt")
+#     with open(metadata_file_path, 'r') as file:
+#         return file.read()
+# 
+# 
+# sample_key = input("Enter the sample key to fetch metadata and misclassification count: ")
+# 
+# sample_data = lenient_agreement_df[lenient_agreement_df['sample'] == sample_key]
+# misclassifications = (~sample_data['agreement']).sum() 
+# print(f"Sample '{sample_key}' was misclassified {misclassifications} times out of {len(sample_data)}.")
+# 
+# metadata = fetch_metadata_from_sample(sample_key)
+# print(f"\nMetadata for '{sample_key}':\n{metadata}")
+# 
+# 
+# 
+# 
+# # SRS994677              water # anaerobic sludge ; should have gone to other 105/113
+# # SRS2217033             animal # mock community 105/108
+# # SRS4776621             soil # rhizosphere 94/95
+# # SRS942824              soil # rhizosphere 109/110
+# 
+# =============================================================================
 
 
 
-def get_consensus(agreements):
-    true_count = sum(agreements)
-    false_count = len(agreements) - true_count
-    return True if true_count > false_count else False if false_count > true_count else None
 
-def process_data(srs_df, extracted_dates):
-    srs_df['published_date'] = srs_df['sample'].map(extracted_dates)
-    srs_df = srs_df[srs_df['published_date'] != 'Date not found']
-    srs_df['published_date'] = pd.to_datetime(srs_df['published_date'], errors='coerce')
-    srs_df.dropna(subset=['published_date'], inplace=True)
-    srs_df['bin'] = pd.qcut(srs_df['published_date'], 4, labels=['youngest', 'young', 'old', 'oldest'])
-    bin_counts = srs_df['bin'].value_counts()
-    balanced_df = pd.concat([srs_df[srs_df['bin'] == label].sample(n=bin_counts.min(), random_state=42) for label in bin_counts.index])
-    agreement_analysis = balanced_df.pivot_table(index='bin', columns='agreement', aggfunc='size', fill_value=0)
-    return balanced_df, agreement_analysis
-
-
-def plot_agreement(yearly_data):
-    yearly_data['Proportion True'] = yearly_data[True] / yearly_data['total']
-    yearly_data['Proportion False'] = yearly_data[False] / yearly_data['total']
-    fig, ax = plt.subplots(figsize=(10, 6))
-    yearly_data[['Proportion False', 'Proportion True']].plot(kind='bar', stacked=True, color=['red', 'green'], ax=ax)
-    ax.set_title('Yearly Proportion of Agreement (True/False)')
-    ax.set_xlabel('Year')
-    ax.set_ylabel('Proportion')
-    plt.xticks(rotation=45)
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    for i, total in enumerate(yearly_data['total']):
-        ax.text(i, 1.05, f'Total: {int(total)}', ha='center', va='bottom', fontsize=9, color='black')
-    plt.show()
-
-
-unique_sample_ids = srs_df['sample'].unique().tolist()
-published_dates = fetch_published_dates(unique_sample_ids)
-extracted_dates = extract_dates(published_dates)
-balanced_df, agreement_analysis = process_data(srs_df, extracted_dates)
-print("Number of samples in each bin:")
-print(balanced_df['bin'].value_counts())
-print("\nAgreement analysis:")
-print(agreement_analysis)
-plot_agreement(balanced_df)
+# =============================================================================
+# # -----------------------------
+# # Quick test: Is metadata getting better with time? Based on sample ID 
+# # -----------------------------
+# 
+# # Filter to include only samples starting with ...
+# srs_df = lenient_agreement_df[lenient_agreement_df['sample'] .str.startswith('SRS')]
+# 
+# # Step 1: Extract numeric part 
+# srs_df['sample_id_numeric'] = srs_df['sample'].str.extract('(\d+)').astype(int)
+# 
+# # Step 2: Calculate quartiles and filter for the bottom 25% and top 25%sorted_df = srs_df.sort_values(by='sample_id_numeric')
+# first_quartile = sorted_df['sample_id_numeric'].quantile(0.25)
+# third_quartile = sorted_df['sample_id_numeric'].quantile(0.75)
+# filtered_df = sorted_df[(sorted_df['sample_id_numeric'] <= first_quartile) | (sorted_df['sample_id_numeric'] >= third_quartile)]
+# 
+# # Assign bins based on quartiles
+# filtered_df['bin'] = ['old' if x <= first_quartile else 'young' for x in filtered_df['sample_id_numeric']]
+# 
+# # Count the number of samples in each bin and balance the bins
+# bin_counts = filtered_df['bin'].value_counts()
+# min_count = bin_counts.min()
+# balanced_df = filtered_df.groupby('bin').sample(n=min_count, random_state=42)
+# 
+# # Step 3: Analyze the agreement rates
+# agreement_analysis = balanced_df.groupby('bin')['agreement'].value_counts(normalize=True).unstack().fillna(0)
+# 
+# print("Number of samples in each bin:")
+# print(balanced_df['bin'].value_counts())
+# print("\nAgreement analysis:")
+# print(agreement_analysis)
+# 
+# 
+# # -------------------------------
+# # Quick test: Is metadata getting better with time? Based on published date
+# # -------------------------------
+# 
+# def get_published_date(sample_id):
+#     url = f"https://www.ncbi.nlm.nih.gov/sra/?term={sample_id}"
+#     try:
+#         response = requests.get(url, timeout=10)
+#         soup = BeautifulSoup(response.text, 'html.parser')
+#         published_info = soup.find(text="Published")
+#         if published_info:
+#             print('looking for ', sample_id)
+#             return published_info.find_next().text
+#         return "Not found"
+#     except requests.RequestException:
+#         return "Error"
+# 
+# def fetch_published_dates(sample_ids):
+#     with ThreadPoolExecutor(max_workers=10) as executor:
+#         results = list(executor.map(get_published_date, sample_ids))
+#     return dict(zip(sample_ids, results))
+# 
+# def extract_dates(published_dates):
+#     date_pattern = r'\d{4}-\d{2}-\d{2}'
+#     dates = {}
+#     for sample_id, value in published_dates.items():
+#         match = re.search(date_pattern, value)
+#         dates[sample_id] = match.group(0) if match else "Date not found"
+#     return dates
+# 
+# 
+# 
+# def get_consensus(agreements):
+#     true_count = sum(agreements)
+#     false_count = len(agreements) - true_count
+#     return True if true_count > false_count else False if false_count > true_count else None
+# 
+# def process_data(srs_df, extracted_dates):
+#     srs_df['published_date'] = srs_df['sample'].map(extracted_dates)
+#     srs_df = srs_df[srs_df['published_date'] != 'Date not found']
+#     srs_df['published_date'] = pd.to_datetime(srs_df['published_date'], errors='coerce')
+#     srs_df.dropna(subset=['published_date'], inplace=True)
+#     srs_df['bin'] = pd.qcut(srs_df['published_date'], 4, labels=['youngest', 'young', 'old', 'oldest'])
+#     bin_counts = srs_df['bin'].value_counts()
+#     balanced_df = pd.concat([srs_df[srs_df['bin'] == label].sample(n=bin_counts.min(), random_state=42) for label in bin_counts.index])
+#     agreement_analysis = balanced_df.pivot_table(index='bin', columns='agreement', aggfunc='size', fill_value=0)
+#     return balanced_df, agreement_analysis
+# 
+# 
+# def plot_agreement(yearly_data):
+#     yearly_data['Proportion True'] = yearly_data[True] / yearly_data['total']
+#     yearly_data['Proportion False'] = yearly_data[False] / yearly_data['total']
+#     fig, ax = plt.subplots(figsize=(10, 6))
+#     yearly_data[['Proportion False', 'Proportion True']].plot(kind='bar', stacked=True, color=['red', 'green'], ax=ax)
+#     ax.set_title('Yearly Proportion of Agreement (True/False)')
+#     ax.set_xlabel('Year')
+#     ax.set_ylabel('Proportion')
+#     plt.xticks(rotation=45)
+#     plt.grid(axis='y', linestyle='--', alpha=0.7)
+#     for i, total in enumerate(yearly_data['total']):
+#         ax.text(i, 1.05, f'Total: {int(total)}', ha='center', va='bottom', fontsize=9, color='black')
+#     plt.show()
+# 
+# 
+# unique_sample_ids = srs_df['sample'].unique().tolist()
+# published_dates = fetch_published_dates(unique_sample_ids)
+# extracted_dates = extract_dates(published_dates)
+# balanced_df, agreement_analysis = process_data(srs_df, extracted_dates)
+# print("Number of samples in each bin:")
+# print(balanced_df['bin'].value_counts())
+# print("\nAgreement analysis:")
+# print(agreement_analysis)
+# plot_agreement(balanced_df)
+# =============================================================================
 
