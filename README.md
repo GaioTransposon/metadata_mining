@@ -30,12 +30,13 @@
 <a name="introduction"></a>
 # Introduction: 
 
-This repository contains a modular, containerized pipeline for processing and annotating environmental sample metadata as part of the **MicrobeAtlasProject**. Each container encapsulates a specific set of tasks — as you see depicted below - from preprocessing metadata (C1 - 🔴 red), creating a benchmark dataset (C2 - 🟠 orange), interacting with GPT models and generating embeddings (C3 - 🟣 purple), to GPT output evaluation (C3 - 🟢 green). 
+This repository contains a modular, containerized pipeline for processing and annotating environmental sample metadata. Each container encapsulates a specific set of tasks — as you see depicted below - from preprocessing metadata (C1 - 🔴 red), creating a benchmark dataset (C2 - 🟠 orange), interacting with GPT models (C3 - 🟣 purple), to GPT output evaluation (C3 - 🟢 green). 
 
 
 ![Pipeline overview](pipeline.png)
 
-Let's start with the requirements!
+
+Let's start getting what we need to start! 
 
 ---
 <a name="requirements"></a>
@@ -46,17 +47,17 @@ Let's start with the requirements!
 
 ```
 cd ~
-git clone link_to_clone_repo
+git clone https://github.com/GaioTransposon/metadata_mining.git
 ```
-
 
 ### 2) Download large files and move to folder: 
 
 - Make a directory: 
+
 ```
-cd ~
-mkdir MicrobeAtlasProject
+mkdir ~/MicrobeAtlasProject
 ```
+
 - Download these large files: `sample.info.gz`, `metadata.out`, `...`
 - Place them into ~/MicrobeAtlasProject/.
 
@@ -87,12 +88,27 @@ open -a Docker
 ```
 docker build -t metadmin .
 ```
+
+### 7) Get your own API keys: 
+
+In order to run container 3, you will need to acquire your own OpenAI API key. Here a link explaining where you will find or make one: 
+https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key 
+Once you have your API key, place it in `~/MicrobeAtlasProject`. 
+
+Ideally, you generate two separate keys: one for the chat completion (annotation of metadata), and one for creating embeddings. In this pipeline the two are named: `my_api_key` and `my_api_key_embeddings`. The reason for using two separate keys is keeping track of usage quotas for each task. 
+
+
+
 <a name="container-1"></a>
 ## Container 1: Metadata Splitting and Cleaning
 
-This Docker container is part of the **MicrobeAtlasProject** pipeline. It provides a consistent environment to run all scripts related to processing and cleaning environmental metadata, including coordinate parsing, ontology translation, and exploratory analysis.
+The first container provides an environment to run all scripts related to processing and cleaning metagenomic environmental metadata, including coordinates parsing, ontology code translation, and perform some exploratory analysis of the metadata.
 
 
+<a name="container-1"></a>
+## Container 1: Metadata Splitting and Cleaning
+
+The first container provides an environment to run all scripts related to processing and cleaning metagenomic environmental metadata, including coordinates parsing, ontology code translation, and perform some exploratory analysis of the metadata.
 
 ---
 
@@ -192,15 +208,15 @@ docker run --rm \
 <a name="container-2"></a>
 ## Container 2: Benchmark Annotation via Interactive Interface
 
-This container supports the creation and manual curation of a benchmark (also referred to as gold standard dictionary - gold_dict.pkl), which maps selected sample IDs to: 
+This container supports the creation and manual curation of a benchmark (also referred to as gold standard dictionary - file: gold_dict.pkl), which maps selected sample IDs to: 
 - a biome (animal, plant, soil, water, other)
 - a specific sample origin (sub-biome)
 - geographic coordinates (latitude/longitude)
 - a short geographic location description
 
 This container includes two interactive scripts: 
-- make_gold_dict.py: read the metadata from each sample and annotate samples yourself.
-- edit_gold_dict.py: modify or correct existing entries (when you realise you made a mistake).
+- make_gold_dict.py: you are shown metadata from each sample and you can annotate samples yourself.
+- edit_gold_dict.py: you can modify or correct existing entries (when you realise you made a mistake).
 
 ⚠️ These scripts use input() prompts, so they must be run inside an interactive Docker session as running them directly with conda run or piping won't work properly.
 
@@ -226,7 +242,7 @@ Activate the environment inside the container:
 conda activate metadmin_env
 ```
 
-To create the benchmark from scratch or to continue making it, run: 
+To create the benchmark from scratch or to continue building on it, run: 
 
 ```
 python /app/scripts/make_gold_dict.py
@@ -234,16 +250,16 @@ python /app/scripts/make_gold_dict.py
 
 This starts a session where you can annotate samples one by one. Your progress is automatically saved to gold_dict.pkl.
 
-To edit entries in the existing dictionary:
+To edit entries in the existing dictionary, run:
 
 ```
 python /app/scripts/edit_gold_dict.py
 ```
 
 To exit either session just type:
-```exit```
+`exit`
 
-💾 In both cases your changes are automatically saved to /MicrobeAtlasProject/gold_dict.pkl, which is mounted from your local system.
+💾 In both cases your changes are automatically saved to `~/MicrobeAtlasProject/gold_dict.pkl`. 
 
 
 
@@ -254,18 +270,21 @@ To exit either session just type:
 
 This container handles all steps related to GPT-based annotation of metadata, including: synchronous or asynchronous interactions with the OpenAI API, preparing and submitting batch jobs (asynchronous runs), fetching responses (asynchronous runs), generating sub-biome embeddings from GPT outputs and from benchmark data. 
 
-⚠️ Before running this container, you will need to acquire your API key and place it in ~/MicrobeAtlasProject. You could generate two separate keys: one for the chat completion (annotation of metadata), one for creating embeddings. In this pipeline the two are named: my_api_key and my_api_key_embeddings. The reason for this is keeping track of usage quotas for each task. 
+⚠️ Before running this container, you will need to acquire your API key and place it in `~/MicrobeAtlasProject`. You could generate two separate keys: one for the chat completion (annotation of metadata), one for creating embeddings. In this pipeline the two are named: `my_api_key` and `my_api_key_embeddings`. The reason for using two separate keys is keeping track of usage quotas for each task. 
 
 
 <a name="run-container-3"></a>
 ### 🚀 Run Container 3: 
 
-You can run either:
+You can:
 
-- Synchronous interaction with OpenAI
-- Asynchronous interaction via the batch API (two steps)
+- run synchronous interaction with OpenAI (single step)
 
-Then, generate embeddings from GPT results and from benchmark data.
+AND/OR
+
+- run asynchronous an interaction via the batch API (two steps)
+
+Then, you can generate embeddings from GPT results and from benchmark data.
 
 <a name="synchronous-gpt-interaction"></a>
 #### Synchronous GPT interaction: 
@@ -382,7 +401,7 @@ docker run -it --rm \
 <a name="container-4"></a>
 ## Container 4: GPT performance evaluation
 
-This container evaluates GPT performance by comparing biomes and sub-biomes annotations by GPT (.tsv files for biomes and .json files for sub-biomes) against those of the benchmark (gold_dict.pkl). It does so for each GPT run. For biomes annotation evaluation, it compares strings for either a lenient or an exact match. It produces a summary CSV with per-run biome agreement metrics. For sub-biomes annotation evaluation, it uses embeddings of GPT runs versus embeddings of the benchmark. It computes cosine similarity between matched embeddings, it calculates the distribution of similarities versus the background, and it produces a summary CSV with per-run sub-biome similarity metrics. Pairwise statistical comparisons are performed. Additionally, it evaluates geographic annotations by GPT by comparing them to the metadata-extracted coordinates. 
+This container evaluates GPT performance by comparing biomes and sub-biomes annotations by GPT (.tsv files for biomes and .json files for sub-biomes) against those of the benchmark (gold_dict.pkl). It does so for each GPT run. For biomes annotation evaluation, it compares strings for either a lenient or an exact match. It produces a summary CSV with per-run biome agreement metrics. For sub-biomes annotation evaluation, it uses embeddings of GPT runs versus embeddings of the benchmark. Then, it computes cosine similarity between sample-ID-matched embeddings, it calculates the distribution of similarities versus the background, and it produces a summary CSV with per-run sub-biome similarity metrics. Pairwise statistical comparisons are performed. Additionally, in this container, we evaluate geographic annotations by GPT by comparing them to the metadata-extracted coordinates. 
 
 
 <a name="run-container-4"></a>
@@ -390,17 +409,17 @@ This container evaluates GPT performance by comparing biomes and sub-biomes anno
 
 Four scripts to run:
 
-- One to obtain the metrics .... validate_biomes_subbiomes.py
-- overall_analysis.py
-- coord_to_text.py
-- geo_check.py
+- GPT runs evaluation: validate_biomes_subbiomes.py
+- Overall GPT performance: overall_analysis.py
+- Convert coordinates to places: coord_to_text.py
+- Geographic location: GPT versus metadata: geo_check.py
 
-.....
 
-<a name="compare-gpt-runs"></a>
-#### Compare GPT runs: 
 
-This script ......
+<a name="gpt-runs-evaluation"></a>
+#### GPT runs evaluation: 
+
+This script compares biome and sub-biome annotations per GPT run against the benchmark's. In this manner GPT runs in which different seetings were used (creativity or other paramters), can be compared for performance. 
 
 
 ```
@@ -412,10 +431,11 @@ docker run -it --rm \
     --work_dir . \
     --map_file gpt_file_label_map.tsv
 ```
-<a name="overall-analysis"></a>
-#### Overall analysis: 
 
-This script ...... needs to run interatcively because you may need to choose files in case few files have the same label. Launch Docker container interactively:
+<a name="overall-gpt-performance"></a>
+#### Overall GPT performance: 
+
+This script assesses the overall GPT performance (all runs) against the benchmark. It needs to run interactively because you may need to choose amomngst files, in the case in which files end up with the same label. First, launch the Docker container interactively:
 
 ```
 docker run -it --rm \
@@ -425,28 +445,24 @@ docker run -it --rm \
   metadmin
 ```
 
-Activate the environment inside the container:
-
-`conda activate metadmin_env`
-
-
-To select files... run:
+Activate the environment inside the container, then run the script:
 
 ```
+conda activate metadmin_env
 python /app/scripts/overall_analysis.py \
        --work_dir . \
        --metadata_dir sample_info_split_dirs \
        --keyword_based_annot_file joao_biomes_parsed.csv
 ```
 
-This starts a session where you can achoose files when they have same label. 
+This starts a session where you can choose amongst files. No choice will be given if no files labels match. In which case, the analysis will be done directly.  
 
 To exit the session just type: `exit`
 
 <a name="convert-coordinates-to-places"></a>
 #### Convert coordinates to places: 
 
-This script performs reverse geocoding on a set of unique latitude/longitude coordinates. This means it convertseach coordinate pair into a humna-readable place name (like a city, region, or country). It uses the Nomatin geocoding service OpensStreetMap. It may take long to run as we are using the free version (no API). Approximately you can expect it to take 1.3 seconds per coordinates pair. 
+This script performs reverse geocoding on a set of unique latitude/longitude coordinates. This means it converts each coordinate pair into a human-readable place name (e.g.: a city, region, or country). It uses the Nomatin geocoding service OpensStreetMap. It may take long to run as we are using the free version (no API). Approximately you can expect it to take 1.3 seconds per coordinates pair. 
 
 
 ```
@@ -464,7 +480,9 @@ docker run -it --rm \
 
 You can check the progress by running from another terminal: 
 
-`tail -f ~/MicrobeAtlasProject/geocoding_progress.log`
+```
+tail -f ~/MicrobeAtlasProject/geocoding_progress.log
+```
 
 
 <a name="geographic-location-gpt-versus-metadata"></a>
@@ -480,13 +498,10 @@ docker run -it --rm \
   metadmin
 ```
 
-Activate the environment inside the container:
-
-`conda activate metadmin_env`
-
-Then run:
+Activate the environment inside the container, then run the script:
 
 ```
+conda activate metadmin_env`
 python /app/scripts/geo_check.py \
     --work_dir . \
     --metadata_dir sample_info_split_dirs \
@@ -498,8 +513,6 @@ python /app/scripts/geo_check.py \
     --output_map_all_mismatches map_with_color_coded_points_mismatches.html
 ```
 
-You can quit at any time 'QUIT'. 
-
-To exit the session just type: `exit`
+To exit the session just type `exit`
 
 
