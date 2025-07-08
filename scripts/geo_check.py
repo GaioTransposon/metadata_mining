@@ -6,6 +6,18 @@ Created on Wed Aug  7 17:17:28 2024
 @author: dgaio
 """
 
+# run as: 
+    
+# python ~/github/metadata_mining/scripts/geo_check.py \
+#     --work_dir ~/MicrobeAtlasProject \
+#     --metadata_dir sample_info_split_dirs \
+#     --api_key_file google_maps_api_key \
+#     --coordinates_file sample.coordinates.reparsed.filtered \
+#     --translated_coordinates geocoded_coordinates.csv \
+#     --random_misclassified_samples_dict random_misclassified_samples_dict.pkl \
+#     --output_map_all_matches map_with_color_coded_points_all.html \
+#     --output_map_all_mismatches map_with_color_coded_points_mismatches.html
+
 
 import pandas as pd
 import glob
@@ -14,50 +26,98 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
-scripts = os.path.join(os.path.expanduser('~'), 'github/metadata_mining/scripts')
-sys.path.append(scripts)
-from call_googlemaps_get_coordinates import GoogleMapsLocationCache
-from location_validation import LocationValidationGame
-from math import radians, cos, sin, sqrt, atan2
+import argparse
 import folium
 import random
 from collections import defaultdict, Counter
 import json
-
-# paths:
-middle_dir = os.path.join(os.path.expanduser('~'), 'github/metadata_mining/middle_dir')
-directory_with_split_metadata = 'sample.info_split_dirs'
+# Optionally add scripts dir to path if needed
 home_path = os.path.expanduser('~')
+scripts = os.path.join(home_path, 'github/metadata_mining/scripts')
+sys.path.append(scripts)
+from call_googlemaps_get_coordinates import GoogleMapsLocationCache
+from location_validation import LocationValidationGame
 
-if home_path == '/Users/danielagaio':
-    work_dir = os.path.join(os.path.expanduser('~'), 'cloudstor/Gaio/MicrobeAtlasProject') 
-    api_key_file = os.path.join(home_path, 'Desktop', 'keys', 'google_maps_api_key')
-    
-elif home_path == '/Users/dgaio':
-    work_dir = os.path.join(os.path.expanduser('~'), 'MicrobeAtlasProject') 
-    api_key_file = os.path.join(home_path, 'google_maps_api_key')
-    
-else:
-    raise ValueError(f"Unrecognized home path: {home_path}")
-    
-    
-# files
-file_pattern = os.path.join(work_dir, 'production/gpt_clean_output*.csv')
-coordinates_file = 'sample.coordinates.reparsed.filtered'
-translated_coordinates = 'geocoded_coordinates.csv'
 
-random_misclassified_samples_dict = 'random_misclassified_samples_dict.pkl'
 
-# output files: 
-map_all_matches = os.path.join(work_dir, 'map_with_color_coded_points_all.html')
-map_all_mismatches = os.path.join(work_dir, 'map_with_color_coded_points_mismatches.html')
 
+# Argument parsing
+parser = argparse.ArgumentParser(description="Script to process sample coordinates and GPT output files for mapping and analysis.")
+
+parser.add_argument("--work_dir", default=None,
+                    help="Project working directory")
+parser.add_argument("--metadata_dir", default=None,
+                    help="Directory where metadata directories are located")
+parser.add_argument("--api_key_file", default=None,
+                    help="File containing the Google Maps API key.")
+parser.add_argument("--coordinates_file", default='sample.coordinates.reparsed.filtered',
+                    help="Filename for the original coordinates file.")
+parser.add_argument("--translated_coordinates", default='geocoded_coordinates.csv',
+                    help="Filename for the translated/geocoded coordinates CSV.")
+parser.add_argument("--random_misclassified_samples_dict", default='random_misclassified_samples_dict.pkl',
+                    help="File containing random misclassified samples dictionary (if needed).")
+parser.add_argument("--output_map_all_matches", default='map_with_color_coded_points_all.html',
+                    help="Output filename for HTML map with all matches.")
+parser.add_argument("--output_map_all_mismatches", default='map_with_color_coded_points_mismatches.html',
+                    help="Output filename for HTML map with all mismatches.")
+
+args = parser.parse_args()
+
+
+def abspath_from_arg(path_arg, default_base='.'):
+    if path_arg is None:
+        return None
+    if os.path.isabs(path_arg):
+        return path_arg
+    return os.path.abspath(os.path.join(default_base, path_arg))
+
+
+
+# File patterns and paths
+
+work_dir = abspath_from_arg(args.work_dir, os.getcwd())
+metadata_dir = abspath_from_arg(args.metadata_dir, os.getcwd())
+api_key_file = abspath_from_arg(args.api_key_file, work_dir)
+
+coordinates_file = abspath_from_arg(args.coordinates_file, work_dir)
+translated_coordinates = abspath_from_arg(args.translated_coordinates, work_dir)
+random_misclassified_samples_dict = abspath_from_arg(args.random_misclassified_samples_dict, work_dir)
+
+map_all_matches = abspath_from_arg(args.output_map_all_matches, work_dir)
+map_all_mismatches = abspath_from_arg(args.output_map_all_mismatches, work_dir)
+
+
+
+# work_dir = os.path.join(home_path, args.work_dir)
+
+# metadata_dir = os.path.join(home_path, args.metadata_dir)
+
+# api_key_file = os.path.join(work_dir, args.api_key_file)
+
+# coordinates_file = os.path.join(args.work_dir, args.coordinates_file)
+
+# translated_coordinates = os.path.join(args.work_dir, args.translated_coordinates)
+
+# random_misclassified_samples_dict = os.path.join(args.work_dir, args.random_misclassified_samples_dict)
+
+# map_all_matches = os.path.join(args.work_dir, args.output_map_all_matches)
+# map_all_mismatches = os.path.join(args.work_dir, args.output_map_all_mismatches)
+
+
+
+#######################################################
 
 
 # 1. open gpt files and concatenate them: 
-files = glob.glob(file_pattern)
+file_patterns = ["gpt_clean_output*.csv"]
+gpt_files = []
+for pat in file_patterns:
+    gpt_files.extend(glob.glob(os.path.join(work_dir, pat)))
+
+print(f"\nFound {len(gpt_files)} GPT output files.\n")
+
 gpt_geo_text = pd.concat(
-    (pd.read_csv(f, usecols=['sample_id', 'geo_location']) for f in files),
+    (pd.read_csv(f, usecols=['sample_id', 'geo_location']) for f in gpt_files),
     ignore_index=True
 ).dropna(subset=['geo_location'])
 
@@ -68,18 +128,13 @@ gpt_geo_text['geo_location'] = gpt_geo_text['geo_location'].str.replace('Viet Na
 gpt_geo_text['geo_location'] = gpt_geo_text['geo_location'].str.replace('Czech Republic', 'Czechia', regex=False)
 gpt_geo_text.rename(columns={'geo_location':'gpt_name'}, inplace=True)
 
-
 # 2. open coordinates file
-coordinates_file = os.path.join(middle_dir, coordinates_file)
 df_coordinates_ori = pd.read_csv(coordinates_file, delimiter=' ', header=None, names=['label', 'sample_id', 'latitude', 'longitude'], na_values='None')
-df_coordinates_ori.drop(columns=['label'], inplace=True)  # Drop the label column as it's not needed
-
+df_coordinates_ori.drop(columns=['label'], inplace=True)
 
 # 3. open translated coordinates file: 
-translated_coordinates = os.path.join(middle_dir, translated_coordinates)
 df_translated_coordinates = pd.read_csv(translated_coordinates)
 df_translated_coordinates.rename(columns={'place_name':'latlon_name'}, inplace=True)
-
 
 # merge 1.2.3.
 merged_coordinates = pd.merge(df_coordinates_ori, df_translated_coordinates, on=['latitude', 'longitude'], how='left')
@@ -306,7 +361,7 @@ def load_samples_dict(filepath):
     return pd.read_pickle(filepath)
 
 # Check if the dictionary file exists
-random_misclassified_samples_dict = os.path.join(middle_dir, random_misclassified_samples_dict)
+random_misclassified_samples_dict = os.path.join(work_dir, random_misclassified_samples_dict)
 if os.path.exists(random_misclassified_samples_dict):
     # Load the dictionary from the file
     random_samples_dict = load_samples_dict(random_misclassified_samples_dict)
@@ -372,8 +427,8 @@ print(f"Number of samples in dictionary: {len(random_samples_dict)}")
 #     Comment: 
 #     {fill out expalaining why mistake happened} 
 
-directory_with_split_metadata = os.path.join(work_dir, directory_with_split_metadata)
-game = LocationValidationGame(random_samples_dict, directory_with_split_metadata, work_dir)
+
+game = LocationValidationGame(random_samples_dict, metadata_dir, work_dir)
 game.play()
 
 # Get the updated data with user responses
@@ -465,3 +520,6 @@ for answer, comments in comments_by_answer.items():
     for comment, count in comments.items():
         percentage = (count / total_comments * 100)
         print(f"{comment}: {count} ({percentage:.2f}%)")
+        
+        
+        

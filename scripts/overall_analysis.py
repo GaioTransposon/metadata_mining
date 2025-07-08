@@ -10,7 +10,7 @@ Created on Tue Jul 16 15:37:48 2024
 
 
 # run as
-# python overall_analysis.py \
+# python ~/github/metadata_mining/scripts/overall_analysis.py \
 #        --work_dir ~/MicrobeAtlasProject \
 #        --metadata_dir sample_info_split_dirs \
 #        --keyword_based_annot_file joao_biomes_parsed.csv
