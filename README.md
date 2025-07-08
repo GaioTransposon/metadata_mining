@@ -18,8 +18,12 @@
     - [1. Synchronous GPT Interaction](#synchronous-gpt-interaction)
     - [2. Asynchronous GPT Interaction](#asynchronous-gpt-interaction)
     - [3. Create Embeddings](#create-embeddings)
-
-
+- [Container 4: GPT performance evaluation](#container-4)
+  - [🚀 Run Container 4](#run-container-4)
+    - [1. Compare GPT runs](#compare-gpt-runs)
+    - [2. Overall analysis](#overall-analysis)
+    - [3. Convert coordinates to places](#convert-coordinates-to-places)
+    - [4. Geographic location: GPT versus metadata](#geographic-location-gpt-versus-metadata)
 
 
 ---
@@ -371,4 +375,131 @@ docker run -it --rm \
     --api_key_path my_api_key_embeddings \
     --gold_dict_path gold_dict.pkl
 ```
+
+
+---
+
+<a name="container-4"></a>
+## Container 4: GPT performance evaluation
+
+This container evaluates GPT performance by comparing biomes and sub-biomes annotations by GPT (.tsv files for biomes and .json files for sub-biomes) against those of the benchmark (gold_dict.pkl). It does so for each GPT run. For biomes annotation evaluation, it compares strings for either a lenient or an exact match. It produces a summary CSV with per-run biome agreement metrics. For sub-biomes annotation evaluation, it uses embeddings of GPT runs versus embeddings of the benchmark. It computes cosine similarity between matched embeddings, it calculates the distribution of similarities versus the background, and it produces a summary CSV with per-run sub-biome similarity metrics. Pairwise statistical comparisons are performed. Additionally, it evaluates geographic annotations by GPT by comparing them to the metadata-extracted coordinates. 
+
+
+<a name="run-container-4"></a>
+### 🚀 Run Container 4: 
+
+Four scripts to run:
+
+- One to obtain the metrics .... validate_biomes_subbiomes.py
+- overall_analysis.py
+- coord_to_text.py
+- geo_check.py
+
+.....
+
+<a name="compare-gpt-runs"></a>
+#### Compare GPT runs: 
+
+This script ......
+
+
+```
+docker run -it --rm \
+  -v ~/MicrobeAtlasProject:/MicrobeAtlasProject \
+  -v ~/github/metadata_mining/scripts:/app/scripts \
+  metadmin \
+  python /app/scripts/validate_biomes_subbiomes.py \
+    --work_dir . \
+    --map_file gpt_file_label_map.tsv
+```
+<a name="overall-analysis"></a>
+#### Overall analysis: 
+
+This script ...... needs to run interatcively because you may need to choose files in case few files have the same label. Launch Docker container interactively:
+
+```
+docker run -it --rm \
+  --entrypoint bash \
+  -v ~/MicrobeAtlasProject:/MicrobeAtlasProject \
+  -v ~/github/metadata_mining/scripts:/app/scripts \
+  metadmin
+```
+
+Activate the environment inside the container:
+
+`conda activate metadmin_env`
+
+
+To select files... run:
+
+```
+python /app/scripts/overall_analysis.py \
+       --work_dir . \
+       --metadata_dir sample_info_split_dirs \
+       --keyword_based_annot_file joao_biomes_parsed.csv
+```
+
+This starts a session where you can achoose files when they have same label. 
+
+To exit the session just type: `exit`
+
+<a name="convert-coordinates-to-places"></a>
+#### Convert coordinates to places: 
+
+This script performs reverse geocoding on a set of unique latitude/longitude coordinates. This means it convertseach coordinate pair into a humna-readable place name (like a city, region, or country). It uses the Nomatin geocoding service OpensStreetMap. It may take long to run as we are using the free version (no API). Approximately you can expect it to take 1.3 seconds per coordinates pair. 
+
+
+```
+docker run -it --rm \
+  -e PYTHONUNBUFFERED=1 \
+  -v ~/MicrobeAtlasProject:/MicrobeAtlasProject \
+  -v ~/github/metadata_mining/scripts:/app/scripts \
+  metadmin \
+  python -u /app/scripts/coord_to_text.py \
+    --work_dir . \
+    --coordinates_file sample.coordinates.reparsed.filtered \
+    --output_file geocoded_coordinates.csv \
+    --min_delay_seconds 1.3
+```
+
+You can check the progress by running from another terminal: 
+
+`tail -f ~/MicrobeAtlasProject/geocoding_progress.log`
+
+
+<a name="geographic-location-gpt-versus-metadata"></a>
+#### Geographic location: GPT versus metadata: 
+
+This script needs to run interactively because it gives you the possibility to evaluate a set of GPT geographic locations versus the extracted coordinates. You will pick "who" was correct: coordinates-derived geographic location (from metadata) or GPT-derived geographic location. This will help you qualify the mismatches between the two. Start by launching the Docker container interactively:
+
+```
+docker run -it --rm \
+  --entrypoint bash \
+  -v ~/MicrobeAtlasProject:/MicrobeAtlasProject \
+  -v ~/github/metadata_mining/scripts:/app/scripts \
+  metadmin
+```
+
+Activate the environment inside the container:
+
+`conda activate metadmin_env`
+
+Then run:
+
+```
+python /app/scripts/geo_check.py \
+    --work_dir . \
+    --metadata_dir sample_info_split_dirs \
+    --api_key_file /MicrobeAtlasProject/google_maps_api_key \
+    --coordinates_file sample.coordinates.reparsed.filtered \
+    --translated_coordinates geocoded_coordinates.csv \
+    --random_misclassified_samples_dict random_misclassified_samples_dict.pkl \
+    --output_map_all_matches map_with_color_coded_points_all.html \
+    --output_map_all_mismatches map_with_color_coded_points_mismatches.html
+```
+
+You can quit at any time 'QUIT'. 
+
+To exit the session just type: `exit`
+
 

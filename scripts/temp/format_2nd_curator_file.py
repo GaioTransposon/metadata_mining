@@ -10,7 +10,7 @@ Created on Tue Feb 11 10:48:46 2025
 import pandas as pd
 
 # Load the Excel file
-df = pd.read_excel('/Users/danielagaio/github/metadata_mining/middle_dir/GH_collect_output_here.xlsx')
+df = pd.read_excel('~/MicrobeAtlasProject/GH_collect_output_here.xlsx')
 
 # Format the 'location' column by enclosing in quotes
 df['location'] = '"' + df['location'].astype(str) + '"'
@@ -23,4 +23,4 @@ df = df[['sample ID', 'biome', 'location', 'keywords (comma-separated)', 'descri
 df.columns = ['col_0', 'col_1', 'col_2', 'col_3', 'col_4']
 
 # Save to txt file
-df.to_csv('/Users/danielagaio/github/metadata_mining/middle_dir/GH_collect_output_here.txt', index=False, header=True, sep=',', quoting=2)
+df.to_csv('~/MicrobeAtlasProject/GH_collect_output_here.txt', index=False, header=True, sep=',', quoting=2)

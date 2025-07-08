@@ -47,9 +47,9 @@ def check_biomes(df, gold_dict):
 
 # Load gold standard dictionary
 home_dir = os.getenv('HOME')
-gold_dict_path = os.path.join(home_dir, "github/metadata_mining/source_data/gold_dict.pkl") 
+gold_dict_path = os.path.join(home_dir, "MicrobeAtlasProject/gold_dict.pkl") 
 gold_dict = load_gold_dict(gold_dict_path)
-data_file_path = os.path.join(home_dir, "cloudstor/Gaio/MicrobeAtlasProject/GH_collect_output_here.txt") 
+data_file_path = os.path.join(home_dir, "MicrobeAtlasProject/GH_collect_output_here.txt") 
 
 
 
@@ -91,7 +91,7 @@ def extract_incorrect_samples(file_path, incorrect_samples):
     return "-----\n".join(filtered_sections)
 
 # Path to the text file
-file_path = os.path.join(home_dir, "cloudstor/Gaio/MicrobeAtlasProject/metadata_chunks_202407191703.txt")  
+file_path = os.path.join(home_dir, "MicrobeAtlasProject/metadata_chunks_202407191703.txt")  
 
 # Extract sections for incorrect samples
 incorrect_sample_sections = extract_incorrect_samples(file_path, incorrect_samples)
@@ -99,7 +99,7 @@ incorrect_sample_sections = extract_incorrect_samples(file_path, incorrect_sampl
 # Optionally, write the filtered sections to a new file
 
 
-with open(os.path.join(home_dir, "cloudstor/Gaio/MicrobeAtlasProject/GH_incorrect_samples.txt"), 'w') as output_file:
+with open(os.path.join(home_dir, "MicrobeAtlasProject/GH_incorrect_samples.txt"), 'w') as output_file:
     output_file.write(incorrect_sample_sections)
 
 print("Filtered sections saved to 'GH_incorrect_samples.txt'")
