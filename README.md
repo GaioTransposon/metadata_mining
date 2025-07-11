@@ -46,7 +46,8 @@ Let's start getting what we need to start!
 ### 1) Clone the repo into your home directory:
 
 ```
-cd ~
+mkdir ~/github
+cd ~/github
 git clone https://github.com/GaioTransposon/metadata_mining.git
 ```
 
@@ -97,12 +98,8 @@ Once you have your API key, place it in `~/MicrobeAtlasProject`.
 
 Ideally, you generate two separate keys: one for the chat completion (annotation of metadata), and one for creating embeddings. In this pipeline the two are named: `my_api_key` and `my_api_key_embeddings`. The reason for using two separate keys is keeping track of usage quotas for each task. 
 
+In order to run (the last script of) cotainer 4, you will need to acquire your own Google Maps API key. Google provides a free usage tier, which can cover a significant number of API requests. Generate one and name it `google_maps_api_key`. Place it in `~/MicrobeAtlas`. 
 
-
-<a name="container-1"></a>
-## Container 1: Metadata Splitting and Cleaning
-
-The first container provides an environment to run all scripts related to processing and cleaning metagenomic environmental metadata, including coordinates parsing, ontology code translation, and perform some exploratory analysis of the metadata.
 
 
 <a name="container-1"></a>
@@ -124,9 +121,9 @@ docker run -it --rm \
   -v ~/github/metadata_mining/scripts:/app/scripts \
   metadmin \
   python /app/scripts/dirs.py \
-    --input_file sample.info_test.gz \
-    --output_dir sample_info_split_dirs_test \
-    --figure_path files_distribution_in_dirs_test.pdf
+    --input_file sample.info.gz \
+    --output_dir sample_info_split_dirs \
+    --figure_path files_distribution_in_dirs.pdf
 ```
 
 <a name="fetch-ontologies"></a>
@@ -155,7 +152,7 @@ docker run -it --rm \
   metadmin \
   python /app/scripts/clean_and_envo_translate.py \
     --ontology_dict ontologies_dict.pkl \
-    --metadata_dirs sample_info_split_dirs_test \
+    --metadata_dirs sample_info_split_dirs \
     --max_processes 8
 ```
 
@@ -202,7 +199,7 @@ docker run --rm \
   | tr '\t' ' ' \
   | sed 's/  */ /g' \
   | sed 's/ *$//' \
-  > ~/MicrobeAtlasProject/sample.coordinates.reparsed.filtered_fresh
+  > ~/MicrobeAtlasProject/sample.coordinates.reparsed.filtered
 ```
 
 <a name="container-2"></a>
@@ -282,7 +279,7 @@ You can:
 
 AND/OR
 
-- run asynchronous an interaction via the batch API (two steps)
+- run an asynchronous interaction via the batch API (two steps)
 
 Then, you can generate embeddings from GPT results and from benchmark data.
 
@@ -412,14 +409,14 @@ Four scripts to run:
 - GPT runs evaluation: validate_biomes_subbiomes.py
 - Overall GPT performance: overall_analysis.py
 - Convert coordinates to places: coord_to_text.py
-- Geographic location: GPT versus metadata: geo_check.py
+- Geographic location - GPT versus metadata: geo_check.py
 
-
+⚠️ In order to run the last script of this container you will need a free Google Maps API key. Generate one and name it `google_maps_api_key`. Place it in `~/MicrobeAtlas`. 
 
 <a name="gpt-runs-evaluation"></a>
 #### GPT runs evaluation: 
 
-This script compares biome and sub-biome annotations per GPT run against the benchmark's. In this manner GPT runs in which different seetings were used (creativity or other paramters), can be compared for performance. 
+This script compares biome and sub-biome annotations per GPT run against the benchmark's. In this manner GPT runs in which different seetings were used (creativity or other paramters), can be compared for performance. You can use my --map_file (gpt_file_label_map.tsv) if you are reproducing my results (GPT performance). If you have your own GPT files you will need to edit gpt_file_label_map.tsv to reflect your file names and corresponding labels. 
 
 
 ```
@@ -452,10 +449,10 @@ conda activate metadmin_env
 python /app/scripts/overall_analysis.py \
        --work_dir . \
        --metadata_dir sample_info_split_dirs \
-       --keyword_based_annot_file joao_biomes_parsed.csv
+       --keyword_based_annot_file keywordsbased_biomes_parsed.csv
 ```
 
-This starts a session where you can choose amongst files. No choice will be given if no files labels match. In which case, the analysis will be done directly.  
+This starts a session where you can choose amongst files. No choice will be given if no files labels match. In which case, the analysis will be done directly. Results (and stats) will print out to the console. 
 
 To exit the session just type: `exit`
 
@@ -501,7 +498,7 @@ docker run -it --rm \
 Activate the environment inside the container, then run the script:
 
 ```
-conda activate metadmin_env`
+conda activate metadmin_env
 python /app/scripts/geo_check.py \
     --work_dir . \
     --metadata_dir sample_info_split_dirs \
