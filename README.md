@@ -20,7 +20,7 @@
     - [3. Create Embeddings](#create-embeddings)
 - [Container 4: GPT performance evaluation](#container-4)
   - [🚀 Run Container 4](#run-container-4)
-    - [1. GPT runs evaluation](#gpt_runs_evaluation)
+    - [1. GPT runs evaluation](#gpt-runs-evaluation)
     - [2. Overall gpt performance](#overall-gpt-performance)
     - [3. Convert coordinates to places](#convert-coordinates-to-places)
     - [4. Geographic location: GPT versus metadata](#geographic-location-gpt-versus-metadata)
