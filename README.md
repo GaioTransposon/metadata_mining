@@ -20,14 +20,16 @@
     - [3. Create Embeddings](#create-embeddings)
 - [Container 4: GPT performance evaluation](#container-4)
   - [🚀 Run Container 4](#run-container-4)
-    - [1. Compare GPT runs](#compare-gpt-runs)
-    - [2. Overall analysis](#overall-analysis)
+    - [1. GPT runs evaluation](#gpt_runs_evaluation)
+    - [2. Overall gpt performance](#overall-gpt-performance)
     - [3. Convert coordinates to places](#convert-coordinates-to-places)
     - [4. Geographic location: GPT versus metadata](#geographic-location-gpt-versus-metadata)
 
 
----
 
+
+---
+<a name="introduction"></a>
 # Introduction: 
 
 This repository contains a modular, containerized pipeline for processing and annotating environmental sample metadata. Each container encapsulates a specific set of tasks — as you see depicted below - from preprocessing metadata (C1 - 🔴 red), creating a benchmark dataset (C2 - 🟠 orange), interacting with GPT models (C3 - 🟣 purple), to GPT output evaluation (C3 - 🟢 green). 
@@ -39,7 +41,7 @@ This repository contains a modular, containerized pipeline for processing and an
 Let's start getting what we need to start! 
 
 ---
-
+<a name="requirements"></a>
 ## 📦 Requirements: 
 
 
@@ -102,14 +104,17 @@ In order to run (the last script of) cotainer 4, you will need to acquire your o
 
 
 
+<a name="container-1"></a>
 ## Container 1: Metadata Splitting and Cleaning
 
 The first container provides an environment to run all scripts related to processing and cleaning metagenomic environmental metadata, including coordinates parsing, ontology code translation, and perform some exploratory analysis of the metadata.
 
 ---
 
+<a name="run-container-1"></a>
 ### 🚀 Run Container 1: 
 
+<a name="split-the-metadata-file"></a>
 #### 1. Split the metadata file 🧾 into individual files: 
 
 ```
@@ -123,6 +128,7 @@ docker run -it --rm \
     --figure_path files_distribution_in_dirs.pdf
 ```
 
+<a name="fetch-ontologies"></a>
 #### 2. Fetch ontologies  🌐: 
 
 ```
@@ -135,6 +141,7 @@ docker run -it --rm \
     --output_file ontologies_dict
 ```
 
+<a name="clean-metadata-files"></a>
 #### 3. Clean metadata files and replace ontology codes with labels  🧼: 
 
 Increase the file descriptor limit first. By default, many operating systems limit how many files can be open at once. Since this script processes many files in parallel, you must increase the ulimit:
@@ -151,13 +158,6 @@ docker run -it --rm \
     --max_processes 8
 ```
 
-<a name="introduction"></a>
-<a name="requirements"></a>
-<a name="container-1"></a>
-<a name="run-container-1"></a>
-<a name="split-the-metadata-file"></a>
-<a name="fetch-ontologies"></a>
-<a name="clean-metadata-files"></a>
 <a name="check-metadata-size-reduction"></a>
 #### 4. Check metadata size reduction 📉 : 
 
