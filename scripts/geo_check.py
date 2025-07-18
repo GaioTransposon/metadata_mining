@@ -9,7 +9,7 @@ Created on Wed Aug  7 17:17:28 2024
 # run as: 
     
 # python ~/github/metadata_mining/scripts/geo_check.py \
-#     --work_dir ~/MicrobeAtlasProject \
+#     --work_dir ~/MicrobeAtlasProject_ori \
 #     --metadata_dir sample_info_split_dirs \
 #     --api_key_file google_maps_api_key \
 #     --coordinates_file sample.coordinates.reparsed.filtered \

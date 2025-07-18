@@ -503,8 +503,8 @@ Activate the environment inside the container, then run the script:
 conda activate metadmin_env
 python /app/scripts/geo_check.py \
     --work_dir . \
-    --metadata_dir sample_info_split_dirs \
-    --api_key_file /MicrobeAtlasProject/google_maps_api_key \
+    --metadata_dir MicrobeAtlasProject/sample_info_split_dirs \
+    --api_key_file google_maps_api_key \
     --coordinates_file sample.coordinates.reparsed.filtered \
     --translated_coordinates geocoded_coordinates.csv \
     --random_misclassified_samples_dict random_misclassified_samples_dict.pkl \
