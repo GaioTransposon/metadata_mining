@@ -38,7 +38,7 @@ This repository contains a modular, containerized pipeline for processing and an
 ![Pipeline overview](pipeline.png)
 
 
-Let's start getting what we need to start! 
+Let's get what we need to start! 
 
 ---
 <a name="requirements"></a>
@@ -61,11 +61,13 @@ git clone https://github.com/GaioTransposon/metadata_mining.git
 mkdir ~/MicrobeAtlasProject
 ```
 
-- Download these large files: `sample.info.gz`, `metadata.out`, `...`
-- Place them into ~/MicrobeAtlasProject/.
+- Download the directory containing all the files you need from: https://zenodo.org/records/16100607 
+- Decompress the directory `unzip MicrobeAtlasProject_Zenodo.zip`
+- Rename it "MicrobeAtlasProject" `mv MicrobeAtlasProject_Zenodo MicrobeAtlasProject`
+- Make sure it's placed in your home directory `~/MicrobeAtlasProject`
 
 
-### 3) Ensure the following directories exist on your machine: 
+### 3) Hence, ensure the following directories exist on your machine: 
 
 ```
 ~/MicrobeAtlasProject/
