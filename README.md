@@ -102,8 +102,7 @@ Once you have your API key, place it in `~/MicrobeAtlasProject`.
 
 Ideally, you generate two separate keys: one for the chat completion (annotation of metadata), and one for creating embeddings. In this pipeline the two are named: `my_api_key` and `my_api_key_embeddings`. The reason for using two separate keys is keeping track of usage quotas for each task. 
 
-In order to run (the last script of) cotainer 4, you will need to acquire your own Google Maps API key. Google provides a free usage tier, which can cover a significant number of API requests. Generate one and name it `google_maps_api_key`. Place it in `~/MicrobeAtlas`. 
-
+In order to run (the last script of) container 4, you will need to acquire your own Google Maps API key (follow instructions [here](https://developers.google.com/maps/documentation/embed/get-api-key?setupProd=configure). Google provides a free usage tier, which can cover a significant number of API requests. Generate one and name it `google_maps_api_key`. Place it in `~/MicrobeAtlas`. 
 
 
 <a name="container-1"></a>
@@ -415,7 +414,7 @@ Four scripts to run:
 - Convert coordinates to places: coord_to_text.py
 - Geographic location - GPT versus metadata: geo_check.py
 
-⚠️ In order to run the last script of this container you will need a free Google Maps API key. Generate one and name it `google_maps_api_key`. Place it in `~/MicrobeAtlas`. 
+⚠️ In order to run the last script of this container you will need a free Google Maps API key (follow instructions [here](https://developers.google.com/maps/documentation/embed/get-api-key?setupProd=configure). Generate one and name it `google_maps_api_key`. Place it in `~/MicrobeAtlas`. 
 
 <a name="gpt-runs-evaluation"></a>
 #### GPT runs evaluation: 
