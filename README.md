@@ -61,7 +61,7 @@ git clone https://github.com/GaioTransposon/metadata_mining.git
 mkdir ~/MicrobeAtlasProject
 ```
 
-- Download the directory containing all the files you need from: https://zenodo.org/records/16100607 
+- Download the directory containing all the files you need from [here](https://zenodo.org/records/16100607)
 - Decompress the directory `unzip MicrobeAtlasProject_Zenodo.zip`
 - Rename it "MicrobeAtlasProject" `mv MicrobeAtlasProject_Zenodo MicrobeAtlasProject`
 - Make sure it's placed in your home directory `~/MicrobeAtlasProject`
@@ -96,9 +96,7 @@ docker build -t metadmin .
 
 ### 7) Get your own API keys: 
 
-In order to run container 3, you will need to acquire your own OpenAI API key. Here a link explaining where you will find or make one: 
-https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key 
-Once you have your API key, place it in `~/MicrobeAtlasProject`. 
+In order to run container 3, you will need to acquire your own OpenAI API key. Instructions on how to make one you will find [here](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key). Once you have your API key, place it in `~/MicrobeAtlasProject`. 
 
 Ideally, you generate two separate keys: one for the chat completion (annotation of metadata), and one for creating embeddings. In this pipeline the two are named: `my_api_key` and `my_api_key_embeddings`. The reason for using two separate keys is keeping track of usage quotas for each task. 
 
