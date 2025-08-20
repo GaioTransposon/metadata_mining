@@ -1,0 +1,35 @@
+filename,type,size,container,data_type,description
+sample.info.gz,file,325.70 MB,1,provided,input - file with concatenated metadata of 3.8M samples (downloaded from NCBI)
+sample.info_test.gz,file,10.64 KB,1,provided,input - subset of sample.info.gz (can be used for testing)
+metadata.out,file,2.04 GB,1,provided,input - samples metadata for coordinates extraction
+samples_with_lat_lon_reversal.tsv,file,2.37 KB,1,provided,input - curated list of samples with obvious reversal of latitude-longitude
+ontologies_dict.pkl,file,8.56 MB,1,produced,"output - dictionary of ontologies (FOODON, ENVO, UBERON, PO)"
+sample.coordinates.reparsed.filtered,file,60.86 MB,1,produced,output - extracted coordinates 
+training_data_pmids_based.csv,file,1.07 GB,2,provided,"input - selection of samples: must be microbiome samples, must be different enough (based on PMID)"
+gold_dict.pkl,file,98.41 KB,2,produced,output - built benchmark
+openai_system_better_prompt.txt,file,1.43 KB,3,provided,input - prompt improved in text format
+openai_system_better_prompt_batch.txt,file,1.69 KB,3,provided,input - prompt improved in json format for batch 
+openai_system_better_prompt_json.txt,file,1.69 KB,3,provided,input - prompt improved  in json format
+openai_system_prompt.txt,file,1.32 KB,3,provided,input - original prompt in text format
+openai_system_prompt_json.txt,file,1.58 KB,3,provided,input - original prompt in json format
+gpt_file_label_map.tsv,file,25.83 KB,3,provided,input - manually made file matching obtained files with corresponding labels
+batch_job_info.json,file,5.25 KB,3,produced,output - this file stores the OpenAI request batch id and related details
+gpt_clean_output_*.txt,file,NA,3,produced,output - all OpenAI GPT output files in text format
+gpt_clean_output_*.csv,file,NA,3,produced,output - all OpenAI GPT output files in csv format
+embeddings,directory,2.3 GB,3,produced,output - directory containing OpenAI GPT -made embeddings 
+GH_collect_output_here.txt,file,41.53 KB,4,provided,input - human curator samples annotations 1st round
+GH_combined_output.txt,file,41.30 KB,4,provided,input - human curator samples annotations 1st + 2nd round
+keywordsbased_biomes_parsed.csv,file,38.75 MB,4,provided,input - keywords-based samples annotations (biomes). This is what MicrobeAtlas was initially based on. 
+biome_subbiome_results.csv,file,149.53 KB,4,produced,output - results of GPT vs benchmark 
+biome_subbiome_stats.csv,file,14.73 MB,4,produced,output - stats of GPT vs benchmark 
+geocoded_coordinates.csv,file,7.76 MB,4,produced,output - OpenStreetMap-obtained coordinates from GPT geographic location in text form
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
