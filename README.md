@@ -94,6 +94,19 @@ open -a Docker
 docker build -t metadmin .
 ```
 
+### 6.1) Alternatively, you can directly pull the docker image: 
+
+Prebuilt images are available on Docker Hub:
+
+- [gaiotransposon/metadmin](https://hub.docker.com/r/gaiotransposon/metadmin)
+
+Pull with:
+
+```
+docker pull gaiotransposon/metadmin:latest
+```
+
+
 ### 7) Get your own API keys: 
 
 In order to run container 3, you will need to acquire your own OpenAI API key. Instructions on how to make one you will find [here](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key). Once you have your API key, place it in `~/MicrobeAtlasProject`. 
