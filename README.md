@@ -55,17 +55,19 @@ git clone https://github.com/GaioTransposon/metadata_mining.git
 
 ### 2) Download large files and move folder: 
 
-- Download the directory containing all the files you need from [here](https://zenodo.org/records/16100607)
+- Download the directory containing all the files you need from [here](https://zenodo.org/records/16100607) to your Downloads folder
+- Move to your Downloads folder `cd ~/Downloads`
 - Decompress the directory `unzip MicrobeAtlasProject_Zenodo.zip`
 - Rename it "MicrobeAtlasProject" `mv MicrobeAtlasProject_Zenodo MicrobeAtlasProject`
-- Move it to your home directory `mv MicrobeAtlasProject ~/MicrobeAtlasProject`
+- Move it to your home directory `mv MicrobeAtlasProject ~/.`
 
 
 ### 3) Hence, ensure the following directories exist on your machine: 
 
 ```
-~/MicrobeAtlasProject/
-~/github/metadata_mining/scripts/
+for dir in ~/MicrobeAtlasProject ~/github/metadata_mining/scripts; do
+    [ -d "$dir" ] && echo "✅ Exists: $dir" || echo "❌ Missing: $dir"
+done
 ```
 
 ### 4) Install Docker
