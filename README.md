@@ -53,18 +53,12 @@ cd ~/github
 git clone https://github.com/GaioTransposon/metadata_mining.git
 ```
 
-### 2) Download large files and move to folder: 
-
-- Make a directory: 
-
-```
-mkdir ~/MicrobeAtlasProject
-```
+### 2) Download large files and move folder: 
 
 - Download the directory containing all the files you need from [here](https://zenodo.org/records/16100607)
 - Decompress the directory `unzip MicrobeAtlasProject_Zenodo.zip`
 - Rename it "MicrobeAtlasProject" `mv MicrobeAtlasProject_Zenodo MicrobeAtlasProject`
-- Make sure it's placed in your home directory `~/MicrobeAtlasProject`
+- Move it to your home directory `mv MicrobeAtlasProject ~/MicrobeAtlasProject`
 
 
 ### 3) Hence, ensure the following directories exist on your machine: 
