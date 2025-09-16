@@ -21,8 +21,13 @@ from typing import Dict, List, Tuple
 # ----------------------------
 # Config (adjust as needed)
 # ----------------------------
-SEED = 42
-PER_CLASS = 100                  # how many samples per group (soil/plant)
+# Config
+CLASS_A_NAME = "soil"
+CLASS_B_NAME = "plant"
+CLASS_A_TERMS = ["soil"]
+CLASS_B_TERMS = ["plant"]
+PER_CLASS = 1000
+SEED = 42             # how many samples per group (soil/plant)
 BASE_DIR = os.path.join(os.path.expanduser('~'), "MicrobeAtlasProject/Hackathon")
 WORK_DIR = os.path.join(BASE_DIR, "embeddings")
 
@@ -69,48 +74,96 @@ def load_subbiome_map(path: str) -> Dict[str, str]:
 
 def select_balanced_samples(
     id_to_text: Dict[str, str],
-    per_class: int = 1000,
-    seed: int = 42
+    class_a_name: str,
+    class_b_name: str,
+    class_a_terms: List[str],
+    class_b_terms: List[str],
+    per_class: int,
+    seed: int,
+    match_whole_words: bool = True,
+    case_insensitive: bool = True,
+    exclude_ambiguous: bool = True,
 ) -> Tuple[pd.DataFrame, List[str]]:
     """
-    From id_to_text, select an equal number of samples that contain 'soil' or 'plant'.
-    - Case-insensitive match with word boundaries.
-    - Excludes ambiguous samples that match both.
-    Returns:
-        df_meta: DataFrame with columns [sample_id, sub_biome, group]
-        selected_ids: list of sample_ids in the same order as df_meta
+    Build a balanced subset between two classes using keyword matches.
+
+    Parameters
+    ----------
+    id_to_text : {sample_id: text}
+    class_a_name, class_b_name : display names for the two classes (e.g., "soil", "plant")
+    class_a_terms, class_b_terms : keywords for each class (list of strings)
+    per_class : target number of samples to pick for each class
+    seed : RNG seed for reproducible shuffling
+    match_whole_words : if True, wrap each term with word boundaries (\\b)
+    case_insensitive : if True, use re.IGNORECASE
+    exclude_ambiguous : if True, discard samples matching both classes
+
+    Returns
+    -------
+    df_meta : DataFrame with columns [sample_id, sub_biome, group]
+    selected_ids : list of sample_ids in the same order as df_meta
     """
+
+    def _compile_pattern(terms: List[str]) -> re.Pattern:
+        if match_whole_words:
+            parts = [rf"\b{re.escape(t)}\b" for t in terms]
+        else:
+            parts = [re.escape(t) for t in terms]
+        flags = re.IGNORECASE if case_insensitive else 0
+        return re.compile("|".join(parts), flags=flags) if parts else re.compile(r"$^")  # matches nothing if empty
+
+    pat_a = _compile_pattern(class_a_terms)
+    pat_b = _compile_pattern(class_b_terms)
+
     rng = random.Random(seed)
-    soil_re = re.compile(r"\bsoil\b", flags=re.IGNORECASE)
-    plant_re = re.compile(r"\bplant\b", flags=re.IGNORECASE)
+    a_ids, b_ids = [], []
 
-    soil_ids = []
-    plant_ids = []
     for sid, text in id_to_text.items():
-        has_soil = bool(soil_re.search(text))
-        has_plant = bool(plant_re.search(text))
-        if has_soil and not has_plant:
-            soil_ids.append(sid)
-        elif has_plant and not has_soil:
-            plant_ids.append(sid)
-        # if both match, skip to avoid ambiguity
+        t = text if isinstance(text, str) else str(text)
+        has_a = bool(pat_a.search(t))
+        has_b = bool(pat_b.search(t))
 
-    # Shuffle to avoid any ordering bias, then take per_class
-    rng.shuffle(soil_ids)
-    rng.shuffle(plant_ids)
-    soil_pick = soil_ids[:per_class]
-    plant_pick = plant_ids[:per_class]
+        if exclude_ambiguous and has_a and has_b:
+            continue
+        if has_a and not has_b:
+            a_ids.append(sid)
+        elif has_b and not has_a:
+            b_ids.append(sid)
+        elif not exclude_ambiguous and (has_a or has_b):
+            # If we allow ambiguity, assign by priority: A first, else B
+            a_ids.append(sid) if has_a else b_ids.append(sid)
 
-    # Build metadata DataFrame
-    rows = []
-    for sid in soil_pick:
-        rows.append({"sample_id": sid, "sub_biome": id_to_text[sid], "group": "soil"})
-    for sid in plant_pick:
-        rows.append({"sample_id": sid, "sub_biome": id_to_text[sid], "group": "plant"})
+    # Shuffle & pick
+    rng.shuffle(a_ids)
+    rng.shuffle(b_ids)
+    a_pick = a_ids[:per_class]
+    b_pick = b_ids[:per_class]
+
+    # Warnings if underfilled
+    if len(a_pick) < per_class or len(b_pick) < per_class:
+        print(f"⚠️  Requested per_class={per_class}, but found "
+              f"{class_a_name}={len(a_ids)} eligible, {class_b_name}={len(b_ids)} eligible "
+              f"(after exclude_ambiguous={exclude_ambiguous}). Using the available minimum.")
+
+    # Build metadata
+    rows = (
+        [{"sample_id": sid, "sub_biome": id_to_text[sid], "group": class_a_name} for sid in a_pick] +
+        [{"sample_id": sid, "sub_biome": id_to_text[sid], "group": class_b_name} for sid in b_pick]
+    )
     df_meta = pd.DataFrame(rows)
-
     selected_ids = df_meta["sample_id"].tolist()
     return df_meta, selected_ids
+
+
+
+
+
+
+
+
+
+
+
 
 def load_embeddings_for_ids(h5_path: str, wanted_ids: List[str]) -> Tuple[np.ndarray, List[str]]:
     """
