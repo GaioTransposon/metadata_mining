@@ -87,6 +87,7 @@ open -a Docker
 ### 6) Build the docker image: 
 
 ```
+cd ~/github/metadata_mining
 docker build -t metadmin .
 ```
 
@@ -109,7 +110,7 @@ In order to run container 3, you will need to acquire your own OpenAI API key. I
 
 Ideally, you generate two separate keys: one for the chat completion (annotation of metadata), and one for creating embeddings. In this pipeline the two are named: `my_api_key` and `my_api_key_embeddings`. The reason for using two separate keys is keeping track of usage quotas for each task. 
 
-In order to run (the last script of) container 4, you will need to acquire your own Google Maps API key (follow instructions [here](https://developers.google.com/maps/documentation/embed/get-api-key?setupProd=configure). Google provides a free usage tier, which can cover a significant number of API requests. Generate one and name it `google_maps_api_key`. Place it in `~/MicrobeAtlas`. 
+In order to run (the last script of) container 4, you will need to acquire your own Google Maps API key (follow instructions [here](https://developers.google.com/maps/documentation/embed/get-api-key?setupProd=configure)). Google provides a free usage tier, which can cover a significant number of API requests. Generate one and name it `google_maps_api_key`. Place it in `~/MicrobeAtlas`. 
 
 
 <a name="container-1"></a>

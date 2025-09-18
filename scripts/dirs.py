@@ -106,10 +106,25 @@ elapsed_time = time.time() - start_time
 print(f"Elapsed time: {elapsed_time} seconds")
 print(f"Total directories created: {len(created_dirs)}")
 
-plot_directory_histogram(output_dir, figure_path=figure_path)
+#plot_directory_histogram(output_dir, figure_path=figure_path)
 
 
 
+# --- New logic for chunked runs ---
+base = os.path.basename(input_file)
+input_dir = os.path.dirname(input_file) or "."
+
+if base.startswith("part_") and base.endswith(".gz"):
+    # Find all parts in the same directory
+    parts = sorted(f for f in os.listdir(input_dir) if f.startswith("part_") and f.endswith(".gz"))
+    if base == parts[-1]:
+        print("Last chunk detected — generating final PDF...")
+        plot_directory_histogram(output_dir, figure_path=figure_path)
+    else:
+        print("Chunk run — skipping PDF for this part")
+else:
+    # Normal run on the full file
+    plot_directory_histogram(output_dir, figure_path=figure_path)
 
 
 
