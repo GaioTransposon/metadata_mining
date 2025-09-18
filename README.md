@@ -124,7 +124,7 @@ The first container provides an environment to run all scripts related to proces
 ### 🚀 Run Container 1: 
 
 <a name="split-the-metadata-file"></a>
-#### 1. Split the metadata file 🧾 into individual files: 
+#### 1. Split the large metadata file 🧾 into individual files: 
 
 ```
 docker run -it --rm \
@@ -136,6 +136,7 @@ docker run -it --rm \
     --output_dir sample_info_split_dirs \
     --figure_path files_distribution_in_dirs.pdf
 ```
+⚠️ Docker might get fussy with resource limits. In that case you can either 1. increase Docker memory, or 2. (easier) run the same script outside of Docker. 
 
 <a name="fetch-ontologies"></a>
 #### 2. Fetch ontologies  🌐: 
