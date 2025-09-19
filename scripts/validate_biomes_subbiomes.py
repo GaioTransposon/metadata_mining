@@ -273,6 +273,17 @@ biomes_subbiomes['Label'] = biomes_subbiomes['Filename'].map(file_label_map)
 print(biomes_subbiomes)
 
 
+# newl;y added to reestablish order: 
+# enforce TSV order in final output
+order_map = {f: i for i, f in enumerate(my_files)}
+biomes_subbiomes['__order'] = biomes_subbiomes['Filename'].map(order_map)
+biomes_subbiomes = (
+    biomes_subbiomes
+    .sort_values('__order', kind='stable')
+    .drop(columns='__order')
+)
+
+
 filename = os.path.join(WORK_DIR, 'biome_subbiome_results.csv')
 output_to_csv(biomes_subbiomes, filename)
 
