@@ -7,6 +7,14 @@ Created on Mon Jul 22 17:50:30 2024
 """
 
 
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jul 22 17:50:30 2024
+
+@author: dgaio
+"""
+
 # run as: 
 # python ~/github/metadata_mining/scripts/validate_biomes_subbiomes.py \
 #   --work_dir ~/MicrobeAtlasProject \
@@ -52,16 +60,14 @@ GOLD_DICT_PATH = os.path.join(WORK_DIR, "gold_dict.pkl")
 # ------------- read TSV -------------
 map_path = os.path.join(WORK_DIR, args.map_file)
 
-# CHANGED: read the 3rd column as test_type so we can group stats by it
-df_map = pd.read_csv(
-    map_path, sep="\t", comment="#", header=None,
-    names=["filename", "label", "test_type"], usecols=[0, 1, 2]
-)
+# CHANGE 1: read third column (test_type) so we can group stats by it
+df_map = pd.read_csv(map_path, sep="\t", comment="#", header=None,
+                     names=["filename", "label", "test_type"], usecols=[0, 1, 2])
 
-my_files       = df_map["filename"].tolist()
+my_files       = df_map["filename"].tolist()          # full paths or relative, as in TSV
 my_labels      = df_map["label"].tolist()
-file_label_map = dict(zip(my_files, my_labels))
-# CHANGED: filename order map (TSV order) to re-apply final ordering
+file_label_map = dict(zip(my_files, my_labels))       # filename (full string) -> label
+# for enforcing TSV order later
 _file_order = {fn: i for i, fn in enumerate(my_files)}
 
 print("\nFile and its label name:\n")
@@ -117,8 +123,10 @@ results_biome = pd.concat([
     full_result[['Full Total Counts']].rename(columns={'Full Total Counts': 'sample_size'})
 ], axis=1)
 
-# CHANGED: keep label explicit for merging later (per-file results will join on label)
-results_biome = results_biome.rename_axis('Label').reset_index()
+# CHANGE 2: map label -> FULL filename (first occurrence in TSV) so it matches results_subbiome keys
+_first_per_label = df_map.drop_duplicates('label')
+filename_label_map = dict(zip(_first_per_label['label'], _first_per_label['filename']))
+results_biome['Filename'] = [filename_label_map.get(label) for label in results_biome.index]
 
 
 # -----------------------------
@@ -132,7 +140,7 @@ results_list = []
 # Fetch embeddings from each gpt json file and compare to ground truth embeddings:
 for gpt_file in my_files:    
     
-    gpt_file_ori = gpt_file
+    gpt_file_ori = gpt_file                              # keep FULL filename (as in TSV)
     gpt_file = re.sub(r'\.txt|\.csv', '_sbembeddings.json', gpt_file)
     gpt_json_file_path = os.path.join(EMBEDDINGS_DIR, gpt_file) 
     embeddings_gpt = load_embeddings(gpt_json_file_path)
@@ -173,7 +181,7 @@ for gpt_file in my_files:
     '95th Percentile': percentiles,  
     'MWU Statistic': MWU_stat,
     'MWU P-value': MWU_p_value,
-    'Filename': gpt_file_ori,
+    'Filename': gpt_file_ori,     # FULL filename, same as results_biome['Filename']
 }
     
     # Append the dictionary to the results list
@@ -213,9 +221,6 @@ for gpt_file in my_files:
 # concatenate data 
 results_subbiome = pd.DataFrame(results_list)
 
-# CHANGED: add labels to per-file sub-biome results for merging
-results_subbiome['Label'] = results_subbiome['Filename'].map(file_label_map)
-
 
 
 # -----------------------------
@@ -224,21 +229,19 @@ results_subbiome['Label'] = results_subbiome['Filename'].map(file_label_map)
 
 results_stats = calculate_overlap_and_run_tests_biomes(full_agreement_df) 
 
-# CHANGED: filter biome stats to label pairs within the same test_type
+# CHANGE 3: filter biome stats to label pairs within the same test_type
 _label_to_testtype = dict(zip(df_map['label'], df_map['test_type']))
 _tt1 = results_stats['Label1'].map(_label_to_testtype)
 _tt2 = results_stats['Label2'].map(_label_to_testtype)
 results_stats = results_stats[_tt1 == _tt2].copy()
 results_stats['test_type'] = _tt1[_tt1 == _tt2]
 
-# CHANGED: map labels to a representative filename (first occurrence in TSV), for display
-_rep_filename_per_label = df_map.drop_duplicates('label').set_index('label')['filename'].to_dict()
-results_stats['Filename1'] = results_stats['Label1'].map(_rep_filename_per_label)
-results_stats['Filename2'] = results_stats['Label2'].map(_rep_filename_per_label)
+results_stats['Filename1'] = results_stats['Label1'].map(filename_label_map)
+results_stats['Filename2'] = results_stats['Label2'].map(filename_label_map)
 
 results_stats['validation'] = 'biome'
 print(results_stats.columns)
-# colnames are: 	Label1	Label2	Statistic	P-value	Adjusted P-value	Test Type	Filename1	Filename2 test_type validation
+# colnames are: 	Label1	Label2	Statistic	P-value	Adjusted P-value	Test Type	Filename1	Filename2  test_type validation
 
 
 # -----------------------------
@@ -247,9 +250,9 @@ print(results_stats.columns)
 
 results_data = []
 
-# CHANGED: compare only files within the same test_type (grouping from TSV)
+# CHANGE 4: compare only files within the same test_type (grouping from TSV)
 for _, grp in df_map.groupby('test_type', sort=False):
-    files = grp['filename'].tolist()
+    files = grp['filename'].tolist()  # FULL filenames (same keys as 'results')
     for file1, file2 in combinations(files, 2):
         print(f"\n\nComparing file:\n\n{file1}\nwith file:\n{file2}\n")
         overlap_percentage, stat, p_value, p_adjusted, test_type = compare_based_on_overlap_subbiomes(results[file1], results[file2])
@@ -264,6 +267,7 @@ for _, grp in df_map.groupby('test_type', sort=False):
             'Filename2': file2
         }
 
+
         results_data.append(result_dict)
     
     
@@ -271,22 +275,24 @@ for _, grp in df_map.groupby('test_type', sort=False):
 results_df_stats = pd.DataFrame(results_data)
 results_df_stats['validation'] = 'sub-biome'
 
-# CHANGED: map filename -> label directly (no reversing needed)
-results_df_stats['Label1'] = results_df_stats['Filename1'].map(file_label_map)
-results_df_stats['Label2'] = results_df_stats['Filename2'].map(file_label_map)
+# key to value reverse
+reversed_filename_label_map = {v: k for k, v in filename_label_map.items()}
+results_df_stats['Label1'] = results_df_stats['Filename1'].map(reversed_filename_label_map)
+results_df_stats['Label2'] = results_df_stats['Filename2'].map(reversed_filename_label_map)
 
 print(results_df_stats.columns)
-# colnames are: 	Statistic	P-value	Adjusted P-value	Test Type	Filename1	Filename2 validation Label1 Label2
+# colnames are: 	Statistic	P-value	Adjusted P-value	Test Type	Filename1	Filename2
 
 
 
 
 # Combine biome and sub-biome results: 
-# CHANGED: merge ON 'Label' so every file row is kept (many files can share a label)
-biomes_subbiomes = pd.merge(results_subbiome, results_biome, on='Label', how='left')
+# (now both sides use FULL 'Filename', so no rows get dropped)
+biomes_subbiomes = pd.merge(results_biome, results_subbiome, on='Filename', how='inner')
+biomes_subbiomes['Label'] = biomes_subbiomes['Filename'].map(file_label_map)
 print(biomes_subbiomes)
 
-# CHANGED: enforce TSV file order (unique filenames) so output rows match the TSV sequence
+# CHANGE 5: enforce TSV order by FULL filename (unique), to match the map file exactly
 biomes_subbiomes['__ord'] = biomes_subbiomes['Filename'].map(_file_order)
 biomes_subbiomes = (
     biomes_subbiomes
