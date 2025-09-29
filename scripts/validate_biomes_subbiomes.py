@@ -1,317 +1,252 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
-Created on Mon Jul 22 17:50:30 2024
-
-@author: dgaio
+Simplified validator to reliably reproduce biome_subbiome_results.csv
+- TSV input with columns: <filename> <label> [ignored third col]
+- Computes:
+    * Biome exact + lenient agreement (mean, sd) and sample size
+    * Sub-biome cosine similarity summary if embeddings exist; leaves NaN otherwise
+- Outputs: biome_subbiome_results.csv in --work_dir
 """
-
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jul 22 17:50:30 2024
-
-@author: dgaio
-"""
-
-# run as: 
-# python ~/github/metadata_mining/scripts/validate_biomes_subbiomes.py \
-#   --work_dir ~/MicrobeAtlasProject \
-#   --map_file gpt_file_label_map.tsv
-
 
 import os
-import pandas as pd
-import pickle
-import numpy as np
-import re
-from itertools import combinations
-from features_process import load_and_process_file, filter_common_keys
-from embeddings_functions import (load_embeddings, compare_embeddings, create_shuffled_background_distribution, sample_by_category)
-from stats_module import calculate_overlap_and_run_tests_biomes, compare_based_on_overlap_subbiomes, print_statistics, test_similarity_separation
-from output_writing import plot_biome_agreement, plot_actual_vs_background, plot_heatmap, save_figures_to_pdf, output_to_csv
-import argparse
 import sys
+import argparse
+import pickle
+import json
+import re
+import numpy as np
+import pandas as pd
+
+# Make local imports work
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(SCRIPT_DIR)
 
+# Reuse your existing helpers if available
+try:
+    from features_process import load_and_process_file, filter_common_keys
+except ImportError:
+    load_and_process_file = None
+    filter_common_keys = None
 
+# ------------------ Utilities ------------------
 
+def safe_lenient_match(a, b):
+    if pd.isna(a) or pd.isna(b):
+        return False
+    sa = str(a).strip().lower()
+    sb = str(b).strip().lower()
+    return (sa in sb) or (sb in sa)
 
-# ------------------ NEW argument parsing ------------------
-parser = argparse.ArgumentParser(
-    description="Validate GPT-predicted biomes & sub-biomes."
-)
-parser.add_argument("--work_dir", default=".", help="Base working directory")
-parser.add_argument(
-    "--map_file",
-    required=True,
-    help="TSV with at least two columns: <filename> <label> "
-         "(optional 3rd column like test_type is ignored)",
-)
-args = parser.parse_args()
+def load_gold(work_dir):
+    gold_pkl = os.path.join(work_dir, "gold_dict.pkl")
+    if not os.path.exists(gold_pkl):
+        raise FileNotFoundError(f"Missing gold_dict.pkl at {gold_pkl}")
+    with open(gold_pkl, "rb") as f:
+        gold_dict = pickle.load(f)
+    gold_df = pd.DataFrame({
+        "sample": list(gold_dict.keys()),
+        "biome": [v[1] for v in gold_dict.values()]
+    })
+    return gold_dict, gold_df
 
-WORK_DIR       = os.path.abspath(args.work_dir)
-EMBEDDINGS_DIR = os.path.join(WORK_DIR, "embeddings")
-GOLD_DICT_PATH = os.path.join(WORK_DIR, "gold_dict.pkl")
+def load_embeddings_json(path):
+    with open(path, "r") as f:
+        return json.load(f)
 
+def compute_biome_results(work_dir, file_label_map, gold_df):
+    """
+    Uses your existing load_and_process_file to create per-sample rows with columns:
+      [sample, biome, gpt_biome, label, filename]
+    Then computes exact/lenient means/sds and sample_size by label.
+    """
+    if load_and_process_file is None:
+        raise ImportError("features_process.load_and_process_file not available. This simplified script expects it.")
 
-# ------------- read TSV -------------
-map_path = os.path.join(WORK_DIR, args.map_file)
+    rows = []
+    for file, label in file_label_map.items():
+        full_path = os.path.join(work_dir, file)
+        df = load_and_process_file(full_path, gold_df, label)  # your helper
+        df = df.copy()
+        df["Filename"] = os.path.basename(file)
+        rows.append(df)
 
-# CHANGE 1: read third column (test_type) so we can group stats by it
-df_map = pd.read_csv(map_path, sep="\t", comment="#", header=None,
-                     names=["filename", "label", "test_type"], usecols=[0, 1, 2])
+    big = pd.concat(rows, ignore_index=True)
 
-my_files       = df_map["filename"].tolist()          # full paths or relative, as in TSV
-my_labels      = df_map["label"].tolist()
-file_label_map = dict(zip(my_files, my_labels))       # filename (full string) -> label
-# for enforcing TSV order later
-_file_order = {fn: i for i, fn in enumerate(my_files)}
+    # Exact + lenient flags
+    big["exact_agreement"] = (big["gpt_biome"] == big["biome"])
+    big["lenient_agreement"] = big.apply(lambda r: safe_lenient_match(r["biome"], r["gpt_biome"]), axis=1)
 
-print("\nFile and its label name:\n")
-for file, label in file_label_map.items():
-    print(f"{os.path.basename(file)} - {label}\n")
+    # Aggregate by label
+    grp = big.groupby("label", dropna=False)
+    out = pd.DataFrame({
+        "Agreement biome (exact match)": grp["exact_agreement"].mean(),
+        "biome_exact_match_mean": grp["exact_agreement"].mean(),
+        "biome_exact_match_sd": grp["exact_agreement"].std(ddof=1),
+        "Agreement biome (lenient match)": grp["lenient_agreement"].mean(),
+        "biome_lenient_match_mean": grp["lenient_agreement"].mean(),
+        "biome_lenient_match_sd": grp["lenient_agreement"].std(ddof=1),
+        "sample_size": grp.size(),
+    })
 
+    # Add Filename column via reverse map (label->filename base) — if labels are unique
+    label_to_basefile = {lbl: os.path.basename(f) for f, lbl in file_label_map.items()}
+    out["Filename"] = [label_to_basefile.get(lbl) for lbl in out.index]
+    out.index.name = "Label"
 
+    return out.reset_index()
 
-# -----------------------------
-# Ground truth loading & processing
-# -----------------------------   
-with open(GOLD_DICT_PATH, 'rb') as file:
-    gold_dict = pickle.load(file)
-gold_dict_df = pd.DataFrame({'sample': list(gold_dict.keys()), 'biome': [v[1] for v in gold_dict.values()]})
-gold_dict_json_path = os.path.join(EMBEDDINGS_DIR, 'gold_dict_sbembeddings.json')
-embeddings_gd = load_embeddings(gold_dict_json_path)
+def safe_cosines(gd_emb, gpt_emb):
+    gd = np.array(gd_emb, dtype=float)
+    gt = np.array(gpt_emb, dtype=float)
+    # cosine similarity
+    denom = (np.linalg.norm(gd) * np.linalg.norm(gt))
+    if denom == 0:
+        return np.nan
+    return float(np.dot(gd, gt) / denom)
 
+def compute_subbiome_results(work_dir, file_label_map):
+    """
+    Best-effort sub-biome summary per file:
+      Average Similarity, Median Similarity, Standard Deviation, subbiome_sample_size, 95th Percentile
+    - Looks for:
+        * embeddings/gold_dict_sbembeddings.json
+        * embeddings/<gpt_file>_sbembeddings.json (with .txt/.csv replaced)
+    - If anything is missing or yields 0 comparable samples, returns NaNs but keeps the row.
+    """
+    embeddings_dir = os.path.join(work_dir, "embeddings")
+    gold_json = os.path.join(embeddings_dir, "gold_dict_sbembeddings.json")
 
-    
-# -----------------------------
-# 1. Biome agreement calculation & plotting 
-# ----------------------------- 
+    sub_rows = []
+    gold = None
+    if os.path.exists(gold_json):
+        gold = load_embeddings_json(gold_json)
 
-# Load, process, and calculate agreements for data files
-full_dfs = [load_and_process_file(os.path.join(WORK_DIR, f), gold_dict_df, label) for f, label in file_label_map.items()]
-full_agreement_df = pd.concat(full_dfs, ignore_index=True)
-full_agreement_df['agreement'] = full_agreement_df['gpt_biome'] == full_agreement_df['biome']
-lenient_agreement_df = pd.concat(full_dfs, ignore_index=True)
+    for gpt_file, label in file_label_map.items():
+        base = os.path.basename(gpt_file)
+        gpt_json_name = re.sub(r'\.txt|\.csv', '_sbembeddings.json', base)
+        gpt_json_path = os.path.join(embeddings_dir, gpt_json_name)
 
-lenient_agreement_df['agreement'] = lenient_agreement_df.apply(
-    lambda row: ((str(row['biome']).strip().lower() in str(row['gpt_biome']).strip().lower() or
-                 str(row['gpt_biome']).strip().lower() in str(row['biome']).strip().lower()) and
-                 not pd.isna(row['biome']) and not pd.isna(row['gpt_biome'])),
-    axis=1
-)
-
-
-full_result, lenient_result = plot_biome_agreement(full_agreement_df, lenient_agreement_df, file_label_map, WORK_DIR)
-
-
-results_biome = pd.concat([
-    # full match 
-    full_result[['full match label']].rename(columns={'full match label': 'Agreement biome (exact match)'}),
-    full_result[['mean']].rename(columns={'mean': 'biome_exact_match_mean'}),
-    full_result[['sd']].rename(columns={'sd': 'biome_exact_match_sd'}),
-
-    # lenient match
-    lenient_result[['full+partial match label']].rename(columns={'full+partial match label': 'Agreement biome (lenient match)'}),
-    lenient_result[['mean']].rename(columns={'mean': 'biome_lenient_match_mean'}),
-    lenient_result[['sd']].rename(columns={'sd': 'biome_lenient_match_sd'}),
-    
-    # in common
-    full_result[['Full Total Counts']].rename(columns={'Full Total Counts': 'sample_size'})
-], axis=1)
-
-# CHANGE 2: map label -> FULL filename (first occurrence in TSV) so it matches results_subbiome keys
-_first_per_label = df_map.drop_duplicates('label')
-filename_label_map = dict(zip(_first_per_label['label'], _first_per_label['filename']))
-results_biome['Filename'] = [filename_label_map.get(label) for label in results_biome.index]
-
-
-# -----------------------------
-# 2. Sub-biome agreement calculation & plotting 
-# ----------------------------- 
-
-results={}
-results_sub_biome = []
-results_list = []
-
-# Fetch embeddings from each gpt json file and compare to ground truth embeddings:
-for gpt_file in my_files:    
-    
-    gpt_file_ori = gpt_file                              # keep FULL filename (as in TSV)
-    gpt_file = re.sub(r'\.txt|\.csv', '_sbembeddings.json', gpt_file)
-    gpt_json_file_path = os.path.join(EMBEDDINGS_DIR, gpt_file) 
-    embeddings_gpt = load_embeddings(gpt_json_file_path)
-    
-    # Filter embeddings to include only common keys
-    filtered_gd, filtered_gpt = filter_common_keys(embeddings_gd, embeddings_gpt)
-    print("\nSample size after filtering:", len(filtered_gpt))
-
-    ########################################
-    # Compare embeddings
-    compare_results = compare_embeddings(filtered_gd, filtered_gpt)
-
-    ########################################
-    # Calculate and print statistics
-    actual_similarities = [result['cosine'] for result in compare_results.values()]
-    avg_sim, median_sim, std_dev, percentiles, subbiome_sample_size = print_statistics(actual_similarities)
-
-    results[gpt_file_ori] = compare_results
-
-    
-    ########################################
-    # Similarity vs background
-    background_similarities = create_shuffled_background_distribution(filtered_gd, filtered_gpt, num_comparisons=len(actual_similarities))
-    MWU_stat, MWU_p_value = test_similarity_separation(actual_similarities, background_similarities)
-    title = f"Comparison of Actual vs Background Cosine Similarity for\n{gpt_file}"
-    comparison_fig = plot_actual_vs_background(actual_similarities, background_similarities, title, 
-                                               avg_sim, median_sim, std_dev,
-                                               MWU_stat, MWU_p_value)
-    
-    ########################################
-    # Gather info: 
-    #avg_sim, median_sim, std_dev, percentiles, MWU_stat, MWU_p_value, filename, label
-    results_sub_biome_dict = {
-    'Average Similarity': avg_sim,
-    'Median Similarity': median_sim,
-    'Standard Deviation': std_dev,
-    'subbiome_sample_size': subbiome_sample_size,
-    '95th Percentile': percentiles,  
-    'MWU Statistic': MWU_stat,
-    'MWU P-value': MWU_p_value,
-    'Filename': gpt_file_ori,     # FULL filename, same as results_biome['Filename']
-}
-    
-    # Append the dictionary to the results list
-    results_list.append(results_sub_biome_dict)
-    
-    
-
-    
-    ########################################
-    # Plotting: 
-        
-    # Extract sub_biome_texts directly from embeddings dictionaries
-    gold_labels = {key: embeddings_gd[key]['sub-biome'] for key in embeddings_gd}
-    gpt_labels = {key: embeddings_gpt[key]['sub-biome'] for key in embeddings_gpt}
-    
-    ### filtering to keep only common keys in both dictionaries, and 10 per biome
-    gold_biomes = {key: embeddings_gd[key]['biome'] for key in embeddings_gd}
-    common_keys = list(gold_labels.keys() & gpt_labels.keys())
-    sampled_keys = sample_by_category(common_keys, gold_biomes, 10)
-    ###
-
-    # Prepare data matrices for the heatmap
-    matrix_gd = np.array([embeddings_gd[key]['embedding'] for key in sampled_keys])
-    matrix_gpt = np.array([embeddings_gpt[key]['embedding'] for key in sampled_keys])
-    gold_labels_sampled = {key: gold_labels[key] for key in sampled_keys}
-    gpt_labels_sampled = {key: gpt_labels[key] for key in sampled_keys}
-
-    # Generate heatmap
-    heatmap_fig = plot_heatmap(matrix_gd, matrix_gpt, gpt_labels_sampled, gold_labels_sampled, sampled_keys, sampled_keys)
-
-    ########################################
-    # Save both to a PDF
-    gpt_base_file = gpt_file.replace('_sbembeddings.json', '')
-    save_figures_to_pdf([comparison_fig, heatmap_fig], gpt_base_file, EMBEDDINGS_DIR)
-
-    
-# concatenate data 
-results_subbiome = pd.DataFrame(results_list)
-
-
-
-# -----------------------------
-# 1. Stats for biomes
-# ----------------------------- 
-
-results_stats = calculate_overlap_and_run_tests_biomes(full_agreement_df) 
-
-# CHANGE 3: filter biome stats to label pairs within the same test_type
-_label_to_testtype = dict(zip(df_map['label'], df_map['test_type']))
-_tt1 = results_stats['Label1'].map(_label_to_testtype)
-_tt2 = results_stats['Label2'].map(_label_to_testtype)
-results_stats = results_stats[_tt1 == _tt2].copy()
-results_stats['test_type'] = _tt1[_tt1 == _tt2]
-
-results_stats['Filename1'] = results_stats['Label1'].map(filename_label_map)
-results_stats['Filename2'] = results_stats['Label2'].map(filename_label_map)
-
-results_stats['validation'] = 'biome'
-print(results_stats.columns)
-# colnames are: 	Label1	Label2	Statistic	P-value	Adjusted P-value	Test Type	Filename1	Filename2  test_type validation
-
-
-# -----------------------------
-# 2. Stats for sub-biomes
-# ----------------------------- 
-
-results_data = []
-
-# CHANGE 4: compare only files within the same test_type (grouping from TSV)
-for _, grp in df_map.groupby('test_type', sort=False):
-    files = grp['filename'].tolist()  # FULL filenames (same keys as 'results')
-    for file1, file2 in combinations(files, 2):
-        print(f"\n\nComparing file:\n\n{file1}\nwith file:\n{file2}\n")
-        overlap_percentage, stat, p_value, p_adjusted, test_type = compare_based_on_overlap_subbiomes(results[file1], results[file2])
-
-        result_dict = {
-            # label1 and labels2
-            'Statistic': stat,
-            'P-value': p_value,
-            'Adjusted P-value': p_adjusted,
-            'Test Type': test_type,
-            'Filename1': file1,
-            'Filename2': file2
+        rec = {
+            "Filename": base,
+            "Average Similarity": np.nan,
+            "Median Similarity": np.nan,
+            "Standard Deviation": np.nan,
+            "subbiome_sample_size": 0,
+            "95th Percentile": np.nan,
         }
 
+        try:
+            if (gold is None) or (not os.path.exists(gpt_json_path)):
+                sub_rows.append(rec)
+                continue
 
-        results_data.append(result_dict)
-    
-    
-    
-results_df_stats = pd.DataFrame(results_data)
-results_df_stats['validation'] = 'sub-biome'
+            gpt = load_embeddings_json(gpt_json_path)
 
-# key to value reverse
-reversed_filename_label_map = {v: k for k, v in filename_label_map.items()}
-results_df_stats['Label1'] = results_df_stats['Filename1'].map(reversed_filename_label_map)
-results_df_stats['Label2'] = results_df_stats['Filename2'].map(reversed_filename_label_map)
+            # Build common keys; optionally reuse your filter_common_keys if present
+            if filter_common_keys is not None:
+                gd_filt, gpt_filt = filter_common_keys(gold, gpt)
+                common_keys = list(gd_filt.keys())
+            else:
+                common_keys = sorted(set(gold.keys()).intersection(gpt.keys()))
 
-print(results_df_stats.columns)
-# colnames are: 	Statistic	P-value	Adjusted P-value	Test Type	Filename1	Filename2
+            if len(common_keys) == 0:
+                sub_rows.append(rec)
+                continue
 
+            sims = []
+            for k in common_keys:
+                gd_emb = gold[k].get("embedding")
+                gt_emb = gpt[k].get("embedding")
+                if gd_emb is None or gt_emb is None:
+                    continue
+                s = safe_cosines(gd_emb, gt_emb)
+                if not (np.isnan(s) or np.isinf(s)):
+                    sims.append(s)
 
+            if len(sims) == 0:
+                sub_rows.append(rec)
+                continue
 
+            sims_arr = np.array(sims, dtype=float)
 
-# Combine biome and sub-biome results: 
-# (now both sides use FULL 'Filename', so no rows get dropped)
-biomes_subbiomes = pd.merge(results_biome, results_subbiome, on='Filename', how='inner')
-biomes_subbiomes['Label'] = biomes_subbiomes['Filename'].map(file_label_map)
-print(biomes_subbiomes)
+            rec.update({
+                "Average Similarity": float(np.mean(sims_arr)),
+                "Median Similarity": float(np.median(sims_arr)),
+                "Standard Deviation": float(np.std(sims_arr, ddof=1)) if len(sims_arr) > 1 else 0.0,
+                "subbiome_sample_size": int(len(sims_arr)),
+                "95th Percentile": float(np.percentile(sims_arr, 95)),
+            })
 
-# CHANGE 5: enforce TSV order by FULL filename (unique), to match the map file exactly
-biomes_subbiomes['__ord'] = biomes_subbiomes['Filename'].map(_file_order)
-biomes_subbiomes = (
-    biomes_subbiomes
-    .sort_values('__ord', kind='stable')
-    .drop(columns='__ord')
-    .reset_index(drop=True)
-)
+        except Exception:
+            # keep NaNs on error but never drop the row
+            pass
 
-filename = os.path.join(WORK_DIR, 'biome_subbiome_results.csv')
-output_to_csv(biomes_subbiomes, filename)
+        sub_rows.append(rec)
 
+    return pd.DataFrame(sub_rows)
 
+def main():
+    parser = argparse.ArgumentParser(description="Simplified validator for GPT biomes & sub-biomes (results only).")
+    parser.add_argument("--work_dir", default=".", help="Base working directory")
+    parser.add_argument("--map_file", required=True,
+                        help="TSV with at least two columns: <filename> <label> (3rd col ignored)")
+    parser.add_argument("--out_csv", default="biome_subbiome_results.csv",
+                        help="Output CSV name (written under --work_dir)")
+    args = parser.parse_args()
 
-# Combine biome and sub-biome stats 
-biomes_subbiomes_stats = pd.concat([results_stats, results_df_stats], ignore_index=True)
-print(biomes_subbiomes_stats.head())
-print(biomes_subbiomes_stats.columns)
+    work_dir = os.path.abspath(args.work_dir)
+    map_path = os.path.join(work_dir, args.map_file)
 
+    # Read mapping
+    df_map = pd.read_csv(
+        map_path,
+        sep="\t",
+        comment="#",
+        header=None,
+        names=["filename", "label", "extra"],
+        usecols=[0, 1]
+    )
+    file_label_map = dict(zip(df_map["filename"].tolist(), df_map["label"].tolist()))
 
+    # Gold truth
+    _, gold_df = load_gold(work_dir)
 
-filename = os.path.join(WORK_DIR, 'biome_subbiome_stats.csv')
-output_to_csv(biomes_subbiomes_stats, filename)
+    # 1) Biome agreement table (authoritative left table)
+    biome_tbl = compute_biome_results(work_dir, file_label_map, gold_df)
+
+    # 2) Sub-biome summary (best-effort; may contain NaNs)
+    sub_tbl = compute_subbiome_results(work_dir, file_label_map)
+
+    # 3) LEFT-join so we NEVER drop a row if sub-biome is missing/failed
+    merged = pd.merge(biome_tbl, sub_tbl, on="Filename", how="left")
+
+    # Add back Label->Filename mapping explicitly (Filename already present; Label is in biome_tbl)
+    # And ensure columns order is friendly
+    preferred_order = [
+        "Label",
+        "Filename",
+        "Agreement biome (exact match)",
+        "biome_exact_match_mean",
+        "biome_exact_match_sd",
+        "Agreement biome (lenient match)",
+        "biome_lenient_match_mean",
+        "biome_lenient_match_sd",
+        "sample_size",
+        "Average Similarity",
+        "Median Similarity",
+        "Standard Deviation",
+        "subbiome_sample_size",
+        "95th Percentile",
+    ]
+    # Keep any extra columns too
+    remaining = [c for c in merged.columns if c not in preferred_order]
+    merged = merged[[c for c in preferred_order if c in merged.columns] + remaining]
+
+    out_path = os.path.join(work_dir, args.out_csv)
+    merged.to_csv(out_path, index=False)
+    print(f"Wrote: {out_path}")
+
+if __name__ == "__main__":
+    main()
