@@ -17,7 +17,7 @@ import numpy as np
 import sys
 import re
 from itertools import combinations
-sys.path.append('/Users/danielagaio/github/metadata_mining/scripts')
+sys.path.append('/Users/dgaio/github/metadata_mining/scripts')
 from features_process import find_distinguishing_features, extract_labels_from_filename, edit_features, load_and_process_file, handle_malformed_lines, filter_common_keys
 from embeddings_functions import (load_embeddings, compare_embeddings, create_shuffled_background_distribution, sample_by_category)
 from stats_module import calculate_overlap_and_run_tests_biomes, compare_based_on_overlap_subbiomes, print_statistics, test_similarity_separation
