@@ -32,6 +32,8 @@ from sklearn.metrics import (
 )
 
 import argparse
+import time
+
 
 home_dir = os.getenv('HOME')
 mypath = os.path.join(home_dir, "github/metadata_mining/scripts")
@@ -130,14 +132,24 @@ for file_path in gpt_files:
     df['gpt_biome'] = df['gpt_biome'].str.strip()
     label_df_map[label].append((file_path, df))
 
-# Assert no duplicate labels and collect the only file per label
-dupe_labels = [label for label, file_dfs in label_df_map.items() if len(file_dfs) != 1]
+
+# ---- Diagnose duplicate labels (print details) ----
+dupe_labels = {label: file_dfs for label, file_dfs in label_df_map.items() if len(file_dfs) > 1}
 if dupe_labels:
-    raise ValueError(f"Duplicate labels detected (expected none): {dupe_labels}")
+    print("\n[ERROR] Duplicate labels detected. Details:\n")
+    for label, file_dfs in dupe_labels.items():
+        print(f"Label: {label}  (count={len(file_dfs)})")
+        for fp, df in sorted(file_dfs, key=lambda t: os.path.getmtime(t[0]), reverse=True):
+            mtime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(fp)))
+            size_mb = os.path.getsize(fp) / (1024 * 1024)
+            print(f"  - {fp}")
+            print(f"    mtime: {mtime} | size: {size_mb:.2f} MB | rows: {len(df)}")
+    # stop here so you can fix clashing labels upstream
+    raise ValueError("Duplicate labels found. See details above.")
 
-selected_files = [file_dfs[0][0] for file_dfs in label_df_map.items()]
-selected_dfs   = [file_dfs[0][1] for file_dfs in label_df_map.items()]
-
+# Expect exactly one file per label (enforced by the check above)
+selected_files = [file_dfs[0][0] for file_dfs in label_df_map.values()]
+selected_dfs   = [file_dfs[0][1] for file_dfs in label_df_map.values()]
 
 # Update my_files to reflect the actual files used in the final DataFrame
 my_files = selected_files
