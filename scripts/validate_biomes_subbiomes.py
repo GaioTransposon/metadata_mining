@@ -4,15 +4,20 @@
 """
 Validate biomes & sub-biomes from GPT outputs, driven by a TSV map.
 
-Usage:
-  python validate_biomes_subbiomes.py --map_tsv /Users/dgaio/MicrobeAtlasProject_Zenodo/gpt_file_label_map_mini.tsv
+Usage example (inside Docker as in your other scripts):
 
-TSV format (tab-separated; header required; lines starting with # ignored):
-filename    label   test_type
-<fileA>     L1      sync - chunking no + chunksizes
-<fileB>     L2      sync - chunking no + chunksizes
-<fileC>     L3      sync - models
-...
+docker run -it --rm \
+  -v ~/MicrobeAtlasProject:/MicrobeAtlasProject \
+  -v ~/github/metadata_mining/scripts:/app/scripts \
+  metadmin \
+  python /app/scripts/validate_biomes_subbiomes.py \
+    --map_tsv gpt_file_label_map.tsv \
+    --gold_dict gold_dict.pkl
+
+Notes:
+- Filenames listed in --map_tsv are resolved relative to --work_dir (default: /MicrobeAtlasProject).
+- gold_dict_sbembeddings.json is expected in <work_dir>/embeddings unless overridden with --gold_embeddings_json.
+- You can override paths via env vars too (WORK_DIR, SCRIPTS_DIR).
 """
 
 import os
@@ -25,8 +30,17 @@ import argparse
 from itertools import combinations
 from typing import List, Dict, Tuple
 
-# project imports
-sys.path.append('/Users/dgaio/github/metadata_mining/scripts')
+# -----------------------------
+# Path setup (Docker-friendly)
+# -----------------------------
+DEFAULT_WORK_DIR = os.environ.get("WORK_DIR", "/MicrobeAtlasProject")
+DEFAULT_SCRIPTS_DIR = os.environ.get("SCRIPTS_DIR", "/app/scripts")
+
+# Ensure project scripts are importable regardless of host paths
+if DEFAULT_SCRIPTS_DIR not in sys.path:
+    sys.path.append(DEFAULT_SCRIPTS_DIR)
+
+# project imports (now relative to /app/scripts inside the container)
 from features_process import (
     load_and_process_file, filter_common_keys
 )
@@ -39,16 +53,8 @@ from stats_module import (
 )
 from output_writing import (
     plot_biome_agreement, plot_actual_vs_background, plot_heatmap,
-    save_figures_to_pdf, output_to_csv
+    save_figures_to_pdf, output_to_csv  # keeping import in case you reuse later
 )
-
-# -----------------------------
-# Paths (unchanged)
-# -----------------------------
-home_dir = os.getenv('HOME')
-work_dir = os.path.join(home_dir, "MicrobeAtlasProject")
-embeddings_dir = os.path.join(work_dir, "embeddings")
-gold_dict_path = os.path.join(home_dir, "github/metadata_mining/source_data/gold_dict.pkl")
 
 # -----------------------------
 # Helpers
@@ -71,42 +77,34 @@ def read_map_tsv(path: str) -> pd.DataFrame:
         df = df.copy()
         df.columns = [str(c).strip().lower() for c in df.columns]
 
-        # Reorder if expected columns present
         if set(expected).issubset(df.columns):
             df = df[expected]
         else:
-            # If not, we can't clean this frame
             raise ValueError(f"TSV must provide columns {expected} (found: {list(df.columns)})")
 
-        # Coerce to string & strip
         for c in expected:
             df[c] = df[c].astype(str).str.strip()
 
-        # Drop fully empty rows
         df = df[~(df[expected].apply(lambda r: all((x == "" or pd.isna(x)) for x in r), axis=1))]
 
-        # Validate non-empty
         if df.isna().any().any() or (df[expected] == "").any().any():
             bad = df[df[expected].isna().any(axis=1) | (df[expected] == "").any(axis=1)]
             raise ValueError(f"TSV has rows with missing values:\n{bad}")
 
         return df
 
-    # --- Try 1: read assuming a real header row (commented header is skipped) ---
+    # Try header
     df_try = pd.read_csv(path, sep="\t", comment="#", dtype=str, keep_default_na=False)
     header_lower = [str(c).strip().lower() for c in df_try.columns]
 
     if header_lower == expected:
-        # Good, proceed
         return _clean_df(df_try)
     else:
-        # The first row was likely treated as header -> re-read with header=None
         df_nohdr = pd.read_csv(
             path, sep="\t", comment="#", header=None, names=expected,
             dtype=str, keep_default_na=False
         )
         return _clean_df(df_nohdr)
-
 
 def add_separator(df: pd.DataFrame) -> pd.DataFrame:
     """Append a single blank (NaN) row to visually separate groups."""
@@ -114,8 +112,6 @@ def add_separator(df: pd.DataFrame) -> pd.DataFrame:
         return df
     blank = pd.DataFrame([{col: np.nan for col in df.columns}])
     return pd.concat([df, blank], ignore_index=True)
-
-
 
 def groups_from_test_type(df: pd.DataFrame) -> List[Tuple[str, List[str], List[str]]]:
     """
@@ -133,19 +129,21 @@ def groups_from_test_type(df: pd.DataFrame) -> List[Tuple[str, List[str], List[s
     return groups
 
 # -----------------------------
-# Core per-group pipeline (mostly your original)
+# Core per-group pipeline
 # -----------------------------
 def run_validation_for_group(
     my_files: List[str],
     my_labels: List[str],
     group_name: str,
     gold_dict: Dict,
-    embeddings_gd: Dict
+    embeddings_gd: Dict,
+    work_dir: str
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Runs the pipeline for one group (test_type).
     Returns (results_df, stats_df) without writing CSVs.
     """
+    embeddings_dir = os.path.join(work_dir, "embeddings")
     file_label_map = dict(zip(my_files, my_labels))
 
     print("\n=== Running test_type group:", group_name, "===\n")
@@ -199,7 +197,7 @@ def run_validation_for_group(
         )
     ], axis=1)
 
-    # Build a clean Label column (from index) and map to filenames safely
+    # Clean Label column and map to filenames
     results_biome = results_biome.copy()
     results_biome['Label'] = results_biome.index.astype(str).str.strip()
 
@@ -208,7 +206,6 @@ def run_validation_for_group(
     }
     results_biome['Filename'] = results_biome['Label'].map(filename_label_map)
 
-    # Warn if any labels didn't map to a filename (prevents silent drops)
     missing_fn = results_biome[results_biome['Filename'].isna()]['Label'].tolist()
     if missing_fn:
         print("\n[WARN] These labels didn’t map to a filename (check TSV/whitespace):", missing_fn)
@@ -332,12 +329,12 @@ def run_validation_for_group(
     reverse_map = {v: k for k, v in filename_label_map.items()}
     biomes_subbiomes['Label'] = biomes_subbiomes['Filename'].map(reverse_map)
 
-    # Return DataFrames (caller will concatenate across groups and write once)
-    combined_stats_df = pd.concat([results_stats, results_df_stats], ignore_index=True) \
-        if not results_df_stats.empty else results_stats.copy()
-
     # move "Label" to the last column
     biomes_subbiomes = biomes_subbiomes[[c for c in biomes_subbiomes.columns if c != "Label"] + ["Label"]]
+
+    # combine stats
+    combined_stats_df = pd.concat([results_stats, results_df_stats], ignore_index=True) \
+        if not results_df_stats.empty else results_stats.copy()
 
     return biomes_subbiomes, combined_stats_df
 
@@ -348,43 +345,59 @@ def run_validation_for_group(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process GPT outputs by groups from a TSV map.')
     parser.add_argument('--map_tsv', type=str, required=True,
-                        help='TSV with columns: filename\\tlabel\\ttest_type')
+                        help='TSV with columns: filename\\tlabel\\ttest_type (paths resolved relative to --work_dir).')
     parser.add_argument('--gold_dict', type=str, required=True,
-                    help='Path to gold_dict.pkl')
+                        help='Path to gold_dict.pkl (resolved relative to --work_dir unless absolute).')
+    parser.add_argument('--work_dir', type=str, default=DEFAULT_WORK_DIR,
+                        help=f'Working dir that contains GPT outputs and embeddings (default: {DEFAULT_WORK_DIR}).')
+    parser.add_argument('--scripts_dir', type=str, default=DEFAULT_SCRIPTS_DIR,
+                        help=f'Path to scripts for imports (default: {DEFAULT_SCRIPTS_DIR}).')
+    parser.add_argument('--gold_embeddings_json', type=str, default=None,
+                        help='Optional override for gold_dict_sbembeddings.json path. '
+                             'Default: <work_dir>/embeddings/gold_dict_sbembeddings.json')
     args = parser.parse_args()
-    gold_dict_path = args.gold_dict
 
+    # Normalize paths relative to work_dir if given relative
+    def _resolve(p: str) -> str:
+        return p if os.path.isabs(p) else os.path.join(args.work_dir, p)
+
+    work_dir = args.work_dir
+    embeddings_dir = os.path.join(work_dir, "embeddings")
+
+    map_tsv_path = _resolve(args.map_tsv)
+    gold_dict_path = _resolve(args.gold_dict)
+
+    gold_embeddings_json = args.gold_embeddings_json or os.path.join(
+        embeddings_dir, 'gold_dict_sbembeddings.json'
+    )
+    if not os.path.isabs(gold_embeddings_json):
+        gold_embeddings_json = _resolve(gold_embeddings_json)
 
     # Load ground truth once
     with open(gold_dict_path, 'rb') as file:
         gold_dict = pickle.load(file)
-    gold_dict_json_path = os.path.join(embeddings_dir, 'gold_dict_sbembeddings.json')
-    embeddings_gd = load_embeddings(gold_dict_json_path)
+
+    embeddings_gd = load_embeddings(gold_embeddings_json)
 
     # Read TSV and form groups by test_type
-    df_map = read_map_tsv(args.map_tsv)
+    df_map = read_map_tsv(map_tsv_path)
     groups = groups_from_test_type(df_map)
 
     # Run all groups fresh each time (combine within THIS run)
     all_results, all_stats = [], []
     for group_name, files, labels in groups:
-        res_df, stats_df = run_validation_for_group(files, labels, group_name, gold_dict, embeddings_gd)
+        res_df, stats_df = run_validation_for_group(files, labels, group_name, gold_dict, embeddings_gd, work_dir)
         all_results.append(add_separator(res_df))
         all_stats.append(add_separator(stats_df))
 
     combined_results_df = pd.concat(all_results, ignore_index=True)
     combined_stats_df = pd.concat(all_stats, ignore_index=True)
 
-    # Always overwrite outputs (bypass output_to_csv if it appends)
+    # Always overwrite outputs
     out_results = os.path.join(work_dir, 'biome_subbiome_results.csv')
     out_stats   = os.path.join(work_dir, 'biome_subbiome_stats.csv')
 
-    combined_results_df.to_csv(out_results, index=False)   # overwrite
-    combined_stats_df.to_csv(out_stats, index=False)       # overwrite
-
+    combined_results_df.to_csv(out_results, index=False)
+    combined_stats_df.to_csv(out_stats, index=False)
 
     print(f"\nWrote combined files:\n  {out_results}\n  {out_stats}\n")
-
-
-
-
