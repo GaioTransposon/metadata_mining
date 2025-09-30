@@ -428,17 +428,19 @@ Four scripts to run:
 <a name="gpt-runs-evaluation"></a>
 #### GPT runs evaluation: 
 
-This script compares biome and sub-biome annotations per GPT run against the benchmark's. In this manner GPT runs in which different seetings were used (creativity or other paramters), can be compared for performance. You can use my --map_file (gpt_file_label_map.tsv) if you are reproducing my results (GPT performance). If you have your own GPT files you will need to edit gpt_file_label_map.tsv to reflect your file names and corresponding labels. 
+This script compares biome and sub-biome annotations per GPT run against the benchmark's. In this manner the performance of GPT runs in which different settings were used (creativity parameters or other parameters), can be compared. You can use my --map_file (gpt_file_label_map.tsv) if you are reproducing my results (GPT performance). If you have your own GPT files you will need to edit gpt_file_label_map.tsv to reflect your file names and your labels of choice. 
 
 
 ```
 docker run -it --rm \
   -v ~/MicrobeAtlasProject:/MicrobeAtlasProject \
   -v ~/github/metadata_mining/scripts:/app/scripts \
+  -e WORK_DIR=/MicrobeAtlasProject \
+  -e SCRIPTS_DIR=/app/scripts \
   metadmin \
   python /app/scripts/validate_biomes_subbiomes.py \
-    --work_dir . \
-    --map_file gpt_file_label_map.tsv
+    --map_tsv gpt_file_label_map.tsv \
+    --gold_dict gold_dict.pkl
 ```
 
 <a name="overall-gpt-performance"></a>
