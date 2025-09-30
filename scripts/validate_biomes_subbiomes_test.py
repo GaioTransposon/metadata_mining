@@ -349,7 +349,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process GPT outputs by groups from a TSV map.')
     parser.add_argument('--map_tsv', type=str, required=True,
                         help='TSV with columns: filename\\tlabel\\ttest_type')
+    parser.add_argument('--gold_dict', type=str, required=True,
+                    help='Path to gold_dict.pkl')
     args = parser.parse_args()
+    gold_dict_path = args.gold_dict
+
 
     # Load ground truth once
     with open(gold_dict_path, 'rb') as file:
