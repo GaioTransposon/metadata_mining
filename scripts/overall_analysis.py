@@ -10,7 +10,7 @@ Created on Tue Jul 16 15:37:48 2024
 
 
 # run as
-# python ~/github/metadata_mining/scripts/overall_analysis.py \
+# python ~/github/metadata_mining/scripts/overall_analysis_docker.py \
 #        --work_dir ~/MicrobeAtlasProject \
 #        --metadata_dir sample_info_split_dirs \
 #        --keyword_based_annot_file joao_biomes_parsed.csv
@@ -32,6 +32,8 @@ from sklearn.metrics import (
 )
 
 import argparse
+import time
+
 
 home_dir = os.getenv('HOME')
 mypath = os.path.join(home_dir, "github/metadata_mining/scripts")
@@ -59,7 +61,7 @@ parser.add_argument(
 parser.add_argument(
     "--keyword_based_annot_file",
     default="joao_biomes_parsed.csv",
-    help="CSV (inside work_dir) with Joao’s biome assignments.",
+    help="CSV (inside work_dir) with Joao’s (keyword-based classifier) biome assignments.",
 )
 args = parser.parse_args()
 
@@ -117,13 +119,6 @@ file_label_map = {file: extract_labels_from_filename(file, distinguishing_tokens
 # Files processing and Agreement calculation
 # -----------------------------
 
-def user_select_file(files):
-    print("\nMultiple files found for the same label. Choose which one to keep:")
-    for index, (file, _) in enumerate(files):
-        print(f"{index + 1}: {file}")
-    choice = int(input("Enter the number of the file to keep: ")) - 1
-    return files[choice]  # Return the tuple of the chosen file and its DataFrame
-
 # Initialize a dictionary to hold label to DataFrame mappings
 label_df_map = defaultdict(list)
 
@@ -137,17 +132,24 @@ for file_path in gpt_files:
     df['gpt_biome'] = df['gpt_biome'].str.strip()
     label_df_map[label].append((file_path, df))
 
-# Select DataFrames, handling duplicates where necessary
-selected_files = []
-selected_dfs = []
-for label, file_dfs in label_df_map.items():
-    if len(file_dfs) > 1:
-        chosen_file, chosen_df = user_select_file(file_dfs)
-        selected_files.append(chosen_file)
-        selected_dfs.append(chosen_df)
-    else:
-        selected_files.append(file_dfs[0][0])
-        selected_dfs.append(file_dfs[0][1])
+
+# ---- Diagnose duplicate labels (print details) ----
+dupe_labels = {label: file_dfs for label, file_dfs in label_df_map.items() if len(file_dfs) > 1}
+if dupe_labels:
+    print("\n[ERROR] Duplicate labels detected. Details:\n")
+    for label, file_dfs in dupe_labels.items():
+        print(f"Label: {label}  (count={len(file_dfs)})")
+        for fp, df in sorted(file_dfs, key=lambda t: os.path.getmtime(t[0]), reverse=True):
+            mtime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(fp)))
+            size_mb = os.path.getsize(fp) / (1024 * 1024)
+            print(f"  - {fp}")
+            print(f"    mtime: {mtime} | size: {size_mb:.2f} MB | rows: {len(df)}")
+    # stop here so you can fix clashing labels upstream
+    raise ValueError("Duplicate labels found. See details above.")
+
+# Expect exactly one file per label (enforced by the check above)
+selected_files = [file_dfs[0][0] for file_dfs in label_df_map.values()]
+selected_dfs   = [file_dfs[0][1] for file_dfs in label_df_map.values()]
 
 # Update my_files to reflect the actual files used in the final DataFrame
 my_files = selected_files
@@ -190,7 +192,7 @@ print(f"Kurtosis: {kurtosis:.2f}")
 
 
 
-################## Old (Joao's) vs new (GPT) biome agreements conf matrices: 
+################## Keyword-based classifier (Joao's) vs new (GPT) biome agreements conf matrices: 
 ###
 
 selected_biomes = ['animal', 'plant', 'soil', 'water', 'other']
@@ -208,7 +210,7 @@ merged_df.rename(columns={'biome_x': 'predicted_biome', 'biome_y': 'gd_biome'}, 
 
 # Find common sample IDs between GPT and João's datasets
 common_samples = set(lenient_agreement_df_filt['sample']).intersection(set(merged_df['sample']))
-print(f"Number of common samples between GPT and Joao: {len(common_samples)}")
+print(f"Number of common samples between GPT and Keyword-based classifier: {len(common_samples)}")
 
 # Subset both DataFrames to include only the common samples
 lenient_agreement_df_common = lenient_agreement_df_filt[lenient_agreement_df_filt['sample'].isin(common_samples)]
@@ -261,7 +263,7 @@ metrics_df = pd.DataFrame(grouped_metrics)
 
 print(f"\nNumber of tests (labels): {len(metrics_df)}")
 
-print("\nRanges of metrics per label:")
+print("\nRanges of metrics per label (GPT):")
 for metric in ["accuracy", "precision_macro", "recall_macro", "f1_macro"]:
     print(f"{metric}: min = {metrics_df[metric].min():.3f}, max = {metrics_df[metric].max():.3f}")
 ###
@@ -288,7 +290,7 @@ normalized_conf_matrix_joao_common = conf_matrix_joao_common.div(
 
 # Print matrices for inspection (optional)
 print("\nNormalized GPT Confusion Matrix:\n", normalized_conf_matrix_gpt_common.round(3))
-print("\nNormalized Joao Confusion Matrix:\n", normalized_conf_matrix_joao_common.round(3))
+print("\nNormalized Keyword-based classifier Confusion Matrix:\n", normalized_conf_matrix_joao_common.round(3))
 
 ###
 
@@ -347,7 +349,7 @@ gpt_kappa = cohen_kappa_score(gpt_actual, gpt_predicted)
 joao_kappa = cohen_kappa_score(joao_actual, joao_predicted)
 
 print(f"GPT Kappa: {gpt_kappa:.3f}")   # -1 to 1: 1 is perfect agreement
-print(f"João Kappa: {joao_kappa:.3f}")
+print(f"Keyword-based classifier Kappa: {joao_kappa:.3f}")
 ## 
 
 
@@ -427,6 +429,7 @@ legend_ax = fig.add_subplot(gs[1, 4:6])  # Span across columns for better center
 legend = legend_ax.legend(*ax4.get_legend_handles_labels(), loc='center', fontsize=9)
 legend_ax.axis('off')  # Hide the axis box for the legend
 
+fig.savefig(os.path.join(WORK_DIR, "GPT_vs_keyword_confusion_matrix.pdf"), format="pdf", bbox_inches="tight")
 plt.show()
 ###
 
@@ -440,7 +443,7 @@ agreement_by_biome = lenient_agreement_df.groupby('biome')['agreement'].mean().s
 
 print('\nAgreement by biome: ', agreement_by_biome, '\n')
 
-plt.figure(figsize=(10, 6))
+""" plt.figure(figsize=(10, 6))
 ax = agreement_by_biome.plot(kind='bar', color='skyblue')
 plt.title('Agreement by biome')
 plt.xlabel('biome')
@@ -450,7 +453,8 @@ plt.ylim(0, 100)
 for p in ax.patches:
     ax.annotate(f"{p.get_height():.2f}", (p.get_x() + p.get_width() / 2., p.get_height()),
                  ha='center', va='center', xytext=(0, 10), textcoords='offset points')
-plt.show()
+plt.savefig(os.path.join(WORK_DIR, "agreement_by_biome.pdf"), format="pdf", bbox_inches="tight")
+plt.show() """
 
 
 # We are interested about False agreement samples, so filter to keep: 
@@ -469,6 +473,7 @@ sns.heatmap(conf_matrix_false, cmap='Blues')
 plt.xticks(rotation=45, ha='right')  # Rotate x labels for better visibility
 plt.yticks(rotation=0)  # Ensure y labels are horizontal
 plt.title('Overall confusion matrix (False agreements only)')
+plt.savefig(os.path.join(WORK_DIR, "false_conf_matrix_overall.pdf"), format="pdf", bbox_inches="tight")
 plt.show()
 ##
 
@@ -502,6 +507,7 @@ sns.heatmap(normalized_conf_matrix, annot=True, fmt=".3f", cmap='viridis')
 plt.xticks(rotation=45, ha='right')
 plt.yticks(rotation=0)
 plt.title('Filtered Confusion Matrix of Biome Predictions (Counts > 2) - Normalized by Row')
+plt.savefig(os.path.join(WORK_DIR, "false_conf_matrix_filtered_normalized.pdf"), format="pdf", bbox_inches="tight")
 plt.show()
 ##
 
@@ -528,16 +534,15 @@ print(f"Chi-squared: {chi2_contingency(contingency_table)[:2]}")
 standardized_residuals = calculate_residuals(contingency_table, expected_df)
 misclassification_percentages = (contingency_table.div(contingency_table.sum(axis=1), axis=0) * 100)
 
-print("\nPercentages of Misclassifications (Top 6 Percentages per Biome):")
+""" print("\nPercentages of Misclassifications (Top 6 Percentages per Biome):")
 for biome in misclassification_percentages.index:
     top_percentages = misclassification_percentages.loc[biome].nlargest(6)
     if not top_percentages.empty:
         print(f"\n{biome}:")
         for gpt_biome, percentage in top_percentages.items():
             residual = standardized_residuals.at[biome, gpt_biome]
-            print(f"{gpt_biome:10} {percentage:.2f}% residual {residual:.2f}")
-
-
+            print(f"{gpt_biome:10} {percentage:.2f}% residual {residual:.2f}") """
+            
 
 def descriptive_stats(data, label):
     print(f"\nDescriptive Statistics for {label}:")
@@ -561,6 +566,7 @@ plt.title('Distribution of Misclassifications per Sample (All Data)')
 plt.xlabel('Misclassifications Count')
 plt.ylabel('Frequency')
 plt.grid(True)
+plt.savefig(os.path.join(WORK_DIR, "misclassifications_hist.pdf"), format="pdf", bbox_inches="tight")
 plt.show()
 
 
@@ -589,7 +595,7 @@ print(f"Number of samples above 95th percentile: {len(top_5_percent)}")
 
 
 # =============================================================================
-# ################## Study misclassified samples in detail 
+# ################## Study misclassified samples in detail (previous manuscript version - without accounting for random seed runs bias)
 # 
 # 
 # # Display top misclassified samples 
@@ -625,6 +631,108 @@ print(f"Number of samples above 95th percentile: {len(top_5_percent)}")
 # # SRS942824              soil # rhizosphere 109/110
 # 
 # =============================================================================
+
+
+# ─────────────────────────────────────────────────────────────
+# Balanced per-sample misclassification — Top 10 + metadata
+# ─────────────────────────────────────────────────────────────
+
+
+# --- put this helper near the top of the section ---
+def safe_mode(s):
+    s = s.dropna()
+    if s.empty:
+        return None
+    m = s.mode()
+    return m.iloc[0] if not m.empty else None
+
+
+
+
+# 0) Seed column if not already there (safe no-op if exists)
+if 'seed' not in lenient_agreement_df.columns:
+    def _extract_seed(label):
+        m = re.search(r'rs(\d+)', str(label))
+        return m.group(1) if m else "no_seed"
+    lenient_agreement_df['seed'] = lenient_agreement_df['label'].map(_extract_seed)
+
+base_df = lenient_agreement_df.copy()
+base_df['misclass'] = ~base_df['agreement']
+
+# 1) Choose a **balanced** dataset: prefer strict intersection (samples in every run)
+runs = base_df['label'].unique()
+n_runs = len(runs)
+sample_run_counts = base_df.groupby('sample')['label'].nunique()
+
+intersection_samples = sample_run_counts[sample_run_counts == n_runs].index
+df_use = base_df[base_df['sample'].isin(intersection_samples)].copy()
+
+if df_use['sample'].nunique() == 0:
+    # Fallback: ≥80% coverage if the strict intersection is empty
+    coverage_threshold = 0.80
+    min_runs = int(np.ceil(coverage_threshold * n_runs))
+    eligible = sample_run_counts[sample_run_counts >= min_runs].index
+    df_use = base_df[base_df['sample'].isin(eligible)].copy()
+    print(f"[Using ≥{int(coverage_threshold*100)}% coverage] Eligible samples: {df_use['sample'].nunique()}")
+else:
+    print(f"[Using strict intersection] Samples in ALL {n_runs} runs: {df_use['sample'].nunique()}")
+
+# 2) Aggregate per sample: counts and rate (unweighted, as requested)
+agg = (
+    df_use.groupby('sample')
+    .agg(
+        runs_seen=('label', 'nunique'),
+        misclass_runs=('misclass', 'sum'),
+        true_biome=('biome', safe_mode)   # <— was lambda with .mode().iloc[0]
+    )
+    .reset_index()
+)
+agg['misclass_pct'] = 100.0 * agg['misclass_runs'] / agg['runs_seen']
+
+# 3) Most common wrong label (robust to all-NaN)
+wrong_mode_map = (
+    df_use[df_use['misclass']]
+    .groupby('sample')['gpt_biome']
+    .apply(safe_mode)    # <— was lambda with .mode().iloc[0]
+)
+agg['most_common_wrong_biome'] = agg['sample'].map(wrong_mode_map)
+
+# (rest unchanged)
+agg_sorted = agg.sort_values(
+    by=['misclass_pct', 'misclass_runs', 'runs_seen'],
+    ascending=[False, False, False]
+).reset_index(drop=True)
+
+top10 = agg_sorted.head(100).copy()
+display_cols = ['sample', 'true_biome', 'runs_seen', 'misclass_runs', 'misclass_pct', 'most_common_wrong_biome']
+print("\nTop 10 misclassified samples (balanced):")
+print(top10[display_cols].to_string(index=False, formatters={'misclass_pct': '{:.1f}%'.format}))
+
+# 7) Helper: fetch metadata (FIXED var name: METADATA_DIR)
+def fetch_metadata_from_sample(sample):
+    """Read metadata from METADATA_DIR/dir_{last3}/{sample}_clean.txt."""
+    folder_name = f"dir_{sample[-3:]}"
+    folder_path = os.path.join(METADATA_DIR, folder_name)
+    metadata_file_path = os.path.join(folder_path, f"{sample}_clean.txt")
+    try:
+        with open(metadata_file_path, 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        return f"[metadata file not found at {metadata_file_path}]"
+
+# 8) Print each top sample’s metadata right after the summary
+print("\n================ METADATA FOR TOP 10 ================\n")
+for _, row in top10.iterrows():
+    s = row['sample']
+    print(f"--- {s} | true={row['true_biome']} | misclass={row['misclass_runs']}/{row['runs_seen']} ({row['misclass_pct']:.1f}%)"
+          f" | common_wrong={row['most_common_wrong_biome']} ---")
+    meta = fetch_metadata_from_sample(s)
+    # Trim extremely long dumps; adjust if you want the full file
+    preview = meta if len(meta) <= 4000 else meta[:4000] + "\n[...truncated...]"
+    print(preview)
+    print("\n")
+
+
 
 
 
