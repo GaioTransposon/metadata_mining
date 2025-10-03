@@ -15,6 +15,7 @@ import numpy as np
 import seaborn as sns
 from matplotlib.legend_handler import HandlerTuple
 from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap
+from matplotlib.colors import ListedColormap, BoundaryNorm
 from datetime import datetime
 import time
 
@@ -239,53 +240,64 @@ plot_bars(df_subset, plots_dir, 'Models (sync requests)', 9)
 ###
 
 
+
 ###
 # Figure 5 
+df_subset = df_full[136:140]  
+plot_bars(df_subset, plots_dir, 'Output formats', 9)  
+###
+
+
+
+###
+# Figure 6 
 df_subset = df_full[44:54]  
 plot_lines(df_subset, plots_dir, 'Frequency penalty', 8, 4)  
 ###
 
 
+
 ###
-# Suppl figure 
+# Suppl Figure 5 - A
 df_subset = df_full[14:28]  
 plot_lines(df_subset, plots_dir, 'Creativity params: temp', 8, 4)  
 
 
+# Suppl Figure 5 - B
 df_subset = df_full[28:43]  
 plot_lines(df_subset, plots_dir, 'Creativity params: topp', 8, 4)  
 
 
+# Suppl Figure 5 - C
 df_subset = df_full[44:59]  
 plot_lines(df_subset, plots_dir, 'Creativity params: freqp', 8, 4)  
 
+
+# Suppl Figure 5 - D
 df_subset = df_full[59:74]  
 plot_lines(df_subset, plots_dir, 'Creativity params: presp', 8, 4)  
 ###
 
 
 ###
-# Suppl figure 
+# Suppl figure 6 - A
 df_subset = df_full[75:91] 
 plot_bars(df_subset, plots_dir, 'Sync requests: same and different sample groups (rs)', 7)  
 
-
+# Suppl figure 6 - B
 df_subset = df_full[92:113] 
 plot_bars(df_subset, plots_dir, 'Async requests: same and different sample groups (rs)', 7)  
 
-
+# Suppl figure 6 - C
 df_subset = df_full[114:126] 
-plot_bars(df_subset, plots_dir, 'Sync versus async requests (same sample group)', 7)  
+plot_bars(df_subset, plots_dir, 'Async versus sync requests (same sample group)', 7)  
 ###
+
+
 
 # df_subset = df_full[127:135] 
 # plot_bars(df_subset, plots_dir, 'Please', 9)  
 
-###
-# Figure 6
-df_subset = df_full[136:] 
-plot_bars(df_subset, plots_dir, 'Output formats', 9)  
-###
 
 
 
@@ -293,7 +305,6 @@ plot_bars(df_subset, plots_dir, 'Output formats', 9)
 ################################################################################
 ################################################################################
 ################################################################################
-
 
 
 # Stats:
@@ -365,13 +376,23 @@ def process_and_visualize(
             "Double-check Label1/Label2 pairs against the 'validation' column."
         )
 
+    
     # ---------- 4️⃣  Plot ---------------------------------------------------------
     bins           = [0, 0.01, 0.05, 0.2, 1.0]
-    biome_cmap     = LinearSegmentedColormap.from_list(
-                        "BiomeCmap", sns.color_palette("Blues_r",  len(bins)-1))
-    subbiome_cmap  = LinearSegmentedColormap.from_list(
-                        "SubBiomeCmap", sns.color_palette("Greens_r", len(bins)-1))
-    norm           = BoundaryNorm(bins, ncolors=len(bins)-1, clip=True)
+    
+    # use DISCRETE colormaps with exactly len(bins)-1 colors
+    biome_cmap = ListedColormap(sns.color_palette("Blues_r",  len(bins)-1))
+    subbiome_cmap = ListedColormap(sns.color_palette("Greens_r", len(bins)-1))
+    
+    # BoundaryNorm should use the cmap's number of discrete colors
+    norm = BoundaryNorm(bins, biome_cmap.N, clip=True)
+    
+    # old (did not do gradient)
+    # biome_cmap     = LinearSegmentedColormap.from_list(
+    #                     "BiomeCmap", sns.color_palette("Blues_r",  len(bins)-1))
+    # subbiome_cmap  = LinearSegmentedColormap.from_list(
+    #                     "SubBiomeCmap", sns.color_palette("Greens_r", len(bins)-1))
+    # norm           = BoundaryNorm(bins, ncolors=len(bins)-1, clip=True)
 
     fig = plt.figure(figsize=(5.5, 5.5))
     ax  = plt.gca()  # so we can refer after savefig if needed
@@ -418,55 +439,62 @@ df_full = pd.read_csv(file_path)
 
 
 
-
+# Figure 3
 df_subset = df_full[0:30] 
 process_and_visualize(df_subset, plots_dir, 'Effect of chunking (sync requests)', 8, 9)  
 
 
+
+# Figure 4
 df_subset = df_full[30:61] 
 process_and_visualize(df_subset, plots_dir, 'Models (sync requests)', 8, 9)  
 
 
+# Figure 5
+df_subset = df_full[1101:1114] 
+process_and_visualize(df_subset, plots_dir, 'Output formats', 8, 9) 
 
 
+# Figure 6 
 df_subset = df_full[140:165] 
 process_and_visualize(df_subset, plots_dir, 'Frequency penalty', 8, 9)  
 
 
+# Suppl Figure 5 - E
 df_subset = df_full[62:100] 
 process_and_visualize(df_subset, plots_dir, 'Creativity parameters: temp', 8, 9) 
 
-
+# Suppl Figure 5 - F
 df_subset = df_full[100:139] 
 process_and_visualize(df_subset, plots_dir, 'Creativity parameters: topp', 8, 9) 
 
-
+# Suppl Figure 5 - G
 df_subset = df_full[140:178] 
 process_and_visualize(df_subset, plots_dir, 'Creativity parameters: freqp', 8, 9)  
 
-
+# Suppl Figure 5 - H
 df_subset = df_full[179:217] 
 process_and_visualize(df_subset, plots_dir, 'Creativity parameters: presp', 8, 9)  
 
 
+
+
+# Suppl Figure 6 - D
 df_subset = df_full[218:490] 
 process_and_visualize(df_subset, plots_dir, 'Sync requests: same and different sample groups (rs)', 4, 8)  
 
+# Suppl Figure 6 - E            
 df_subset = df_full[491:911] 
 process_and_visualize(df_subset, plots_dir, 'Async requests: same and different sample groups (rs)', 4, 8)  
 
-
+# Suppl Figure 6 - F
 df_subset = df_full[912:1044] 
-process_and_visualize(df_subset, plots_dir, 'Sync versus async requests (same sample group)', 4, 8)  
+process_and_visualize(df_subset, plots_dir, 'Async versus sync requests (same sample group)', 4, 8)  
 
 
 
 # df_subset = df_full[1044:1101] 
 # process_and_visualize(df_subset, plots_dir, 'Please (async)', 8, 9)  
-
-
-df_subset = df_full[1101:] 
-process_and_visualize(df_subset, plots_dir, 'Output formats', 8, 9) 
 
 
 

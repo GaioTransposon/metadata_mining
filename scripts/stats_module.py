@@ -6,13 +6,18 @@ Created on Thu Jun 13 15:45:04 2024
 @author: dgaio
 """
 
+
+
 import pandas as pd
 from statsmodels.stats.contingency_tables import mcnemar
 from itertools import combinations
 from scipy.stats import ttest_ind
 import numpy as np
 from scipy.stats import ttest_rel, mannwhitneyu
+from scipy.stats import fisher_exact  # <-- added for Fisher's exact
 
+# The new variance check prevents division-by-zero whenever there is a constant group. 
+# If there’s any variation at all, ttest_ind behaves fine, so no blow-ups.
 
 
 
@@ -45,9 +50,31 @@ def calculate_overlap_and_run_tests_biomes(df, overlap_threshold=0.9):
             test_type = 'McNemar'
             stat, p = result.statistic, result.pvalue
         else:
-            # Perform unpaired t-test
-            stat, p = ttest_ind(df1['agreement'], df2['agreement'])
-            test_type = 'Independent T-test'
+            # Unpaired comparison:
+            # If either group's binary agreement has zero variance, use Fisher's exact test.
+            # Otherwise, fall back to the independent t-test as before.
+            g1 = df1['agreement'].astype(float).values
+            g2 = df2['agreement'].astype(float).values
+
+            var1 = np.var(g1, ddof=1) if len(g1) > 1 else 0.0
+            var2 = np.var(g2, ddof=1) if len(g2) > 1 else 0.0
+
+            if var1 == 0.0 or var2 == 0.0:
+                # Build 2x2 table: successes/failures by group
+                s1 = int(np.nansum(g1))
+                f1 = int(len(g1) - s1)
+                s2 = int(np.nansum(g2))
+                f2 = int(len(g2) - s2)
+                table = [[s1, f1], [s2, f2]]
+
+                # Fisher's exact (two-sided). Returns odds_ratio (stat) and p-value.
+                odds_ratio, p = fisher_exact(table, alternative='two-sided')
+                stat = odds_ratio
+                test_type = 'Fisher exact'
+            else:
+                # Perform unpaired t-test (original behavior)
+                stat, p = ttest_ind(g1, g2)
+                test_type = 'Independent T-test'
 
         results.append((label1, label2, stat, p, test_type))
 
@@ -59,7 +86,6 @@ def calculate_overlap_and_run_tests_biomes(df, overlap_threshold=0.9):
 
     results_df = pd.DataFrame(corrected_results, columns=['Label1', 'Label2', 'Statistic', 'P-value', 'Adjusted P-value', 'Test Type'])
     return results_df
-
 
 
 def compare_based_on_overlap_subbiomes(similarities_dict1, similarities_dict2, threshold=0.8):
@@ -92,14 +118,10 @@ def compare_based_on_overlap_subbiomes(similarities_dict1, similarities_dict2, t
     print(f"Dict2 keys: {list(similarities_dict2.keys())[:5]}")
     print(f"Common: {len(common_keys)} / Min(len1={len(keys1)}, len2={len(keys2)}) = {overlap_percentage:.2f}")
 
-
     return overlap_percentage * 100, round(stat, 2), round(p_value, 5), round(p_adjusted, 5), test_type
 
 
-
-
 def print_statistics(similarities):
-    
     avg_sim = round(np.mean(similarities), 2)
     median_sim = round(np.median(similarities), 2)
     std_dev = round(np.std(similarities), 2)
@@ -116,13 +138,13 @@ def print_statistics(similarities):
     return avg_sim, median_sim, std_dev, percentiles, subbiome_sample_size
 
 
-
-
 def test_similarity_separation(actual_similarities, background_similarities):
     """Performs a statistical test to see if actual and background similarities are significantly different and returns the p-value."""
     stat, p_value = mannwhitneyu(actual_similarities, background_similarities)
     print(f"Actual vs background similarities: Mann-Whitney U test: U={stat}, p-value={p_value}")
     return round(stat, 2), round(p_value, 3)
+
+
 
 
 
