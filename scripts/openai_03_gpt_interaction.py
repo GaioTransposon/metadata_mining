@@ -8,7 +8,7 @@ Created on Wed Dec  6 13:57:30 2023
 
 
 import os
-import openai
+from openai import OpenAI, RateLimitError, APIError, NotFoundError
 import time
 import logging
 import glob 
@@ -21,7 +21,7 @@ from datetime import datetime
 
 class GPTInteractor:
 
-    def __init__(self, work_dir, system_prompt_file, api_key_path, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty, max_requests_per_minute):
+    def __init__(self, work_dir, system_prompt_file, api_key_path, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty, max_requests_per_minute,  base_url=None ):
         self.work_dir = work_dir
         self.system_prompt_file = system_prompt_file
         self.api_key = self.load_api_key(api_key_path)
@@ -36,6 +36,9 @@ class GPTInteractor:
         self.request_times = []  # To track the timestamps of each request
         self.system_prompt = self.load_system_prompt()
         self.api_request_count = 0
+        
+        self.base_url = base_url or None
+        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
 
 
     def load_api_key(self, api_key_path):
@@ -183,10 +186,8 @@ class GPTInteractor:
                 f"{n_samples} microbial metagenomic samples"
             )
     
-        openai.api_key = self.api_key
-    
         try:
-            response = openai.chat.completions.create(
+            response = self.client.chat.completions.create(
                 model             = self.model,
                 messages          = [
                     {"role": "system", "content": customized_prompt},
@@ -208,12 +209,17 @@ class GPTInteractor:
     
             return response                                             # full object
     
-        except openai.RateLimitError:
+        except RateLimitError:
             logging.error("Rate limit exceeded.")
             return "RATE_LIMIT_EXCEEDED"
     
+        except NotFoundError as exc:  # 404s (often: wrong model name or wrong base_url)
+            logging.error(f"NotFound (404): {exc}. Check --model and --base_url.")
+            return None
+        except APIError as exc:
+            logging.error(f"OpenAI API error: {exc}")
+            return None
         except Exception as exc:
-            logging.error(f"GPT request failed: {exc}")
             return None
 
 
