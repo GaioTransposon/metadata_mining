@@ -27,7 +27,7 @@ python github/metadata_mining/scripts/embeddings_from_sb.py \
 
 import os
 import csv
-import openai
+from openai import OpenAI, RateLimitError, APIError, NotFoundError
 import json
 import pickle
 import re
@@ -63,6 +63,17 @@ parser.add_argument(
     required=True,
     help="gold_dict.pkl file (relative to work dir)",
 )
+parser.add_argument(
+    "--embed_model",
+    default="Qwen/Qwen3-Embedding-8B",
+    help="OpenAI-compatible embedding model name"
+)
+parser.add_argument(
+    "--base_url",
+    default=os.environ.get("OPENAI_BASE_URL"),
+    help="OpenAI-compatible base URL (e.g. https://api.deepinfra.com/v1/openai)"
+)
+
 args = parser.parse_args()
 
 # --------------------------
@@ -71,19 +82,15 @@ args = parser.parse_args()
 work_dir        = os.path.abspath(args.directory_path)
 api_key_path    = os.path.join(work_dir, args.api_key_path)
 gold_dict_path  = os.path.join(work_dir, args.gold_dict_path)
+embed_model     = args.embed_model
 
 output_dir      = os.path.join(work_dir, "embeddings")
 os.makedirs(output_dir, exist_ok=True)
 
 
-
-# Set OpenAI API key
 with open(api_key_path, "r") as file:
-    openai.api_key = file.read().strip()
-
-# Check OpenAI version
-openai_version = openai.__version__
-use_old_api = version.parse(openai_version) < version.parse("1.0.0")
+    _api_key = file.read().strip()
+client = OpenAI(api_key=_api_key, base_url=args.base_url or None)
 
 # --------------------------
 # Functions
@@ -101,7 +108,7 @@ def load_and_extract_sub_biome(gold_dict_path):
     return gold_dict_sb
 
 
-def get_embeddings(data_dict, include_biome=False):
+def get_embeddings(client, model, data_dict, include_biome=False):
     embeddings_dict = {}
     failed_samples = []
     sample_ids = list(data_dict.keys())
@@ -112,12 +119,8 @@ def get_embeddings(data_dict, include_biome=False):
         chunk = descriptions[i:i + batch_size]
         sample_ids_chunk = sample_ids[i:i + batch_size]
         try:
-            if use_old_api:
-                response = openai.Embedding.create(input=chunk, engine="text-embedding-3-small")
-                embeddings = [embedding['embedding'] for embedding in response['data']]
-            else:
-                response = openai.embeddings.create(input=chunk, model="text-embedding-3-small")
-                embeddings = [embedding.embedding for embedding in response.data]
+            response = client.embeddings.create(input=chunk, model=model, encoding_format="float")
+            embeddings = [d.embedding for d in response.data]
 
             for j, sample_id in enumerate(sample_ids_chunk):
                 embeddings_dict[sample_id] = {
@@ -126,7 +129,7 @@ def get_embeddings(data_dict, include_biome=False):
                 }
                 if include_biome:
                     embeddings_dict[sample_id]['biome'] = data_dict[sample_id]['biome']
-        except Exception as e:
+        except (RateLimitError, NotFoundError, APIError, Exception) as e:
             print(f"⚠️  Batch {sample_ids_chunk[0]}…{sample_ids_chunk[-1]} failed: {e}")
             failed_samples.extend(sample_ids_chunk)
 
@@ -138,7 +141,7 @@ def save_embeddings(embeddings_dict, output_file_path):
         json.dump(embeddings_dict, json_file, ensure_ascii=False, indent=4)
 
 
-def process_file(csv_file_path, output_dir):
+def process_file(client, model, csv_file_path, output_dir):
     samples = {}
     with open(csv_file_path, mode='r', newline='', encoding='utf-8') as file:
         reader = csv.reader(file)
@@ -153,7 +156,7 @@ def process_file(csv_file_path, output_dir):
                 continue
             samples[sample_id] = {'sub-biome': sub_biome_text}
 
-    embeddings_dict, failed_samples = get_embeddings(samples, include_biome=False)
+    embeddings_dict, failed_samples = get_embeddings(client, model, samples, include_biome=False)
     base_filename = os.path.basename(csv_file_path)
     output_filename = base_filename.replace('.csv', '_sbembeddings.json').replace('.txt', '_sbembeddings.json')
     output_file_path = os.path.join(output_dir, output_filename)
@@ -171,7 +174,7 @@ def process_file(csv_file_path, output_dir):
 output_file_path = os.path.join(output_dir, 'gold_dict_sbembeddings.json')
 if not os.path.exists(output_file_path):
     gold_dict_sb = load_and_extract_sub_biome(gold_dict_path)
-    emb_dict, failed_samples = get_embeddings(gold_dict_sb, include_biome=True)
+    emb_dict, failed_samples = get_embeddings(client, embed_model, gold_dict_sb, include_biome=True)
     save_embeddings(emb_dict, output_file_path)
     print('📦 Gold dict embeddings saved to:', output_file_path)
 
@@ -188,7 +191,7 @@ for file_path in file_list:
         continue
 
     print(f"\n🔎  Getting embeddings for {len(file_list)} samples in {os.path.basename(file_path)} …")
-    output_file, failed = process_file(file_path, output_dir)
+    output_file, failed = process_file(client, embed_model, file_path, output_dir)
     print('📦 Embeddings saved to:', output_file)
     if failed:
         print(f"⚠️  Failed to embed {len(failed)} samples.")

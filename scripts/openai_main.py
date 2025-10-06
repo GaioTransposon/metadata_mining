@@ -21,7 +21,7 @@ from openai_02_metadata_fetching import MetadataFetching
 from openai_02_metadata_processing import MetadataProcessor
 from openai_03_gpt_interaction import GPTInteractor
 #from openai_04_gpt_parsing import GPTOutputParsing
-
+import re
 
 
 
@@ -42,7 +42,8 @@ def parse_arguments():
     parser.add_argument('--system_prompt_file', type=str, required=True, help='it should be named openai_system_prompt.txt. Remember to change the input prompt based on the output_format')
     parser.add_argument('--encoding_name', type=str, required=True, help='name of encoder (for tokenizer) e.g.: cl100k_base')
     parser.add_argument('--api_key_path', type=str, required=True, help='Path to the OpenAI API key')
-    parser.add_argument('--model', type=str, required=True, help='GPT model to use')
+    parser.add_argument('--model', type=str, required=True, help='GPT model to use, if you also changed base url, it could be e.g. microsoft/phi-4')
+    parser.add_argument('--base_url', type=str, required = False, help = 'If you want to use open-source models, you will have to put in the base url of a different provider e.g. https://api.deepinfra.com/v1/openai')
     parser.add_argument('--temperature', type=float, required=True, help='Temperature setting for the GPT model')
     parser.add_argument('--max_tokens', type=int, required=True, help='we should set the maximum: 4096. some models don t support the maximum. run with few samples to check if max_tokens chosen is appropriate')
     parser.add_argument('--top_p', type=float, required=True, help='Top-p setting for the GPT model')
@@ -109,7 +110,7 @@ def main():
     
     # PHASE 3: GPT Interaction
     start_time = time.time()
-    gpt_interactor = GPTInteractor(work_dir, system_prompt_file, api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.max_requests_per_minute)
+    gpt_interactor = GPTInteractor(work_dir, system_prompt_file, api_key_path, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty, args.max_requests_per_minute, base_url=args.base_url)
     responses = gpt_interactor.get_gpt_responses()
     print('####### responses ###############################################################')
     print(responses)
@@ -183,9 +184,15 @@ def main():
     print('my_tot_api_count', my_tot_api_count)
     logging.info(f"my_tot_api_count: {my_tot_api_count}")
 
+    def sanitize(tag: str) -> str:
+        # / in certain model paths broke below. e.g. microsoft/phi. This fixes it.
+        return re.sub(r'[^A-Za-z0-9._-]+', '-', str(tag))
+
+    safe_model = sanitize(args.model)
+
     # save final df to file:
     current_datetime = datetime.now().strftime('%Y%m%d%H%M')
-    filename = f"gpt_clean_output_nspb{args.n_samples_per_biome}_chunking{args.chunking}_chunksize{args.chunk_size}_model{args.model}_temp{args.temperature}_maxtokens{args.max_tokens}_topp{args.top_p}_freqp{args.frequency_penalty}_presp{args.presence_penalty}_rs{args.seed}_API{my_tot_api_count}_{args.opt_text}_dt{current_datetime}.txt"
+    filename = f"gpt_clean_output_nspb{args.n_samples_per_biome}_chunking{args.chunking}_chunksize{args.chunk_size}_model{safe_model}_temp{args.temperature}_maxtokens{args.max_tokens}_topp{args.top_p}_freqp{args.frequency_penalty}_presp{args.presence_penalty}_rs{args.seed}_API{my_tot_api_count}_{args.opt_text}_dt{current_datetime}.txt"
     output_path = os.path.join(work_dir, filename)
     main_parsed_df.to_csv(output_path, index=False)
     logging.info(f"Saved clean GPT output to: {output_path}")
