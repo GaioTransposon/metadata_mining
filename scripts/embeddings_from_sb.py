@@ -8,7 +8,6 @@ Created on Tue May 28 15:40:32 2024
 
 
 
-#!/usr/bin/env python3
 """
 Generate text-embedding-3-small vectors for: 
  – your gold_dict (benchmark) sub-biome strings
@@ -19,7 +18,9 @@ Run as:
 python github/metadata_mining/scripts/embeddings_from_sb.py \
     --directory ~/MicrobeAtlasProject \
     --api_key_path ~/Desktop/keys/my_api_key_embeddings \
-    --gold_dict_path ~/github/metadata_mining/source_data/gold_dict.pkl
+    --gold_dict_path ~/github/metadata_mining/source_data/gold_dict.pkl \
+    --embed_model text-embedding-3-small \
+    --base_url https://api.deepinfra.com/v1/openai
 """
 
 
@@ -34,11 +35,6 @@ import re
 import glob
 import argparse
 from packaging import version
-
-# --------------------------
-# Argument Parsing
-# --------------------------
-
 
 
 # --------------------------
@@ -56,7 +52,7 @@ parser.add_argument(
 parser.add_argument(
     "--api_key_path",
     required=True,
-    help="File containing your OpenAI API key (relative to work dir)",
+    help="File containing your OpenAI API key (relative to work dir; this can be OpenAI API key or DeepInfra API key)",
 )
 parser.add_argument(
     "--gold_dict_path",
@@ -164,7 +160,7 @@ def process_file(client, model, csv_file_path, output_dir):
     if embeddings_dict:
         save_embeddings(embeddings_dict, output_file_path)
 
-    return output_file_path, failed_samples
+    return output_file_path, failed_samples, len(samples)
 
 # --------------------------
 # Main Execution
@@ -190,11 +186,13 @@ for file_path in file_list:
         print('✅ Embeddings already exist for:', output_file_path)
         continue
 
-    print(f"\n🔎  Getting embeddings for {len(file_list)} samples in {os.path.basename(file_path)} …")
-    output_file, failed = process_file(client, embed_model, file_path, output_dir)
-    print('📦 Embeddings saved to:', output_file)
+    print(f"\n🔎  Parsing samples in {os.path.basename(file_path)} …")
+    # pass client and model here:
+    output_file, failed, n_samples = process_file(client, embed_model, file_path, output_dir)
+    print(f'📦 Embeddings saved to: {output_file} (processed {n_samples} samples)')
     if failed:
         print(f"⚠️  Failed to embed {len(failed)} samples.")
+
 
 
 
