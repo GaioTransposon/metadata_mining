@@ -61,7 +61,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--embed_model",
-    default="Qwen/Qwen3-Embedding-8B",
+    required=True,
     help="OpenAI-compatible embedding model name"
 )
 parser.add_argument(
