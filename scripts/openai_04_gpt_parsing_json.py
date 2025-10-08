@@ -75,11 +75,23 @@ class GPTOutputParsing:
             
     def run(self, gpt_responses):
         # Extract content strings from response objects
-        contents = [
-            response.choices[0].message.content
-            for response in gpt_responses
-            if hasattr(response.choices[0], "message") and hasattr(response.choices[0].message, "content")
-        ]
+        
+        try: 
+            contents = [
+                response.choices[0].message.content
+                for response in gpt_responses
+                if hasattr(response.choices[0], "message") and hasattr(response.choices[0].message, "content")
+            ]
+        except AttributeError:
+          
+            contents = [
+                    resp.output_text
+                    for resp in gpt_responses
+                    if getattr(resp, "output_text", None)
+                ]
+            
+                
+            
     
         # Now parse the JSON-like content
         self.parsed_data = self.parse_my_json_like(contents)

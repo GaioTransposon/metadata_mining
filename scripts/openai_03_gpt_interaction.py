@@ -187,19 +187,36 @@ class GPTInteractor:
             )
     
         try:
-            response = self.client.chat.completions.create(
-                model             = self.model,
-                messages          = [
-                    {"role": "system", "content": customized_prompt},
-                    {"role": "user",   "content": content_string}
-                ],
-                temperature        = self.temperature,
-                max_tokens         = self.max_tokens,
-                top_p              = self.top_p,
-                frequency_penalty  = self.frequency_penalty,
-                presence_penalty   = self.presence_penalty,
-            )
-    
+            if 'gpt-5' in self.model:
+                try:
+                    response = self.client.responses.create(
+                        model=self.model,
+                        instructions=customized_prompt,
+                        input=content_string,
+                        max_output_tokens=self.max_tokens,
+                        temperature=self.temperature,
+                        # top_p=self.top_p, not supported
+                        # frequency_penalty  = self.frequency_penalty,
+                        # presence_penalty   = self.presence_penalty,
+                        
+                    )
+                except Exception as e:
+                    print(e)
+   
+            else:    
+                response = self.client.chat.completions.create(
+                    model             = self.model,
+                    messages          = [
+                        {"role": "system", "content": customized_prompt},
+                        {"role": "user",   "content": content_string}
+                    ],
+                    temperature        = self.temperature,
+                    max_tokens         = self.max_tokens,
+                    top_p              = self.top_p,
+                    frequency_penalty  = self.frequency_penalty,
+                    presence_penalty   = self.presence_penalty,
+                )
+        
             # bookkeeping ───────────────────────────────────────────────
             self.request_times.append(time.time())
             self.api_request_count += 1
@@ -208,7 +225,7 @@ class GPTInteractor:
             print("####################")
     
             return response                                             # full object
-    
+        
         except RateLimitError:
             logging.error("Rate limit exceeded.")
             return "RATE_LIMIT_EXCEEDED"
@@ -260,7 +277,12 @@ class GPTInteractor:
                 try:
                     # old (for openai==0.28)
                     #content = response['choices'][0]['message']['content']
-                    content = response.choices[0].message.content
+                    
+                    if 'gpt-5' in self.model:
+                        content = response.output_text
+
+                    else:
+                        content = response.choices[0].message.content
 
                     file.write(content + "\n\n")
                 except KeyError:
