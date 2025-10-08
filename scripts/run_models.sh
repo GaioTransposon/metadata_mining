@@ -42,10 +42,13 @@ OSS_EMBED_MODEL="Qwen/Qwen3-Embedding-8B"
 # ---------------------------
 # Model sets
 # ---------------------------
+
+# "gpt-3.5-turbo-0125"
+# "gpt-3.5-turbo-1106"
+# "gpt-5-2025-08-07" doesnt work becuase max_tokens is no longer a parameter, it needs max_token_completions
 OPENAI_MODELS=(
-  "gpt-3.5-turbo-0125"
-  "gpt-3.5-turbo-1106"
-  "gpt-5-2025-08-07"
+  
+  
 )
 
 OSS_MODELS=(
