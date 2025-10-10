@@ -11,9 +11,12 @@ Created on Tue Jul 16 15:37:48 2024
 
 # run as
 # python ~/github/metadata_mining/scripts/overall_analysis_docker.py \
-#        --work_dir ~/MicrobeAtlasProject \
-#        --metadata_dir sample_info_split_dirs \
-#        --keyword_based_annot_file joao_biomes_parsed.csv
+#         --work_dir ~/MicrobeAtlasProject \
+#         --metadata_dir sample_info_split_dirs \
+#         --keyword_based_annot_file joao_biomes_parsed.csv \
+#         --metadata_dir sample_info_split_dirs \
+#         --exclude_files overall_analysis_excluded_files.txt
+    
 
 
 
@@ -63,6 +66,11 @@ parser.add_argument(
     default="joao_biomes_parsed.csv",
     help="CSV (inside work_dir) with Joao’s (keyword-based classifier) biome assignments.",
 )
+parser.add_argument(
+    "--exclude_files",
+    default=None,
+    help="Path to a text file listing GPT output files (one per line) to exclude from analysis.",
+)
 args = parser.parse_args()
 
 WORK_DIR       = os.path.abspath(args.work_dir)
@@ -83,7 +91,26 @@ gpt_files = []
 for pat in file_patterns:
     gpt_files.extend(glob.glob(os.path.join(WORK_DIR, pat)))
 
-print(f"\nFound {len(gpt_files)} GPT output files.\n")
+print(f"\nFound {len(gpt_files)} GPT output files before exclusion.\n")
+
+# ─────────────────────────────────────────────────────────────
+# Handle --exclude_files (optional)
+# ─────────────────────────────────────────────────────────────
+if args.exclude_files:
+    exclude_path = os.path.abspath(args.exclude_files)
+    if os.path.exists(exclude_path):
+        with open(exclude_path, "r") as f:
+            excluded = [line.strip() for line in f if line.strip()]
+        # Support both absolute and relative paths
+        excluded_abs = {os.path.abspath(os.path.join(WORK_DIR, f)) if not os.path.isabs(f) else os.path.abspath(f)
+                        for f in excluded}
+        gpt_files = [f for f in gpt_files if os.path.abspath(f) not in excluded_abs]
+        print(f"Excluded {len(excluded_abs)} files listed in {exclude_path}")
+    else:
+        print(f"[WARNING] Exclusion file not found: {exclude_path} — skipping exclusion step.")
+
+print(f"\n{len(gpt_files)} GPT output files remaining after exclusion.\n")
+
 
 # ─────────────────────────────────────────────────────────────
 # 3  Joao’s biome calls

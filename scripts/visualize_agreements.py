@@ -53,9 +53,12 @@ def prepare_data(df):
 
 
 
-
-def plot_bars(df, plots_dir, plot_title, labels_font):
+    
+def plot_bars(df, plots_dir, plot_title, labels_font, order=None):
     df = prepare_data(df)
+    
+    if order is not None:
+        df = df.iloc[order]
     
     n_points = len(df)
     group_count = 3  # Since you have three bar groups per index
@@ -98,9 +101,10 @@ def plot_bars(df, plots_dir, plot_title, labels_font):
 
 
 
-
 def plot_lines(df, plots_dir, plot_title, labels_font, break_every_n=None):
     df = prepare_data(df)
+
+        
     # Remove rows where 'Label' is NaN
     df = df.dropna(subset=['Label'])
 
@@ -223,6 +227,14 @@ file_path = os.path.join(work_dir, "biome_subbiome_results.csv")
 df_full = pd.read_csv(file_path)
 
 
+
+
+
+
+
+
+
+
 ###
 # Figure 3
 df_subset = df_full[0:6] 
@@ -253,6 +265,13 @@ plot_bars(df_subset, plots_dir, 'Output formats', 9)
 # Figure 6 
 df_subset = df_full[44:54]  
 plot_lines(df_subset, plots_dir, 'Frequency penalty', 8, 4)  
+###
+
+
+###
+# Figure 7
+df_subset = df_full[146:151] 
+plot_bars(df_subset, plots_dir, 'Proprietary vs non-proprietary', 7, order=[3,1,2,0,4])  
 ###
 
 
@@ -294,7 +313,6 @@ plot_bars(df_subset, plots_dir, 'Async versus sync requests (same sample group)'
 ###
 
 
-
 # df_subset = df_full[127:135] 
 # plot_bars(df_subset, plots_dir, 'Please', 9)  
 
@@ -310,20 +328,181 @@ plot_bars(df_subset, plots_dir, 'Async versus sync requests (same sample group)'
 # Stats:
 
 
+
+
+# =============================================================================
+# def process_and_visualize(
+#         df,
+#         plots_dir,
+#         my_title,
+#         cell_font_size=8,
+#         labels_font=9,
+#         debug=True, 
+#         order=None):   
+#         
+#     """
+#     Draw dual heat-maps for biome vs. sub-biome tests and save to PDF.
+#     Raises or warns early if something is wrong with the data.
+#     """
+# 
+#     # ---------- 1️⃣  Basic cleaning ------------------------------------------------
+#     
+#     df = df.copy()  # ← add this line
+#     df = df.dropna()
+#     
+#     if df.empty:
+#         raise ValueError(
+#             "After dropna() the DataFrame is empty – nothing to plot. "
+#             "Check for missing values in 'Label1', 'Label2', 'P-value', etc."
+#         )
+# 
+#     cols_needed = ['Label1', 'Label2', 'P-value', 'Adjusted P-value',
+#                    'Test Type', 'validation']
+#     missing_cols = [c for c in cols_needed if c not in df.columns]
+#     if missing_cols:
+#         raise KeyError(f"Missing expected columns: {missing_cols}")
+# 
+#     # Make validation comparisons case- & space-insensitive
+#     df['validation'] = df['validation'].str.strip().str.lower()
+# 
+#     # ---------- 2️⃣  Quick stats printout -----------------------------------------
+#     biome_rows      = (df['validation'] == 'biome').sum()
+#     subbiome_rows   = (df['validation'] == 'sub-biome').sum()
+#     if debug:
+#         print(f"[DEBUG] rows after dropna: {len(df)} "
+#               f"(biome={biome_rows}, sub-biome={subbiome_rows})")
+# 
+#     if biome_rows == 0 and subbiome_rows == 0:
+#         raise ValueError(
+#             "No rows have validation == 'biome' or 'sub-biome'. "
+#             "Check spelling/capitalisation in that column."
+#         )
+# 
+#     # ---------- 3️⃣  Build matrices ----------------------------------------------
+#     labels = pd.unique(df[['Label1', 'Label2']].to_numpy().flatten())
+#     
+#     print("\n[INFO] Label indices:")
+#     for i, lbl in enumerate(labels):
+#         print(f"  {i}: {lbl}")
+#         
+#     biome_matrix     = pd.DataFrame(np.nan, index=labels, columns=labels)
+#     subbiome_matrix  = pd.DataFrame(np.nan, index=labels, columns=labels)
+#     biome_annot      = pd.DataFrame("",     index=labels, columns=labels)
+#     subbiome_annot   = pd.DataFrame("",     index=labels, columns=labels)
+#     
+#     
+# 
+# 
+# 
+#     for _, row in df.iterrows():
+#         l1, l2 = row['Label1'], row['Label2']
+#         ann    = f"{row['P-value']:.2f};\n{row['Adjusted P-value']:.2f}"
+#         target = row['validation']
+#         if target == 'biome':
+#             biome_matrix.loc[l1, l2] = biome_matrix.loc[l2, l1] = row['Adjusted P-value']
+#             biome_annot .loc[l1, l2] = biome_annot .loc[l2, l1] = ann
+#         elif target == 'sub-biome':
+#             subbiome_matrix.loc[l1, l2] = subbiome_matrix.loc[l2, l1] = row['Adjusted P-value']
+#             subbiome_annot .loc[l1, l2] = subbiome_annot .loc[l2, l1] = ann
+# 
+#     if biome_matrix.isna().all().all() and subbiome_matrix.isna().all().all():
+#         raise ValueError(
+#             "Both matrices are still all-NaN after filling. "
+#             "Double-check Label1/Label2 pairs against the 'validation' column."
+#         )
+# 
+#     
+#     
+#     
+#     # NEW: reorder by numeric indices, if provided
+#     if order is not None:
+#         if not all(isinstance(i, (int, np.integer)) for i in order):
+#             raise ValueError("`order` must be a list of integer indices.")
+#         if not all(0 <= i < len(labels) for i in order):
+#             raise ValueError(f"`order` indices must be between 0 and {len(labels)-1}.")
+#         labels = labels[order]
+#         biome_matrix     = biome_matrix.reindex(index=labels, columns=labels)
+#         subbiome_matrix  = subbiome_matrix.reindex(index=labels, columns=labels)
+#         biome_annot      = biome_annot.reindex(index=labels, columns=labels)
+#         subbiome_annot   = subbiome_annot.reindex(index=labels, columns=labels)
+# 
+# 
+# 
+#     # ---------- 4️⃣  Plot ---------------------------------------------------------
+#     bins           = [0, 0.01, 0.05, 0.2, 1.0]
+#     
+#     # use DISCRETE colormaps with exactly len(bins)-1 colors
+#     biome_cmap = ListedColormap(sns.color_palette("Blues_r",  len(bins)-1))
+#     subbiome_cmap = ListedColormap(sns.color_palette("Greens_r", len(bins)-1))
+#     
+#     # BoundaryNorm should use the cmap's number of discrete colors
+#     norm = BoundaryNorm(bins, biome_cmap.N, clip=True)
+#     
+#     # old (did not do gradient)
+#     # biome_cmap     = LinearSegmentedColormap.from_list(
+#     #                     "BiomeCmap", sns.color_palette("Blues_r",  len(bins)-1))
+#     # subbiome_cmap  = LinearSegmentedColormap.from_list(
+#     #                     "SubBiomeCmap", sns.color_palette("Greens_r", len(bins)-1))
+#     # norm           = BoundaryNorm(bins, ncolors=len(bins)-1, clip=True)
+# 
+#     fig = plt.figure(figsize=(5.5, 5.5))
+#     ax  = plt.gca()  # so we can refer after savefig if needed
+# 
+#     mask_upper = np.triu(np.ones_like(biome_matrix, dtype=bool), k=1)
+#     mask_lower = np.tril(np.ones_like(biome_matrix, dtype=bool), k=-1)
+# 
+#     sns.heatmap(
+#         biome_matrix,   mask=~mask_lower, cmap=biome_cmap,
+#         annot=biome_annot, fmt="s", cbar=False,
+#         linewidths=.5, linecolor='grey', xticklabels=labels, yticklabels=labels,
+#         square=True, annot_kws={"size": cell_font_size}, norm=norm)
+# 
+#     sns.heatmap(
+#         subbiome_matrix, mask=~mask_upper, cmap=subbiome_cmap,
+#         annot=subbiome_annot, fmt="s", cbar=False,
+#         linewidths=.5, linecolor='grey', xticklabels=labels, yticklabels=labels,
+#         square=True, annot_kws={"size": cell_font_size}, norm=norm)
+# 
+#     plt.title(my_title, fontsize=labels_font)
+#     plt.xticks(rotation=45, ha='right', fontsize=labels_font)
+#     plt.yticks(rotation=0,  fontsize=labels_font)
+#     plt.tight_layout()
+# 
+#     # ---------- 5️⃣  Save BEFORE show() ------------------------------------------
+#     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+#     if not os.path.isdir(plots_dir):
+#         os.makedirs(plots_dir, exist_ok=True)
+# 
+#     pdf_name = os.path.join(plots_dir, f"stats_plot_{current_time}.pdf")
+#     fig.savefig(pdf_name, bbox_inches="tight")
+#     if debug:
+#         print(f"[DEBUG] plot written to: {pdf_name}")
+# 
+#     plt.show()
+#     plt.close(fig)        # free memory for batch runs
+#     time.sleep(1)
+# 
+# 
+# =============================================================================
+
+
 def process_and_visualize(
         df,
         plots_dir,
         my_title,
         cell_font_size=8,
         labels_font=9,
-        debug=True):
+        debug=True,
+        order=None):   # optional numeric order
     """
     Draw dual heat-maps for biome vs. sub-biome tests and save to PDF.
     Raises or warns early if something is wrong with the data.
     """
 
     # ---------- 1️⃣  Basic cleaning ------------------------------------------------
+    df = df.copy()        # avoid SettingWithCopyWarning
     df = df.dropna()
+
     if df.empty:
         raise ValueError(
             "After dropna() the DataFrame is empty – nothing to plot. "
@@ -340,8 +519,8 @@ def process_and_visualize(
     df['validation'] = df['validation'].str.strip().str.lower()
 
     # ---------- 2️⃣  Quick stats printout -----------------------------------------
-    biome_rows      = (df['validation'] == 'biome').sum()
-    subbiome_rows   = (df['validation'] == 'sub-biome').sum()
+    biome_rows    = (df['validation'] == 'biome').sum()
+    subbiome_rows = (df['validation'] == 'sub-biome').sum()
     if debug:
         print(f"[DEBUG] rows after dropna: {len(df)} "
               f"(biome={biome_rows}, sub-biome={subbiome_rows})")
@@ -353,11 +532,17 @@ def process_and_visualize(
         )
 
     # ---------- 3️⃣  Build matrices ----------------------------------------------
-    labels = pd.unique(df[['Label1', 'Label2']].to_numpy().flatten())
-    biome_matrix     = pd.DataFrame(np.nan, index=labels, columns=labels)
-    subbiome_matrix  = pd.DataFrame(np.nan, index=labels, columns=labels)
-    biome_annot      = pd.DataFrame("",     index=labels, columns=labels)
-    subbiome_annot   = pd.DataFrame("",     index=labels, columns=labels)
+    labels = list(pd.unique(df[['Label1', 'Label2']].to_numpy().flatten()))
+
+    # Helper print: indices -> labels
+    print("\n[INFO] Label indices:")
+    for i, lbl in enumerate(labels):
+        print(f"  {i:>2}: {lbl}")
+
+    biome_matrix    = pd.DataFrame(np.nan, index=labels, columns=labels)
+    subbiome_matrix = pd.DataFrame(np.nan, index=labels, columns=labels)
+    biome_annot     = pd.DataFrame("",     index=labels, columns=labels)
+    subbiome_annot  = pd.DataFrame("",     index=labels, columns=labels)
 
     for _, row in df.iterrows():
         l1, l2 = row['Label1'], row['Label2']
@@ -376,26 +561,35 @@ def process_and_visualize(
             "Double-check Label1/Label2 pairs against the 'validation' column."
         )
 
-    
+    # --- reorder by numeric indices, if provided (after filling matrices) ---
+    if order is not None:
+        if not all(isinstance(i, (int, np.integer)) for i in order):
+            raise ValueError("`order` must be a list of integer indices.")
+        if not all(0 <= i < len(labels) for i in order):
+            raise ValueError(f"`order` indices must be between 0 and {len(labels)-1}.")
+
+        labels = [labels[i] for i in order]
+
+        biome_matrix    = biome_matrix.loc[labels, labels]
+        subbiome_matrix = subbiome_matrix.loc[labels, labels]
+        biome_annot     = biome_annot.loc[labels, labels]
+        subbiome_annot  = subbiome_annot.loc[labels, labels]
+
+        print("\n[INFO] Final plot order:")
+        for i, lbl in enumerate(labels):
+            print(f"  {i}: {lbl}")
+
     # ---------- 4️⃣  Plot ---------------------------------------------------------
-    bins           = [0, 0.01, 0.05, 0.2, 1.0]
-    
+    bins = [0, 0.01, 0.05, 0.2, 1.0]
+
     # use DISCRETE colormaps with exactly len(bins)-1 colors
-    biome_cmap = ListedColormap(sns.color_palette("Blues_r",  len(bins)-1))
+    biome_cmap    = ListedColormap(sns.color_palette("Blues_r",  len(bins)-1))
     subbiome_cmap = ListedColormap(sns.color_palette("Greens_r", len(bins)-1))
-    
+
     # BoundaryNorm should use the cmap's number of discrete colors
     norm = BoundaryNorm(bins, biome_cmap.N, clip=True)
-    
-    # old (did not do gradient)
-    # biome_cmap     = LinearSegmentedColormap.from_list(
-    #                     "BiomeCmap", sns.color_palette("Blues_r",  len(bins)-1))
-    # subbiome_cmap  = LinearSegmentedColormap.from_list(
-    #                     "SubBiomeCmap", sns.color_palette("Greens_r", len(bins)-1))
-    # norm           = BoundaryNorm(bins, ncolors=len(bins)-1, clip=True)
 
     fig = plt.figure(figsize=(5.5, 5.5))
-    ax  = plt.gca()  # so we can refer after savefig if needed
 
     mask_upper = np.triu(np.ones_like(biome_matrix, dtype=bool), k=1)
     mask_lower = np.tril(np.ones_like(biome_matrix, dtype=bool), k=-1)
@@ -428,9 +622,8 @@ def process_and_visualize(
         print(f"[DEBUG] plot written to: {pdf_name}")
 
     plt.show()
-    plt.close(fig)        # free memory for batch runs
+    plt.close(fig)
     time.sleep(1)
-
 
 
 
@@ -445,6 +638,16 @@ process_and_visualize(df_subset, plots_dir, 'Effect of chunking (sync requests)'
 
 
 
+
+file_path = os.path.join(work_dir, "biome_subbiome_stats.csv")
+df_full = pd.read_csv(file_path)
+
+
+
+# Figure 3
+df_subset = df_full[0:30] 
+process_and_visualize(df_subset, plots_dir, 'Effect of chunking (sync requests)', 8, 9)  
+
 # Figure 4
 df_subset = df_full[30:61] 
 process_and_visualize(df_subset, plots_dir, 'Models (sync requests)', 8, 9)  
@@ -458,6 +661,15 @@ process_and_visualize(df_subset, plots_dir, 'Output formats', 8, 9)
 # Figure 6 
 df_subset = df_full[140:165] 
 process_and_visualize(df_subset, plots_dir, 'Frequency penalty', 8, 9)  
+
+
+###
+# Figure 7
+df_subset = df_full[1129:] 
+process_and_visualize(df_subset, plots_dir, 'Proprietary vs non-proprietary', 7, 9, order=[2, 4, 1, 0, 3])
+###
+
+
 
 
 # Suppl Figure 5 - E
@@ -477,8 +689,6 @@ df_subset = df_full[179:217]
 process_and_visualize(df_subset, plots_dir, 'Creativity parameters: presp', 8, 9)  
 
 
-
-
 # Suppl Figure 6 - D
 df_subset = df_full[218:490] 
 process_and_visualize(df_subset, plots_dir, 'Sync requests: same and different sample groups (rs)', 4, 8)  
@@ -490,6 +700,7 @@ process_and_visualize(df_subset, plots_dir, 'Async requests: same and different 
 # Suppl Figure 6 - F
 df_subset = df_full[912:1044] 
 process_and_visualize(df_subset, plots_dir, 'Async versus sync requests (same sample group)', 4, 8)  
+
 
 
 

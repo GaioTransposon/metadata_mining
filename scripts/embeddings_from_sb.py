@@ -15,13 +15,42 @@ Generate text-embedding-3-small vectors for:
 
 Run as: 
 -----
-python github/metadata_mining/scripts/embeddings_from_sb.py \
-    --directory ~/MicrobeAtlasProject \
-    --api_key_path ~/Desktop/keys/my_api_key_embeddings \
-    --gold_dict_path ~/github/metadata_mining/source_data/gold_dict.pkl \
-    --embed_model text-embedding-3-small \
+docker run -it --rm \
+  -v ~/MicrobeAtlasProject:/MicrobeAtlasProject \
+  -v ~/github/metadata_mining/scripts:/app/scripts \
+  metadmin \
+  python /app/scripts/embeddings_from_sb.py \
+    --directory_path . \
+    --api_key_path my_api_key_embeddings \
+    --gold_dict_path gold_dict.pkl \
+    --embed_model text-embedding-3-small
+
+
+####
+For non-proprietary models change these arguments to:  
+    
+--api_key_path my_api_key_embeddings_deepinfra
+--embed_model Qwen/Qwen3-Embedding-8B
+
+Also add the base_url argument:
+
+--base_url https://api.deepinfra.com/v1/openai
+
+For example: 
+    
+docker run -it --rm \
+  -v ~/MicrobeAtlasProject:/MicrobeAtlasProject \
+  -v ~/github/metadata_mining/scripts:/app/scripts \
+  metadmin \
+  python /app/scripts/embeddings_from_sb.py \
+    --directory_path . \
+    --api_key_path my_api_key_embeddings_deepinfra \
+    --gold_dict_path gold_dict.pkl \
+    --embed_model Qwen/Qwen3-Embedding-8B \
     --base_url https://api.deepinfra.com/v1/openai
-"""
+####
+
+""" 
 
 
 
@@ -34,7 +63,6 @@ import pickle
 import re
 import glob
 import argparse
-from packaging import version
 
 
 # --------------------------
@@ -79,6 +107,10 @@ work_dir        = os.path.abspath(args.directory_path)
 api_key_path    = os.path.join(work_dir, args.api_key_path)
 gold_dict_path  = os.path.join(work_dir, args.gold_dict_path)
 embed_model     = args.embed_model
+
+# safety for embedding models with / characters
+model_slug      = embed_model.replace('/', '-')
+
 
 output_dir      = os.path.join(work_dir, "embeddings")
 os.makedirs(output_dir, exist_ok=True)
@@ -154,7 +186,14 @@ def process_file(client, model, csv_file_path, output_dir):
 
     embeddings_dict, failed_samples = get_embeddings(client, model, samples, include_biome=False)
     base_filename = os.path.basename(csv_file_path)
-    output_filename = base_filename.replace('.csv', '_sbembeddings.json').replace('.txt', '_sbembeddings.json')
+    
+    
+    output_filename = (
+        base_filename
+        .replace('.csv', f'_sbembeddings__{model_slug}.json')
+        .replace('.txt', f'_sbembeddings__{model_slug}.json')
+    )
+    
     output_file_path = os.path.join(output_dir, output_filename)
 
     if embeddings_dict:
@@ -167,7 +206,8 @@ def process_file(client, model, csv_file_path, output_dir):
 # --------------------------
 
 # Process gold dict
-output_file_path = os.path.join(output_dir, 'gold_dict_sbembeddings.json')
+output_file_path = os.path.join(output_dir, f'gold_dict_sbembeddings__{model_slug}.json')
+
 if not os.path.exists(output_file_path):
     gold_dict_sb = load_and_extract_sub_biome(gold_dict_path)
     emb_dict, failed_samples = get_embeddings(client, embed_model, gold_dict_sb, include_biome=True)
@@ -180,7 +220,13 @@ pattern = os.path.join(work_dir, "gpt_clean_output*")  # when running for George
 file_list = glob.glob(pattern + '.txt') + glob.glob(pattern + '.csv')
 
 for file_path in file_list:
-    output_filename = os.path.basename(file_path).replace('.csv', '_sbembeddings.json').replace('.txt', '_sbembeddings.json')
+
+    output_filename = (
+        os.path.basename(file_path)
+        .replace('.csv', f'_sbembeddings__{model_slug}.json')
+        .replace('.txt', f'_sbembeddings__{model_slug}.json')
+    )
+
     output_file_path = os.path.join(output_dir, output_filename)
     if os.path.exists(output_file_path):
         print('✅ Embeddings already exist for:', output_file_path)

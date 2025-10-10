@@ -137,3 +137,4 @@ dmypy.json
 .DS_Store
 middle_dir/metadata.out
 middle_dir/sample.coordinates.reparsed.filtered
+.DS_Store

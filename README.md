@@ -463,7 +463,8 @@ conda activate metadmin_env
 python /app/scripts/overall_analysis.py \
        --work_dir . \
        --metadata_dir sample_info_split_dirs \
-       --keyword_based_annot_file keywordsbased_biomes_parsed.csv
+       --keyword_based_annot_file keywordsbased_biomes_parsed.csv \
+       --exclude_files overall_analysis_excluded_files.txt
 ```
 
 This starts a session where you can choose amongst files. No choice will be given if no files labels match. In which case, the analysis will be done directly. Results (and stats) will print out to the console. 
