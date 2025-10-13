@@ -46,7 +46,7 @@ docker run -it --rm \
     --directory_path . \
     --api_key_path my_api_key_embeddings_deepinfra \
     --gold_dict_path gold_dict.pkl \
-    --embed_model Qwen/Qwen3-Embedding-8B \
+    --embed_model Qwen/Qwen3-Embedding-4B \
     --base_url https://api.deepinfra.com/v1/openai
 ####
 
@@ -215,10 +215,18 @@ if not os.path.exists(output_file_path):
     print('📦 Gold dict embeddings saved to:', output_file_path)
 
 # Process all matching .txt or .csv files
-pattern = os.path.join(work_dir, "gpt_clean_output*")  # when running for George (2nd curator) file: GH_collect* or GH_combined* (2nd round)
+# Process all matching .txt or .csv files
+patterns = [
+    os.path.join(work_dir, "gpt_clean_output*"),
+    os.path.join(work_dir, "GH_*")
+]
 
-file_list = glob.glob(pattern + '.txt') + glob.glob(pattern + '.csv')
-
+file_list = []
+for pattern in patterns:
+    file_list.extend(glob.glob(pattern + '.txt'))
+    file_list.extend(glob.glob(pattern + '.csv'))
+    
+    
 for file_path in file_list:
 
     output_filename = (

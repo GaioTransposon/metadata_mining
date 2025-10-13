@@ -401,7 +401,8 @@ docker run -it --rm \
   python /app/scripts/embeddings_from_sb.py \
     --directory_path . \
     --api_key_path my_api_key_embeddings \
-    --gold_dict_path gold_dict.pkl
+    --gold_dict_path gold_dict.pkl \
+    --embed_model text-embedding-3-small
 ```
 
 
@@ -428,8 +429,27 @@ Four scripts to run:
 <a name="gpt-runs-evaluation"></a>
 #### GPT runs evaluation: 
 
-This script compares biome and sub-biome annotations per GPT run against the benchmark's. In this manner the performance of GPT runs in which different settings were used (creativity parameters or other parameters), can be compared. You can use my --map_file (gpt_file_label_map.tsv) if you are reproducing my results (GPT performance). If you have your own GPT files you will need to edit gpt_file_label_map.tsv to reflect your file names and your labels of choice. 
+This script compares biome and sub-biome annotations per GPT run against the benchmark's. In this manner the performance of GPT runs in which different settings were used (creativity parameters or other parameters), can be compared. You can use my --map_file (gpt_file_label_map.tsv) if you are reproducing my results (LLM performance). If you have your own LLM files you will need to edit gpt_file_label_map.tsv to reflect your file names and your labels of choice. 
 
+
+```
+docker run -it --rm \
+  -v ~/MicrobeAtlasProject:/MicrobeAtlasProject \
+  -v ~/github/metadata_mining/scripts:/app/scripts \
+  metadmin \
+  python /app/scripts/validate_biomes_subbiomes.py \
+    --map_tsv gpt_file_label_map.tsv \
+    --gold_dict gold_dict.pkl \
+    --embedding_models Qwen-Qwen3-Embedding-8B,text-embedding-3-small
+```
+
+One result and one stats file will be produced for each embedding model (biome_subbiome_results_{embedding_model_name}.csv and biome_subbiome_stats_{embedding_model_name}.csv, respectively)
+
+
+<a name="overall-gpt-performance"></a>
+#### Overall GPT performance: 
+
+This script assesses the overall performance of all GPT runs against the benchmark. You can choose not to include certain files to the overall analysis by adding them to the overall_analysis_excluded_files.txt file. 
 
 ```
 docker run -it --rm \
@@ -438,38 +458,14 @@ docker run -it --rm \
   -e WORK_DIR=/MicrobeAtlasProject \
   -e SCRIPTS_DIR=/app/scripts \
   metadmin \
-  python /app/scripts/validate_biomes_subbiomes.py \
-    --map_tsv gpt_file_label_map.tsv \
-    --gold_dict gold_dict.pkl
+    python /app/scripts/overall_analysis.py \
+              --work_dir . \
+              --metadata_dir sample_info_split_dirs \
+              --keyword_based_annot_file keywordsbased_biomes_parsed.csv \
+              --exclude_files overall_analysis_excluded_files.txt
 ```
 
-<a name="overall-gpt-performance"></a>
-#### Overall GPT performance: 
-
-This script assesses the overall GPT performance (all runs) against the benchmark. It needs to run interactively because you may need to choose amomngst files, in the case in which files end up with the same label. First, launch the Docker container interactively:
-
-```
-docker run -it --rm \
-  --entrypoint bash \
-  -v ~/MicrobeAtlasProject:/MicrobeAtlasProject \
-  -v ~/github/metadata_mining/scripts:/app/scripts \
-  metadmin
-```
-
-Activate the environment inside the container, then run the script:
-
-```
-conda activate metadmin_env
-python /app/scripts/overall_analysis.py \
-       --work_dir . \
-       --metadata_dir sample_info_split_dirs \
-       --keyword_based_annot_file keywordsbased_biomes_parsed.csv \
-       --exclude_files overall_analysis_excluded_files.txt
-```
-
-This starts a session where you can choose amongst files. No choice will be given if no files labels match. In which case, the analysis will be done directly. Results (and stats) will print out to the console. 
-
-To exit the session just type: `exit`
+Results (and stats) will print out to the console. 
 
 <a name="convert-coordinates-to-places"></a>
 #### Convert coordinates to places: 

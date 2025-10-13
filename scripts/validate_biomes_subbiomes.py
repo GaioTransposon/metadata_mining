@@ -12,8 +12,9 @@ docker run -it --rm \
   metadmin \
   python /app/scripts/validate_biomes_subbiomes.py \
     --map_tsv gpt_file_label_map.tsv \
-    --gold_dict gold_dict.pkl
-
+    --gold_dict gold_dict.pkl \
+    --embedding_models text-embedding-3-small,Qwen-Qwen3-Embedding-8B,Qwen-Qwen3-Embedding-4B,Qwen-Qwen3-Embedding-0.6B
+    
 Notes:
 - Filenames listed in --map_tsv are resolved relative to --work_dir (default: /MicrobeAtlasProject).
 - gold_dict_sbembeddings.json is expected in <work_dir>/embeddings unless overridden with --gold_embeddings_json.
@@ -29,6 +30,8 @@ import re
 import argparse
 from itertools import combinations
 from typing import List, Dict, Tuple
+import glob  # NEW
+
 
 # -----------------------------
 # Path setup (Docker-friendly)
@@ -64,6 +67,19 @@ def slugify(text: str) -> str:
     text = re.sub(r"[^\w\s-]", "", text)
     text = re.sub(r"[\s_-]+", "_", text)
     return text.strip("_") or "group"
+
+def discover_models(embeddings_dir: str) -> List[str]:
+    """
+    Discover models from files like '*_sbembeddings__{model}.json' in embeddings_dir.
+    """
+    models = set()
+    for p in glob.glob(os.path.join(embeddings_dir, '*_sbembeddings__*.json')):
+        base = os.path.basename(p)
+        m = re.search(r'_sbembeddings__([^/]+)\.json$', base)
+        if m:
+            models.add(m.group(1))
+    return sorted(models)
+
 
 def read_map_tsv(path: str) -> pd.DataFrame:
     """
@@ -131,19 +147,23 @@ def groups_from_test_type(df: pd.DataFrame) -> List[Tuple[str, List[str], List[s
 # -----------------------------
 # Core per-group pipeline
 # -----------------------------
+
 def run_validation_for_group(
     my_files: List[str],
     my_labels: List[str],
     group_name: str,
     gold_dict: Dict,
     embeddings_gd: Dict,
-    work_dir: str
+    work_dir: str,
+    embedding_model: str  # NEW
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Runs the pipeline for one group (test_type).
     Returns (results_df, stats_df) without writing CSVs.
     """
     embeddings_dir = os.path.join(work_dir, "embeddings")
+    
+    
     file_label_map = dict(zip(my_files, my_labels))
 
     print("\n=== Running test_type group:", group_name, "===\n")
@@ -217,9 +237,18 @@ def run_validation_for_group(
     gold_labels_all = {k: embeddings_gd[k]['sub-biome'] for k in embeddings_gd}
     gold_biomes_all = {k: embeddings_gd[k]['biome'] for k in embeddings_gd}
 
+
+
     for gpt_file in my_files:
         gpt_file_ori = gpt_file
-        gpt_file_json = re.sub(r'\.txt|\.csv', '_sbembeddings.json', gpt_file)
+        #gpt_file_json = re.sub(r'\.txt|\.csv', '_sbembeddings.json', gpt_file)
+        #gpt_json_file_path = os.path.join(embeddings_dir, gpt_file_json)
+        
+        gpt_file_base = re.sub(r'\.(txt|csv)$', '', gpt_file)
+
+        
+        
+        gpt_file_json = f"{gpt_file_base}_sbembeddings__{embedding_model}.json"
         gpt_json_file_path = os.path.join(embeddings_dir, gpt_file_json)
 
         if not os.path.exists(gpt_json_file_path):
@@ -284,7 +313,10 @@ def run_validation_for_group(
                 matrix_gd, matrix_gpt, gpt_labels_sampled, gold_labels_sampled,
                 sampled_keys, sampled_keys
             )
-            gpt_base_file = gpt_file_json.replace('_sbembeddings.json', '')
+            #gpt_base_file = gpt_file_json.replace('_sbembeddings.json', '')
+            gpt_base_file = f"{os.path.basename(gpt_file_base)}__{embedding_model}"
+
+
             save_figures_to_pdf([comparison_fig, heatmap_fig], gpt_base_file, embeddings_dir)
         else:
             print(f"[WARN] No sampled keys available for heatmap: {gpt_file_json}")
@@ -336,6 +368,9 @@ def run_validation_for_group(
     combined_stats_df = pd.concat([results_stats, results_df_stats], ignore_index=True) \
         if not results_df_stats.empty else results_stats.copy()
 
+    biomes_subbiomes['embedding_model'] = embedding_model
+    combined_stats_df['embedding_model'] = embedding_model
+
     return biomes_subbiomes, combined_stats_df
 
 
@@ -355,6 +390,10 @@ if __name__ == "__main__":
     parser.add_argument('--gold_embeddings_json', type=str, default=None,
                         help='Optional override for gold_dict_sbembeddings.json path. '
                              'Default: <work_dir>/embeddings/gold_dict_sbembeddings.json')
+    parser.add_argument('--embedding_models', type=str, default='auto', # NEW
+                        help=("Comma-separated model names to include (matching the "
+                              "'*_sbembeddings__{model}.json' suffix). Use 'auto' to discover."))
+
     args = parser.parse_args()
 
     # Normalize paths relative to work_dir if given relative
@@ -373,31 +412,76 @@ if __name__ == "__main__":
     if not os.path.isabs(gold_embeddings_json):
         gold_embeddings_json = _resolve(gold_embeddings_json)
 
+
     # Load ground truth once
     with open(gold_dict_path, 'rb') as file:
         gold_dict = pickle.load(file)
-
-    embeddings_gd = load_embeddings(gold_embeddings_json)
-
-    # Read TSV and form groups by test_type
+    
+    
+    
+    # Read TSV and form groups
     df_map = read_map_tsv(map_tsv_path)
     groups = groups_from_test_type(df_map)
+    
+    def _safe_model(model: str) -> str:
+        return re.sub(r'[^A-Za-z0-9._-]+', '-', model)
+    
+    # Parse / discover models
+    if args.embedding_models.strip().lower() == 'auto':
+        models = discover_models(embeddings_dir)
+    else:
+        models = [m.strip() for m in args.embedding_models.split(',') if m.strip()]
+    
+    if not models:
+        raise SystemExit("No embedding models found (check --embedding_models or embeddings directory).")
 
-    # Run all groups fresh each time (combine within THIS run)
-    all_results, all_stats = [], []
-    for group_name, files, labels in groups:
-        res_df, stats_df = run_validation_for_group(files, labels, group_name, gold_dict, embeddings_gd, work_dir)
-        all_results.append(add_separator(res_df))
-        all_stats.append(add_separator(stats_df))
+    for model in models:
+        print(f"\n######## Running for embedding model: {model} ########\n")
+    
+        # choose gold embeddings for this model
+        if args.gold_embeddings_json:
+            # if user explicitly passes a file, use it as-is (must exist)
+            gold_embeddings_json_model = _resolve(args.gold_embeddings_json)
+        else:
+            cand_model   = os.path.join(embeddings_dir, f'gold_dict_sbembeddings__{model}.json')
+            cand_default = os.path.join(embeddings_dir, 'gold_dict_sbembeddings.json')
+            gold_embeddings_json_model = cand_model if os.path.exists(cand_model) else cand_default
+    
+        if not os.path.exists(gold_embeddings_json_model):
+            raise SystemExit(
+                f"Gold embeddings not found for model '{model}'. "
+                f"Tried:\n  {os.path.relpath(cand_model, work_dir) if 'cand_model' in locals() else ''}\n"
+                f"       {os.path.relpath(cand_default, work_dir) if 'cand_default' in locals() else ''}\n"
+                f"Or pass --gold_embeddings_json explicitly."
+            )
+    
+        embeddings_gd = load_embeddings(gold_embeddings_json_model)
+    
+        all_results, all_stats = [], []
+    
+        for group_name, files, labels in groups:
+            res_df, stats_df = run_validation_for_group(
+                files, labels, group_name, gold_dict, embeddings_gd, work_dir, model
+            )
+            all_results.append(add_separator(res_df))
+            all_stats.append(add_separator(stats_df))
+    
+        combined_results_df = pd.concat(all_results, ignore_index=True)
+        combined_stats_df = pd.concat(all_stats, ignore_index=True)
+    
+        # Per-model outputs (suffix with __{model})
+        model_tag = _safe_model(model)
+        out_results = os.path.join(work_dir, f'biome_subbiome_results__{model_tag}.csv')
+        out_stats   = os.path.join(work_dir, f'biome_subbiome_stats__{model_tag}.csv')
+    
+        combined_results_df.to_csv(out_results, index=False)
+        combined_stats_df.to_csv(out_stats, index=False)
+    
+        print(f"\nWrote files for '{model}':\n  {out_results}\n  {out_stats}\n")
+    
+    
 
-    combined_results_df = pd.concat(all_results, ignore_index=True)
-    combined_stats_df = pd.concat(all_stats, ignore_index=True)
 
-    # Always overwrite outputs
-    out_results = os.path.join(work_dir, 'biome_subbiome_results.csv')
-    out_stats   = os.path.join(work_dir, 'biome_subbiome_stats.csv')
 
-    combined_results_df.to_csv(out_results, index=False)
-    combined_stats_df.to_csv(out_stats, index=False)
 
-    print(f"\nWrote combined files:\n  {out_results}\n  {out_stats}\n")
+
