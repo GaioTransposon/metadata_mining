@@ -848,7 +848,8 @@ plt.rcParams.update({
 
 # === SIDE-BY-SIDE LAYOUT WITH SUB-BIOME Y-AXIS ZOOM ===
 fig = plt.figure(figsize=(10.5, 4.9))
-gs = fig.add_gridspec(1, 2, width_ratios=[1.05, 1.35], wspace=0.32)
+gs = fig.add_gridspec(1, 2, width_ratios=[1.05, 1.35], wspace=0.45)
+
 
 # ---------- LEFT: Biome (Exact + Lenient) ----------
 ax1 = fig.add_subplot(gs[0, 0])
@@ -922,9 +923,9 @@ for (off, b, hatch) in zip(offsets, bar_sets, hatches):
 
 ax2.set_xticks(x)
 ax2.set_xticklabels(labels, rotation=28, ha='right')
-ax2.set_ylabel('Scores (%)')
-ax2.legend(bbox_to_anchor=(1.02, 1.0), loc='upper left', fontsize=9,
-           title='Sub-biome avg cosine similarity')
+ax2.set_ylabel('Average cosine similarity')
+
+ax2.legend(bbox_to_anchor=(1.02, 1.0), loc='upper left', fontsize=9, title=None)
 
 ax2.grid(True, axis='y', linestyle='--', linewidth=0.5, alpha=0.4)
 ax2.spines['top'].set_visible(False); ax2.spines['right'].set_visible(False)
