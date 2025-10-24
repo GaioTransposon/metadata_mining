@@ -53,18 +53,16 @@ cd ~/github
 git clone https://github.com/GaioTransposon/metadata_mining.git
 ```
 
-### 2) Download large files, move folder and files: 
+### 2) Download and organize files: 
 
-- Download the directory containing all the files you need from [here](https://zenodo.org/records/16100607) to your Downloads folder
-- Move to your Downloads folder `cd ~/Downloads`
-- Decompress the directory `unzip MicrobeAtlasProject_Zenodo.zip`
-- Rename it "MicrobeAtlasProject" `mv MicrobeAtlasProject_Zenodo MicrobeAtlasProject`
-- Move it to your home directory `mv MicrobeAtlasProject ~/.`
-- Move to MicrobeAtlasProject `cd ~/MicrobeAtlasProject`
+- Create a new directory in your home folder `mkdir ~/MicrobeAtlasProject`
+- Download all files from this Zenodo [link](https://zenodo.org/records/17437043) and move all files into `~/MicrobeAtlasProject`
+- Move to the directory `cd ~/MicrobeAtlasProject`
+- Decompress a sub-directory: `unzip LLM_output.zip` 
 - Find all gpt_clean* files inside LLM_output/validation_output and move them here 
 ```find LLM_output/validation_output -type f -name "gpt_clean*" -exec mv {} . \;```
 - Optionally, verify they are here `ls -lh gpt_clean*` 
-
+- Decompress a sub-directory: `unzip embeddings.zip`
 
 ### 3) Hence, ensure the following directories exist on your machine: 
 
