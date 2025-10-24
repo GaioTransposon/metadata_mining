@@ -429,7 +429,7 @@ Four scripts to run:
 <a name="gpt-runs-evaluation"></a>
 #### GPT runs evaluation: 
 
-This script compares biome and sub-biome annotations per GPT run against the benchmark's. In this manner the performance of GPT runs in which different settings were used (creativity parameters or other parameters), can be compared. You can use my --map_file (gpt_file_label_map.tsv) if you are reproducing my results (LLM performance). If you have your own LLM files you will need to edit gpt_file_label_map.tsv to reflect your file names and your labels of choice. 
+This script compares biome and sub-biome annotations per GPT run against the benchmark's. In this manner the performance of GPT runs in which different settings were used (creativity parameters or other parameters), can be compared. You can use my --map_file (gpt_file_label_map.tsv) if you are reproducing my results (LLM performance). If you have your own LLM files you will need to edit gpt_file_label_map.tsv accordingly to reflect your file names and your labels of choice. 
 
 
 ```
@@ -440,7 +440,7 @@ docker run -it --rm \
   python /app/scripts/validate_biomes_subbiomes.py \
     --map_tsv gpt_file_label_map.tsv \
     --gold_dict gold_dict.pkl \
-    --embedding_models Qwen-Qwen3-Embedding-8B,text-embedding-3-small
+    --embedding_models text-embedding-3-small,Qwen-Qwen3-Embedding-8B,Qwen-Qwen3-Embedding-4B,Qwen-Qwen3-Embedding-0.6B
 ```
 
 One result and one stats file will be produced for each embedding model (biome_subbiome_results_{embedding_model_name}.csv and biome_subbiome_stats_{embedding_model_name}.csv, respectively)
@@ -521,6 +521,13 @@ python /app/scripts/geo_check.py \
     --output_map_all_mismatches map_with_color_coded_points_mismatches.html
 ```
 
+⚠️ If you do not want to play the game when prompted to, you don't have to. Just type `QUIT` and the script will use the already evaluated answers from random_misclassified_samples_dict.pkl. 
+
 To exit the session just type `exit`
+
+
+
+
+
 
 
