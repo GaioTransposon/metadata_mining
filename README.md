@@ -13,7 +13,7 @@
     - [6. Parse Latitude and Longitude](#parse-latitude-and-longitude)
 - [Container 2: Benchmark Annotation via Interactive Interface](#container-2)
   - [🚀 Run Container 2](#run-container-2)
-- [Container 3: GPT Interaction](#container-3)
+- [Container 3: Requests to LLM](#container-3)
   - [🚀 Run Container 3](#run-container-3)
     - [1. Synchronous GPT Interaction](#synchronous-gpt-interaction)
     - [2. Asynchronous GPT Interaction](#asynchronous-gpt-interaction)
@@ -53,13 +53,17 @@ cd ~/github
 git clone https://github.com/GaioTransposon/metadata_mining.git
 ```
 
-### 2) Download large files and move folder: 
+### 2) Download large files, move folder and files: 
 
 - Download the directory containing all the files you need from [here](https://zenodo.org/records/16100607) to your Downloads folder
 - Move to your Downloads folder `cd ~/Downloads`
 - Decompress the directory `unzip MicrobeAtlasProject_Zenodo.zip`
 - Rename it "MicrobeAtlasProject" `mv MicrobeAtlasProject_Zenodo MicrobeAtlasProject`
 - Move it to your home directory `mv MicrobeAtlasProject ~/.`
+- Move to MicrobeAtlasProject `cd ~/MicrobeAtlasProject`
+- Find all gpt_clean* files inside LLM_output/validation_output and move them here 
+```find LLM_output/validation_output -type f -name "gpt_clean*" -exec mv {} . \;```
+- Optionally, verify they are here `ls -lh gpt_clean*` 
 
 
 ### 3) Hence, ensure the following directories exist on your machine: 
@@ -106,11 +110,15 @@ docker pull gaiotransposon/metadmin:latest
 
 ### 7) Get your own API keys: 
 
-In order to run container 3, you will need to acquire your own OpenAI API key. Instructions on how to make one you will find [here](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key). Once you have your API key, place it in `~/MicrobeAtlasProject`. 
+1. In order to run container 3, you will need to acquire your own OpenAI API key. Instructions on how to make one you will find [here](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key). Once you have your API key, place it in `~/MicrobeAtlasProject`. 
 
-Ideally, you generate two separate keys: one for the chat completion (annotation of metadata), and one for creating embeddings. In this pipeline the two are named: `my_api_key` and `my_api_key_embeddings`. The reason for using two separate keys is keeping track of usage quotas for each task. 
+2. Ideally, you generate two separate keys: one for the chat completion (annotation of metadata), and one for creating embeddings. In this pipeline the two are named: `my_api_key` and `my_api_key_embeddings`. The reason for using two separate keys is keeping track of usage quotas for each task. 
 
-In order to run (the last script of) container 4, you will need to acquire your own Google Maps API key (follow instructions [here](https://developers.google.com/maps/documentation/embed/get-api-key?setupProd=configure)). Google provides a free usage tier, which can cover a significant number of API requests. Generate one and name it `google_maps_api_key`. Place it in `~/MicrobeAtlas`. 
+3. If you would like to run non-OpenAI models, you can use the Deepinfra platform https://deepinfra.com/. Again, to keep usage under control, when using text generation models or embedding models, you can create separate API keys. Name them `my_api_key_deepinfra` and `my_api_key_embeddings_deepinfra`, respectively. 
+
+4. In order to run (the last script of) container 4, you will need to acquire your own Google Maps API key (follow instructions [here](https://developers.google.com/maps/documentation/embed/get-api-key?setupProd=configure)). Google provides a free usage tier, which can cover a significant number of API requests. Generate one and name it `google_maps_api_key`. Place it in `~/MicrobeAtlas`. 
+
+Once you have all your API keys, make sure you place them inside `~/MicrobeAtlasProject`
 
 
 <a name="container-1"></a>
@@ -184,7 +192,7 @@ docker run -it --rm \
 <a name="analyze-metadata-fields-distribution"></a>
 #### 5. Analyze metadata fields distribution 🧠 : 
 
-This script examines in which metadata fields the benchmark sub-biome information appears. It scans the cleaned metadata files and checks whether the sub-biome (e.g. human gut, sediment, leaf) is found fully or partially in each metadata field. This helps identify the most informative fields across samples and biomes. It outputs a plot and csv summaries with the top-matching fields, based on 1000 random files. 
+This script examines in which metadata fields the benchmark sub-biome information appears. It scans the cleaned metadata files and checks whether the sub-biome (e.g. human gut, sediment, leaf) is found fully or partially in each metadata field. This helps identify the most informative fields across samples and biomes. It outputs a plot and csv summaries with the top-matching fields, based on 1,000 random metadata files. 
 
 ```
 docker run -it --rm \
@@ -275,11 +283,19 @@ To exit either session just type:
 ---
 
 <a name="container-3"></a>
-## Container 3: GPT interaction
+## Container 3: Requests to LLM
 
-This container handles all steps related to GPT-based annotation of metadata, including: synchronous or asynchronous interactions with the OpenAI API, preparing and submitting batch jobs (asynchronous runs), fetching responses (asynchronous runs), generating sub-biome embeddings from GPT outputs and from benchmark data. 
+This container handles all steps related to LLM-based annotation of metadata, including: synchronous or asynchronous interactions, preparing and submitting batch jobs (asynchronous runs), fetching responses (asynchronous runs), generating sub-biome embeddings from LLM outputs and from benchmark data. 
 
-⚠️ Before running this container, you will need to acquire your API key and place it in `~/MicrobeAtlasProject`. You could generate two separate keys: one for the chat completion (annotation of metadata), one for creating embeddings. In this pipeline the two are named: `my_api_key` and `my_api_key_embeddings`. The reason for using two separate keys is keeping track of usage quotas for each task. 
+
+⚠️ - _Already mentioned in Requirements_ - Before running this container, you will need to acquire your API keys. You could generate two separate keys: one for text-generation (annotation of metadata), one for creating embeddings. The reason for using two separate keys is keeping track of usage quotas for each task. 
+
+- In this pipeline the OpenAI API keys are named: `my_api_key` and `my_api_key_embeddings`. 
+
+- For open-weight models the API keys are named `my_api_key_deepinfra` and `my_api_key_embeddings_deepinfra`, respectively. 
+
+
+Make sure you place all API keys inside `~/MicrobeAtlasProject`
 
 
 <a name="run-container-3"></a>
@@ -287,29 +303,31 @@ This container handles all steps related to GPT-based annotation of metadata, in
 
 You can:
 
-- run synchronous interaction with OpenAI (single step)
+- run synchronous interaction with OpenAI or open-weight models (single step)
 
 AND/OR
 
-- run an asynchronous interaction via the batch API (two steps)
+- run an asynchronous interaction with OpenAI via the batch API (two steps)
 
-Then, you can generate embeddings from GPT results and from benchmark data.
+Then, you can generate embeddings from GPT (OpenaAI) or open-weight models results and from benchmark data.
 
 <a name="synchronous-gpt-interaction"></a>
-#### Synchronous GPT interaction: 
+#### Synchronous LLM interaction: 
 
-This script performs end-to-end metadata annotation in a single script using synchronous OpenAI API requests.
+This script performs end-to-end metadata annotation in a single script using synchronous LLM requests.
 
 
+
+For GPT (OpenaAI) models run: 
 ```
-docker run -it --rm \
+docker run -it --rm \    
   -v ~/MicrobeAtlasProject:/MicrobeAtlasProject \
   -v ~/github/metadata_mining/scripts:/app/scripts \
   metadmin \
   python /app/scripts/openai_main.py \
     --work_dir . \
     --input_gold_dict gold_dict.pkl \
-    --n_samples_per_biome 5 \
+    --n_samples_per_biome 100 \
     --chunking no \
     --chunk_size 2000 \
     --seed 22 \
@@ -320,13 +338,27 @@ docker run -it --rm \
     --model gpt-3.5-turbo-1106 \
     --temperature 1.00 \
     --max_tokens 4096 \
-    --top_p 0.75 \
+    --top_p 0.5 \
     --frequency_penalty 0.25 \
     --presence_penalty 1.5 \
     --max_requests_per_minute 3500 \
-    --opt_text normal \
+    --opt_text yourtextofchoice \
     --output_format json
 ```
+
+
+For open-weight models (see models available on https://deepinfra.com/models): 
+- add argument (after --model argument): 
+```
+--base_url https://api.deepinfra.com/v1/openai
+```
+- change these arguments to (examples): 
+```
+--api_key_path my_api_key_deepinfra 
+--model microsoft/phi-4 
+```
+
+
 
 <a name="asynchronous-gpt-interaction"></a>
 #### Asynchronous GPT interaction (2 steps): 
@@ -387,12 +419,13 @@ docker run -it --rm \
 <a name="create-embeddings"></a>
 #### Create Embeddings: 
 
-This script creates text-embedding-3-small vectors from:
+This script creates embeddings from:
 
 - GPT-generated sub-biomes (gpt_clean_output*.csv / .txt)
 - Your benchmark sub-biomes (gold_dict.pkl)
 
 
+For GPT (OpenaAI) embedding models run: 
 ```
 docker run -it --rm \
   -v ~/MicrobeAtlasProject:/MicrobeAtlasProject \
@@ -405,13 +438,20 @@ docker run -it --rm \
     --embed_model text-embedding-3-small
 ```
 
+For open-weight embedding models (see models available on https://deepinfra.com/models/embeddings): 
+- change these arguments to (examples): 
+```
+--api_key_path my_api_key_embeddings_deepinfra
+--embed_model Qwen/Qwen3-Embedding-0.6B
+```
+
 
 ---
 
 <a name="container-4"></a>
-## Container 4: GPT performance evaluation
+## Container 4: LLM performance evaluation
 
-This container evaluates GPT performance by comparing biomes and sub-biomes annotations by GPT (.tsv files for biomes and .json files for sub-biomes) against those of the benchmark (gold_dict.pkl). It does so for each GPT run. For biomes annotation evaluation, it compares strings for either a lenient or an exact match. It produces a summary CSV with per-run biome agreement metrics. For sub-biomes annotation evaluation, it uses embeddings of GPT runs versus embeddings of the benchmark. Then, it computes cosine similarity between sample-ID-matched embeddings, it calculates the distribution of similarities versus the background, and it produces a summary CSV with per-run sub-biome similarity metrics. Pairwise statistical comparisons are performed. Additionally, in this container, we evaluate geographic annotations by GPT by comparing them to the metadata-extracted coordinates. 
+This container evaluates LLM performance by comparing biomes and sub-biomes annotations by the LLM (gpt_clean_output* files for biomes and .json files for sub-biomes) against those of the benchmark (gold_dict.pkl). It does so for each GPT run. For biomes annotation evaluation, it compares strings for either a lenient or an exact match. It produces a summary CSV with per-run biome agreement metrics. For sub-biomes annotation evaluation, it uses embeddings of LLM runs versus embeddings of the benchmark. Then, it computes cosine similarity between sample-ID-matched embeddings, it calculates the distribution of similarities versus the background, and it produces a summary CSV with per-run sub-biome similarity metrics. Pairwise statistical comparisons are performed. Additionally, in this container, we evaluate geographic annotations by GPT (OpenAI) by comparing them to the metadata-extracted coordinates. 
 
 
 <a name="run-container-4"></a>
@@ -419,17 +459,18 @@ This container evaluates GPT performance by comparing biomes and sub-biomes anno
 
 Four scripts to run:
 
-- GPT runs evaluation: validate_biomes_subbiomes.py
+- LLMs runs evaluation: validate_biomes_subbiomes.py
 - Overall GPT performance: overall_analysis.py
 - Convert coordinates to places: coord_to_text.py
 - Geographic location - GPT versus metadata: geo_check.py
 
-⚠️ In order to run the last script of this container you will need a free Google Maps API key (follow instructions [here](https://developers.google.com/maps/documentation/embed/get-api-key?setupProd=configure). Generate one and name it `google_maps_api_key`. Place it in `~/MicrobeAtlas`. 
+
+⚠️ - _Already mentioned in Requirements_ - In order to run the last script of this container you will need a free Google Maps API key (follow instructions [here](https://developers.google.com/maps/documentation/embed/get-api-key?setupProd=configure). Generate one and name it `google_maps_api_key`. Place it in `~/MicrobeAtlasProject/.`. 
 
 <a name="gpt-runs-evaluation"></a>
-#### GPT runs evaluation: 
+#### LLM runs evaluation: 
 
-This script compares biome and sub-biome annotations per GPT run against the benchmark's. In this manner the performance of GPT runs in which different settings were used (creativity parameters or other parameters), can be compared. You can use my --map_file (gpt_file_label_map.tsv) if you are reproducing my results (LLM performance). If you have your own LLM files you will need to edit gpt_file_label_map.tsv accordingly to reflect your file names and your labels of choice. 
+This script compares biome and sub-biome annotations per LLM run against the benchmark's. In this manner the performance of the LLM runs in which different settings were used (creativity parameters or other parameters), can be compared. You can use my --map_file (gpt_file_label_map.tsv) if you are reproducing my results (LLM performance). If you have your own LLM files you will need to edit gpt_file_label_map.tsv accordingly to reflect your file names and your labels of choice. 
 
 
 ```
@@ -449,7 +490,7 @@ One result and one stats file will be produced for each embedding model (biome_s
 <a name="overall-gpt-performance"></a>
 #### Overall GPT performance: 
 
-This script assesses the overall performance of all GPT runs against the benchmark. You can choose not to include certain files to the overall analysis by adding them to the overall_analysis_excluded_files.txt file. 
+This script assesses the overall performance of all GPT (OpenAI) runs against the benchmark. You can choose not to include certain files to the overall analysis by adding them to the overall_analysis_excluded_files.txt file. 
 
 ```
 docker run -it --rm \
@@ -470,7 +511,7 @@ Results (and stats) will print out to the console.
 <a name="convert-coordinates-to-places"></a>
 #### Convert coordinates to places: 
 
-This script performs reverse geocoding on a set of unique latitude/longitude coordinates. This means it converts each coordinate pair into a human-readable place name (e.g.: a city, region, or country). It uses the Nomatin geocoding service OpensStreetMap. It may take long to run as we are using the free version (no API). Approximately you can expect it to take 1.3 seconds per coordinates pair. 
+This script performs reverse geocoding on a set of unique latitude/longitude coordinates. This means it converts each coordinate pair into a human-readable place name (e.g.: a city, region, or country). It uses the Nomatin geocoding service OpensStreetMap. It may take long to run as we are using the free version (no API). Approximately you can expect it to take 1.3 seconds per coordinates pair. This is to avoid congestion, but you can try to set it lower. 
 
 
 ```
@@ -522,6 +563,8 @@ python /app/scripts/geo_check.py \
 ```
 
 ⚠️ If you do not want to play the game when prompted to, you don't have to. Just type `QUIT` and the script will use the already evaluated answers from random_misclassified_samples_dict.pkl. 
+
+The script above is set to use the GPT output files from the production run (with over 2M samples) instead of relying on the GPT output used for validation (which is based only on 1,000 unique samples). The manually curated samples from random_misclassified_samples_dict.pkl come from the benchmark set, but you can also make your own by removing the provided file, and playing the game. 
 
 To exit the session just type `exit`
 
