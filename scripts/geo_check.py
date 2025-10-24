@@ -109,7 +109,7 @@ map_all_mismatches = abspath_from_arg(args.output_map_all_mismatches, work_dir)
 
 
 # 1. open gpt files and concatenate them: 
-file_patterns = ["gpt_clean_output*.csv"]
+file_patterns = ["production/gpt_clean_output*.csv"]
 gpt_files = []
 for pat in file_patterns:
     gpt_files.extend(glob.glob(os.path.join(work_dir, pat)))
@@ -255,44 +255,140 @@ print(f"75th Percentile: {percentile_75:.2f} km")
 
 
 
+# =============================================================================
+# #######################################################
+# ###################### Visualization all ############## OLD
+# #######################################################
+# 
+# 
+# # Create a base map at a central point
+# map = folium.Map(location=[final_merge['latitude'].mean(), final_merge['longitude'].mean()], zoom_start=5)
+# 
+# # Function to choose color based on match status
+# def get_color(match):
+#     return 'green' if match else 'red'
+# 
+# # Plot green markers first (matches = True)
+# for idx, row in final_merge[final_merge['location_match'] == True].iterrows():
+#     folium.CircleMarker(
+#         location=(row['latitude'], row['longitude']),
+#         radius=0.01,
+#         color='green',
+#         fill=True,
+#         fill_color='green',
+#         fill_opacity=0.7,
+#         popup=f"Sample ID: {row['sample_id']}<br>Match: {row['location_match']}"
+#     ).add_to(map)
+# 
+# # Plot red markers second (matches = False)
+# for idx, row in final_merge[final_merge['location_match'] == False].iterrows():
+#     folium.CircleMarker(
+#         location=(row['latitude'], row['longitude']),
+#         radius=0.01,
+#         color='red',
+#         fill=True,
+#         fill_color='red',
+#         fill_opacity=0.7,
+#         popup=f"Sample ID: {row['sample_id']}<br>Match: {row['location_match']}"
+#     ).add_to(map)
+# 
+# # Save the map as an HTML file
+# map.save(map_all_matches)
+# =============================================================================
+
 #######################################################
-###################### Visualization all ##############
+###################### Visualization (scalable) #######
 #######################################################
+from folium import Map, LayerControl, FeatureGroup
+from folium.plugins import HeatMap, FastMarkerCluster
+
+# --- clean coords as before ---
+for col in ("latitude", "longitude"):
+    final_merge[col] = pd.to_numeric(final_merge[col], errors="coerce")
+final_merge = final_merge.replace([np.inf, -np.inf], np.nan).dropna(subset=["latitude", "longitude"])
+
+if final_merge.empty:
+    print("[viz] No valid coordinates to plot. Skipping map generation.")
+else:
+    # Safe center
+    center_lat = float(final_merge["latitude"].mean())
+    center_lon = float(final_merge["longitude"].mean())
+    m = Map(location=[center_lat, center_lon], zoom_start=2, tiles="CartoDB positron")
+
+    # ------ LAYER 1: ALL POINTS DENSITY (HeatMap, sampled) ------
+    # HeatMap does best with up to ~200k points
+    max_heat_points = 200_000
+    if len(final_merge) > max_heat_points:
+        all_sample = final_merge.sample(max_heat_points, random_state=0, replace=False)
+        print(f"[viz] HeatMap: sampled {len(all_sample):,} / {len(final_merge):,}")
+    else:
+        all_sample = final_merge
+
+    heat_coords = all_sample[["latitude", "longitude"]].astype(float).values.tolist()
+    if heat_coords:
+        fg_heat = FeatureGroup(name=f"All samples (HeatMap, n≈{len(all_sample):,})", show=True)
+        HeatMap(heat_coords, radius=6, blur=8, max_zoom=4).add_to(fg_heat)
+        fg_heat.add_to(m)
+
+    # ------ LAYER 2: MISMATCHES ONLY (FastMarkerCluster) ------
+    mismatches = final_merge[final_merge["location_match"] == False]
+    print(f"[viz] Mismatches to cluster: {len(mismatches):,}")
+
+    # Build plain [lat, lon] (no popups; popups kill performance)
+    mismatch_coords = mismatches[["latitude", "longitude"]].astype(float).values.tolist()
+    if mismatch_coords:
+        fg_mis = FeatureGroup(name=f"Mismatches (clustered, n={len(mismatches):,})", show=True)
+        FastMarkerCluster(mismatch_coords).add_to(fg_mis)
+        fg_mis.add_to(m)
+
+    # Optional: matches density only (skip individual markers entirely)
+    # matches = final_merge[final_merge["location_match"] == True]
+    # matches_coords = matches[["latitude","longitude"]].astype(float).values.tolist()
+    # HeatMap(matches_coords, radius=5, blur=7, max_zoom=4).add_to(FeatureGroup(name="Matches (HeatMap)").add_to(m))
+
+    LayerControl(collapsed=False).add_to(m)
+    
+    # ... (after LayerControl(collapsed=False).add_to(m))
+
+    # ------ ADD CUSTOM LEGEND ------
+    legend_html = """
+    <div style="
+        position: fixed;
+        bottom: 40px;
+        left: 40px;
+        width: 260px;
+        background-color: rgba(255, 255, 255, 0.9);
+        border: 2px solid #555;
+        border-radius: 10px;
+        padding: 10px 15px;
+        font-size: 13px;
+        z-index: 9999;
+        box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+    ">
+    <b>Legend</b><br>
+    <span style="color:#0000ff;">&#9679;</span> Blue → <span style="color:#00ff00;">Green</span> → <span style="color:#ffff00;">Yellow</span> → <span style="color:#ff0000;">Red</span><br>
+    &emsp;HeatMap density scale<br>
+    &emsp;(Blue = low sample density, Red = high)<br><br>
+    <span style="background:#4CAF50; border-radius:50%; display:inline-block; width:12px; height:12px; margin-right:6px;"></span> 
+    Small mismatch cluster<br>
+    <span style="background:#FFC107; border-radius:50%; display:inline-block; width:12px; height:12px; margin-right:6px;"></span> 
+    Medium mismatch cluster<br>
+    <span style="background:#F44336; border-radius:50%; display:inline-block; width:12px; height:12px; margin-right:6px;"></span> 
+    Large mismatch cluster<br><br>
+    <i>Numbers in circles = number of mismatched samples</i>
+    </div>
+    """
+    
+    m.get_root().html.add_child(folium.Element(legend_html))
 
 
-# Create a base map at a central point
-map = folium.Map(location=[final_merge['latitude'].mean(), final_merge['longitude'].mean()], zoom_start=5)
+    # Render then write (avoid silent hangs)
+    html = m.get_root().render()
+    with open(map_all_matches, "w", encoding="utf-8") as f:
+        f.write(html)
+    print(f"Saved map to: {map_all_matches}")
 
-# Function to choose color based on match status
-def get_color(match):
-    return 'green' if match else 'red'
 
-# Plot green markers first (matches = True)
-for idx, row in final_merge[final_merge['location_match'] == True].iterrows():
-    folium.CircleMarker(
-        location=(row['latitude'], row['longitude']),
-        radius=0.01,
-        color='green',
-        fill=True,
-        fill_color='green',
-        fill_opacity=0.7,
-        popup=f"Sample ID: {row['sample_id']}<br>Match: {row['location_match']}"
-    ).add_to(map)
-
-# Plot red markers second (matches = False)
-for idx, row in final_merge[final_merge['location_match'] == False].iterrows():
-    folium.CircleMarker(
-        location=(row['latitude'], row['longitude']),
-        radius=0.01,
-        color='red',
-        fill=True,
-        fill_color='red',
-        fill_opacity=0.7,
-        popup=f"Sample ID: {row['sample_id']}<br>Match: {row['location_match']}"
-    ).add_to(map)
-
-# Save the map as an HTML file
-map.save(map_all_matches)
 
 
 #######################################################
