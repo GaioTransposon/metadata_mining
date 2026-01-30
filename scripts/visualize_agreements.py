@@ -289,37 +289,37 @@ plot_lines(df_subset, plots_dir, 'Frequency penalty', 8, 4)
 
 
 ###
-# Suppl Figure 5 - A
+# Suppl Figure 6 - A
 df_subset = df_full[14:28]  
 plot_lines(df_subset, plots_dir, 'Creativity params: temp', 8, 4)  
 
 
-# Suppl Figure 5 - B
+# Suppl Figure 6 - B
 df_subset = df_full[28:43]  
 plot_lines(df_subset, plots_dir, 'Creativity params: topp', 8, 4)  
 
 
-# Suppl Figure 5 - C
+# Suppl Figure 6 - C
 df_subset = df_full[44:59]  
 plot_lines(df_subset, plots_dir, 'Creativity params: freqp', 8, 4)  
 
 
-# Suppl Figure 5 - D
+# Suppl Figure 6 - D
 df_subset = df_full[59:74]  
 plot_lines(df_subset, plots_dir, 'Creativity params: presp', 8, 4)  
 ###
 
 
 ###
-# Suppl figure 6 - A
+# Suppl figure 7 - A
 df_subset = df_full[75:91] 
 plot_bars(df_subset, plots_dir, 'Sync requests: same and different sample groups (rs)', 7)  
 
-# Suppl figure 6 - B
+# Suppl figure 7 - B
 df_subset = df_full[92:113] 
 plot_bars(df_subset, plots_dir, 'Async requests: same and different sample groups (rs)', 7)  
 
-# Suppl figure 6 - C
+# Suppl figure 7 - C
 df_subset = df_full[114:126] 
 plot_bars(df_subset, plots_dir, 'Async versus sync requests (same sample group)', 7)  
 ###
