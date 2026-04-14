@@ -81,13 +81,13 @@ sample_count = 0
 created_dirs = set()
 
 for line in lines:
-    if line != '\n':
+    if line.strip() != '':
         if line.startswith('>'):
             sample_name = line.replace('>', '').strip()
             last_3 = sample_name[-3:]
             dir_path = os.path.join(output_dir, 'dir_' + last_3)
             os.makedirs(dir_path, exist_ok=True)
-            created_dirs.add(dir_path)  # Track unique directories
+            created_dirs.add(dir_path)
 
             file_path = os.path.join(dir_path, sample_name + '.txt')
             sample_count += 1
@@ -97,21 +97,19 @@ for line in lines:
 
         sample_text += line
     else:
-        if sample_text.endswith('\n'):
+        if sample_text and 'file_path' in locals():
             with open(file_path, 'w') as output_file:
                 output_file.write(sample_text)
         sample_text = ''
+        
+if sample_text and 'file_path' in locals():
+    with open(file_path, 'w') as output_file:
+        output_file.write(sample_text)
 
 elapsed_time = time.time() - start_time
 print(f"Elapsed time: {elapsed_time} seconds")
 print(f"Total directories created: {len(created_dirs)}")
 
 plot_directory_histogram(output_dir, figure_path=figure_path)
-
-
-
-
-
-
 
 
