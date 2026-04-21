@@ -188,6 +188,8 @@ def parse_args():
 def main():
     args = parse_args()
     setup_logging()
+    
+    run_timestamp = datetime.now().strftime("%Y%m%d")
 
     work_dir_full = os.path.join(os.path.expanduser('~'), args.work_dir)
     directory_with_split_metadata = os.path.join(work_dir_full, args.directory_with_split_metadata)
@@ -200,7 +202,7 @@ def main():
     samples_per_batch = args.n_samples
     delay_minutes = args.delay_minutes
     state_file = os.path.join(work_dir_full, args.state_file)
-    batch_info_file = "batch_job_info_production.json"
+    batch_info_file = f"{run_timestamp}_batch_job_info_production.json"
 
     start_index = get_current_batch_range(state_file, total_samples, samples_per_batch)[0]
     batches_processed = 0
@@ -210,9 +212,9 @@ def main():
         selected_samples = all_samples[start_index:end_index]
 
         # Paths for logs
-        fail_log = os.path.join(work_dir_full, "failed_samples.txt")
-        success_log = os.path.join(work_dir_full, "sent_samples.txt")
-
+        fail_log = os.path.join(work_dir_full, f"{run_timestamp}_failed_samples.txt")
+        success_log = os.path.join(work_dir_full, f"{run_timestamp}_sent_samples.txt")
+        
         # Fetch metadata
         metadata_dict = fetch_metadata(selected_samples, directory_with_split_metadata, work_dir_full, fail_log)
 
@@ -223,7 +225,9 @@ def main():
                 f.write(sid + '\n')
 
         # Save metadata
-        save_metadata(metadata_dict, os.path.join(work_dir_full, args.output_pkl))
+        output_pkl_with_ts = f"{run_timestamp}_{args.output_pkl}"
+        save_metadata(metadata_dict, os.path.join(work_dir_full, output_pkl_with_ts))
+
 
         # OpenAI client
         with open(os.path.expanduser(args.api_key_path), "r") as f:

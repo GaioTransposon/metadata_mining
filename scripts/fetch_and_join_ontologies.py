@@ -9,9 +9,10 @@ Created on Tue Oct 24 20:56:33 2023
 
 
 # run as: 
-    
+
+# cd MicrobeAtlasProject
 # python ~/github/metadata_mining/scripts/fetch_and_join_ontologies.py \
-#     --wanted_ontologies FOODON ENVO UBERON PO \    
+#     --wanted_ontologies FOODON ENVO UBERON PO \
 #     --output_file "ontologies_dict"
 
 # nb: # NCBITaxon on Ontobee is empty! 
