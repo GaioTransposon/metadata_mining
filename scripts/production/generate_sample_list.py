@@ -45,24 +45,58 @@ def shuffle_and_write_samples(sample_ids, seed, output_file_path):
     logging.info(f"Shuffled sample list saved to {output_file_path}")
 
 
+# =============================================================================
+# def generate_sample_list(work_dir, directory_with_split_metadata, seed, output_file, whitelist_file=None):
+#     setup_logging()
+#     logging.info("Starting the sample list generation process...")
+# 
+#     directory = os.path.join(work_dir, directory_with_split_metadata)
+#     logging.info(f"Looking for files in: {directory}")
+# 
+#     # Collect all sample IDs
+#     sample_ids = fetch_all_sample_ids(directory)
+#     logging.info(f"Found {len(sample_ids)} total sample IDs.")
+# 
+#     # Shuffle the full list
+#     random.seed(seed)
+#     random.shuffle(sample_ids)
+#     
+#     work_dir = os.path.expanduser(os.path.join("~", work_dir))
+# 
+#     # Filter with whitelist if provided
+#     if whitelist_file:
+#         whitelist = load_whitelist(work_dir, whitelist_file)
+#         filtered_sample_ids = [sid for sid in sample_ids if sid in whitelist]
+#         logging.info(f"Filtered down to {len(filtered_sample_ids)} sample IDs after applying whitelist.")
+#     else:
+#         filtered_sample_ids = sample_ids
+# 
+#     # Write final list to file
+#     output_file_path = os.path.join(work_dir, output_file)
+#     with open(output_file_path, 'w') as f:
+#         for sample_id in filtered_sample_ids:
+#             f.write(sample_id + '\n')
+# 
+#     logging.info(f"Final sample list written to: {output_file_path}")
+#     logging.info("Sample list generation completed successfully.")
+# =============================================================================
+
+
 def generate_sample_list(work_dir, directory_with_split_metadata, seed, output_file, whitelist_file=None):
     setup_logging()
     logging.info("Starting the sample list generation process...")
 
+    work_dir = os.path.expanduser(os.path.join("~", work_dir))
     directory = os.path.join(work_dir, directory_with_split_metadata)
+
     logging.info(f"Looking for files in: {directory}")
 
-    # Collect all sample IDs
     sample_ids = fetch_all_sample_ids(directory)
     logging.info(f"Found {len(sample_ids)} total sample IDs.")
 
-    # Shuffle the full list
     random.seed(seed)
     random.shuffle(sample_ids)
-    
-    work_dir = os.path.expanduser(os.path.join("~", work_dir))
 
-    # Filter with whitelist if provided
     if whitelist_file:
         whitelist = load_whitelist(work_dir, whitelist_file)
         filtered_sample_ids = [sid for sid in sample_ids if sid in whitelist]
@@ -70,7 +104,6 @@ def generate_sample_list(work_dir, directory_with_split_metadata, seed, output_f
     else:
         filtered_sample_ids = sample_ids
 
-    # Write final list to file
     output_file_path = os.path.join(work_dir, output_file)
     with open(output_file_path, 'w') as f:
         for sample_id in filtered_sample_ids:
@@ -78,8 +111,7 @@ def generate_sample_list(work_dir, directory_with_split_metadata, seed, output_f
 
     logging.info(f"Final sample list written to: {output_file_path}")
     logging.info("Sample list generation completed successfully.")
-
-
+    
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Generate a randomized list of sample IDs for metadata preparation.")
     parser.add_argument('--work_dir', type=str, required=True, help='Working directory path')
