@@ -44,6 +44,8 @@ def init_openai_client(api_key_path):
         api_key = file.read().strip()
     return OpenAI(api_key=api_key)
 
+
+
 def load_system_prompt(system_prompt_file):
     with open(system_prompt_file, 'r') as file:
         return file.read().strip()
@@ -228,10 +230,14 @@ def main():
         output_pkl_with_ts = f"{run_timestamp}_{args.output_pkl}"
         save_metadata(metadata_dict, os.path.join(work_dir_full, output_pkl_with_ts))
 
-
         # OpenAI client
-        with open(os.path.expanduser(args.api_key_path), "r") as f:
+        # with open(os.path.expanduser(args.api_key_path), "r") as f:
+        #     api_key = f.read().strip()            
+        api_key_path = os.path.expanduser(os.path.join("~", args.api_key_path))
+        with open(api_key_path, "r") as f:
             api_key = f.read().strip()
+    
+    
         client = OpenAI(api_key=api_key)
 
         # Load system prompt
