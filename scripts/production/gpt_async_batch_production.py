@@ -191,7 +191,7 @@ def main():
     args = parse_args()
     setup_logging()
     
-    run_timestamp = datetime.now().strftime("%Y%m%d")
+    run_timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
     work_dir_full = os.path.join(os.path.expanduser('~'), args.work_dir)
     directory_with_split_metadata = os.path.join(work_dir_full, args.directory_with_split_metadata)
@@ -204,7 +204,7 @@ def main():
     samples_per_batch = args.n_samples
     delay_minutes = args.delay_minutes
     state_file = os.path.join(work_dir_full, args.state_file)
-    batch_info_file = f"{run_timestamp}_batch_job_info_production.json"
+    batch_info_file = f"batch_job_info_production.json"
 
     start_index = get_current_batch_range(state_file, total_samples, samples_per_batch)[0]
     batches_processed = 0
@@ -220,11 +220,11 @@ def main():
         # Fetch metadata
         metadata_dict = fetch_metadata(selected_samples, directory_with_split_metadata, work_dir_full, fail_log)
 
-        # Log successful samples
-        successful_sample_ids = list(metadata_dict.keys())
-        with open(success_log, 'a') as f:
-            for sid in successful_sample_ids:
-                f.write(sid + '\n')
+        # # Log successful samples
+        # successful_sample_ids = list(metadata_dict.keys())
+        # with open(success_log, 'a') as f:
+        #     for sid in successful_sample_ids:
+        #         f.write(sid + '\n')
 
         # Save metadata
         output_pkl_with_ts = f"{run_timestamp}_{args.output_pkl}"
@@ -248,13 +248,29 @@ def main():
         df = pd.DataFrame(list(metadata_dict.items()), columns=['sample_id', 'metadata'])
         tasks = prepare_batch_tasks(df, system_prompt, args.model, args.temperature, args.max_tokens, args.top_p, args.frequency_penalty, args.presence_penalty)
 
-        # Submit tasks
+        # # Submit tasks
+        # submit_batch_tasks(
+        #     client,
+        #     tasks,
+        #     batch_info_file,
+        #     work_dir_full,
+        #     samples_per_batch,
+        #     batches_processed + 1,
+        #     args.n_batches,
+        #     args.model,
+        #     args.temperature,
+        #     args.max_tokens,
+        #     args.top_p,
+        #     args.frequency_penalty,
+        #     args.presence_penalty
+        # )
+        
         submit_batch_tasks(
             client,
             tasks,
             batch_info_file,
             work_dir_full,
-            samples_per_batch,
+            len(tasks),
             batches_processed + 1,
             args.n_batches,
             args.model,
@@ -264,6 +280,12 @@ def main():
             args.frequency_penalty,
             args.presence_penalty
         )
+        
+        # Log successfully submitted samples
+        successful_sample_ids = list(metadata_dict.keys())
+        with open(success_log, 'a') as f:
+            for sid in successful_sample_ids:
+                f.write(sid + '\n')
 
         # Sleep and update state
         time.sleep(delay_minutes * 60)
