@@ -80,7 +80,12 @@ def log_failed_batch(directory, batch_job_id):
 api_key_file = os.path.expanduser("~/Desktop/keys/my_api_key_production_run")
 client = init_openai_client(api_key_file)
 
-work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject")
+work_dir = os.path.join(os.path.expanduser('~'), "MicrobeAtlasProject2024")
+production_dir = os.path.join(work_dir, "production")
+
+# ensure production directory exists
+os.makedirs(os.path.join(work_dir, "production"), exist_ok=True)
+
 failed_samples_path = os.path.join(work_dir, "failed_async_samples_production_run.txt")
 
 existing_batch_ids = get_existing_batch_ids(work_dir)
@@ -100,7 +105,9 @@ for batch_info in batch_info_list:
         try:
             result_json = retrieve_results(client, batch_job_id)
             if result_json:
-                output_csv_path = f"{work_dir}/production/gpt_clean_output_batch{batch_job_id.split('_')[-1]}_dt{batch_info['datetime']}.csv"
+                output_csv_path = os.path.join(
+                    production_dir,
+                    f"gpt_clean_output_batch{batch_job_id.split('_')[-1]}_dt{batch_info['datetime']}.csv")
                 convert_jsonl_content_to_csv(result_json, output_csv_path, failed_samples_path)
                 print("Batch completed and results saved to CSV.")
             else:
@@ -112,7 +119,10 @@ for batch_info in batch_info_list:
         print(f"CSV file for batch {batch_job_id} already exists. Skipping creation.")
 
 
-
+output_csv_path = os.path.join(
+    production_dir,
+    f"gpt_clean_output_batch{batch_job_id.split('_')[-1]}_dt{batch_info['datetime']}.csv"
+)
 
 
 
