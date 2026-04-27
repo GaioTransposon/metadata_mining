@@ -58,7 +58,7 @@ python ~/github/metadata_mining/scripts/production/generate_sample_list.py \
     --whitelist_file "all_minfilt_sampids_map2024.tsv"
     
 
-    
+# NB: remove state_file.txt before running this below as it won't run if number if state file has got 2000 samples for example, and samples_list.txt has also got 2000 samples. 
 python ~/github/metadata_mining/scripts/production/gpt_async_batch_production.py \
     --work_dir "MicrobeAtlasProject2024" \
     --sample_list_file "samples_list.txt" \
@@ -66,7 +66,7 @@ python ~/github/metadata_mining/scripts/production/gpt_async_batch_production.py
     --output_pkl "metadataprov.pkl" \
     --system_prompt_file "github/metadata_mining/source_data/openai_system_better_prompt_batch.txt" \
     --api_key_path "Desktop/keys/my_api_key_production_run" \
-    --model "gpt-3.5-turbo-0125" \
+    --model "gpt-5.1" \
     --temperature 1.00 \
     --max_tokens 4096 \
     --top_p 0.75 \
@@ -79,4 +79,8 @@ python ~/github/metadata_mining/scripts/production/gpt_async_batch_production.py
     
 
 
+
+python ~/github/metadata_mining/scripts/production/gpt_async_fetch_and_save_production.py \
+    --work_dir "MicrobeAtlasProject2024" \
+    --api_key_path "Desktop/keys/my_api_key_production_run"
 
