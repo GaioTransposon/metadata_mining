@@ -73,29 +73,67 @@ def save_metadata(metadata_dict, output_pkl_path):
     logging.info(f"Metadata saved to {output_pkl_path}")
 
 
+# =============================================================================
+# # old (works for 3.5 model)
+# def prepare_batch_tasks(df, system_prompt, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty):
+#     tasks = []
+#     for _, row in df.iterrows():
+#         user_content = f"Sample ID: {row['sample_id']}, Metadata: {row['metadata']}"
+#         task = {
+#             "custom_id": f"task-{row['sample_id']}",
+#             "method": "POST",
+#             "url": "/v1/chat/completions",
+#             "body": {
+#                 "model": model,
+#                 "temperature": temperature,
+#                 "max_tokens": max_tokens,
+#                 "top_p": top_p,
+#                 "frequency_penalty": frequency_penalty,
+#                 "presence_penalty": presence_penalty,
+#                 "response_format": {"type": "json_object"},
+#                 "messages": [
+#                     {"role": "system", "content": system_prompt},
+#                     {"role": "user", "content": user_content}
+#                 ],
+#             }
+#         }
+#         tasks.append(task)
+#     return tasks
+# =============================================================================
+
+
 def prepare_batch_tasks(df, system_prompt, model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty):
     tasks = []
     for _, row in df.iterrows():
         user_content = f"Sample ID: {row['sample_id']}, Metadata: {row['metadata']}"
+        
+        body = {
+            "model": model,
+            "temperature": temperature,
+            "top_p": top_p,
+            "frequency_penalty": frequency_penalty,
+            "presence_penalty": presence_penalty,
+            "response_format": {"type": "json_object"},
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content}
+            ],
+        }
+
+        if model.startswith("gpt-3.5"):
+            body["max_tokens"] = max_tokens
+        else:
+            body["max_completion_tokens"] = max_tokens
+
         task = {
             "custom_id": f"task-{row['sample_id']}",
             "method": "POST",
             "url": "/v1/chat/completions",
-            "body": {
-                "model": model,
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-                "top_p": top_p,
-                "frequency_penalty": frequency_penalty,
-                "presence_penalty": presence_penalty,
-                "response_format": {"type": "json_object"},
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_content}
-                ],
-            }
+            "body": body
         }
+
         tasks.append(task)
+
     return tasks
 
 
@@ -127,6 +165,7 @@ def submit_batch_tasks(client, tasks, batch_info_file, work_dir_full, n_samples,
         "presence_penalty": presence_penalty,
         "datetime": datetime.now().strftime('%Y%m%d%H%M')
     }
+
     update_batch_info_file(os.path.join(work_dir_full, batch_info_file), batch_info)
 
 
@@ -303,27 +342,25 @@ if __name__ == "__main__":
 
 
 
-# python /Users/danielagaio/github/metadata_mining/scripts/production/gpt_async_batch_production.py \
-#     --work_dir "cloudstor/Gaio/MicrobeAtlasProject" \
-#     --sample_list_file "missing_samples.txt" \
-#     --directory_with_split_metadata "sample.info_split_dirs" \
+# python ~/github/metadata_mining/scripts/production/gpt_async_batch_production.py \
+#     --work_dir "MicrobeAtlasProject2024" \
+#     --sample_list_file "samples_list.txt" \
+#     --directory_with_split_metadata "sample_info_split_dirs" \
 #     --output_pkl "metadataprov.pkl" \
 #     --system_prompt_file "github/metadata_mining/source_data/openai_system_better_prompt_batch.txt" \
 #     --api_key_path "Desktop/keys/my_api_key_production_run" \
-#     --model "gpt-3.5-turbo-0125" \
+#     --model "gpt-5.1" \
 #     --temperature 1.00 \
 #     --max_tokens 4096 \
 #     --top_p 0.75 \
 #     --frequency_penalty 0.25 \
 #     --presence_penalty 1.5 \
-#     --n_samples 9000 \
-#     --n_batches 5 \
+#     --n_samples 7000 \
+#     --n_batches 3 \
 #     --delay_minutes 1.5 \
-#     --state_file "state_file_202504.txt"
-    
-    
-    # samples_list_202504.txt
+#     --state_file "state_file.txt"
 
+    
 
 
 # =============================================================================

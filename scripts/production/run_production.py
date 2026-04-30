@@ -72,10 +72,11 @@ python ~/github/metadata_mining/scripts/production/gpt_async_batch_production.py
     --top_p 0.75 \
     --frequency_penalty 0.25 \
     --presence_penalty 1.5 \
-    --n_samples 1000 \
-    --n_batches 5 \
+    --n_samples 7000 \
+    --n_batches 3 \
     --delay_minutes 1.5 \
     --state_file "state_file.txt"
+
     
 
 
