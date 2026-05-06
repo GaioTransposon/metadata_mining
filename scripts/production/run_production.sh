@@ -1,10 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Apr 21 14:51:28 2026
-
-@author: dgaio
-"""
+#!/bin/bash
 
 # copy and zip David's file:
 gzip -c /mnt/mnemo6/dpatsch/data_pipeline/downloads/20240219/samples.info \
@@ -21,8 +15,6 @@ cp /mnt/mnemo6/janko/projects/microbe_atlas/results/all_minfilt_sampids_map2024.
 # make a test file: 
 gzip -dc ~/MicrobeAtlasProject2024sample.info.gz | head -n 1000000 > ~/MicrobeAtlasProject2024sample.info_test
 gzip ~/MicrobeAtlasProject2024sample.info_test
-
-
 
 
 
@@ -125,5 +117,6 @@ python ~/github/metadata_mining/scripts/production/make_embeddings.py \
 python  ~/github/metadata_mining/scripts/production/align_and_average_embeddings.py \
   --work_dir ~/MicrobeAtlasProject2024/production \
   --embedding_dim 3072
+
 
 
