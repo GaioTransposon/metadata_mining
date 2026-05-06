@@ -7,6 +7,18 @@ Created on Tue Apr 29 15:35:04 2025
 """
 
 
+# run as: 
+
+# python ~/github/metadata_mining/scripts/production/make_embeddings.py \
+#   --work_dir ~/MicrobeAtlasProject2024/production \
+#   --model text-embedding-3-small \
+#   --embedding_dim 1536
+  
+# python ~/github/metadata_mining/scripts/production/make_embeddings.py \
+#   --work_dir ~/MicrobeAtlasProject2024/production \
+#   --model text-embedding-3-large \
+#   --embedding_dim 3072
+
 
 import os
 import openai
@@ -15,23 +27,73 @@ import numpy as np
 import time
 import json
 import itertools
+import argparse
 
 
+# ===== ARGUMENTS =====
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--work_dir", default=os.path.join(os.path.expanduser("~"), "MicrobeAtlasProject2024/production"))
+parser.add_argument("--api_key_path", default=os.path.join(os.path.expanduser("~"), "Desktop/keys/my_api_key_embeddings"))
+
+parser.add_argument("--model", default="text-embedding-3-large")
+parser.add_argument("--embedding_dim", type=int, default=3072)
+
+parser.add_argument("--batch_size", type=int, default=1000)
+parser.add_argument("--file_slice_size", type=int, default=10000)
+parser.add_argument("--max_requests_per_round", type=int, default=100)
+parser.add_argument("--wait_time", type=int, default=60)
+
+parser.add_argument("--sub_biomes_input", default="GPT_sub_biomes.txt")
+parser.add_argument("--sub_biomes_output", default=None)
+parser.add_argument("--sub_biomes_state", default=None)
+
+parser.add_argument("--keywords_input", default="GPT_keywords.txt")
+parser.add_argument("--keywords_output", default=None)
+parser.add_argument("--keywords_state", default=None)
+
+args = parser.parse_args()
 
 
 # ===== CONFIGURATION =====
-work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
-api_key_path = os.path.join(os.path.expanduser('~'), "Desktop/keys/my_api_key_embeddings")
+work_dir = args.work_dir
+api_key_path = args.api_key_path
+
+sub_output = (
+    args.sub_biomes_output
+    if args.sub_biomes_output
+    else f"embeddings/GPT_sub_biomes_embeddings_{args.embedding_dim}.h5"
+)
+
+key_output = (
+    args.keywords_output
+    if args.keywords_output
+    else f"embeddings/GPT_keywords_embeddings_{args.embedding_dim}.h5"
+)
+
+sub_state = (
+    args.sub_biomes_state
+    if args.sub_biomes_state
+    else f"state_file_sub_biomes_{args.embedding_dim}.txt"
+)
+
+key_state = (
+    args.keywords_state
+    if args.keywords_state
+    else f"state_file_keywords_{args.embedding_dim}.txt"
+)
+
 input_files = [
-    ('GPT_sub_biomes.txt', 'embeddings/GPT_sub_biomes_embeddings.h5', 'state_file_sub_biomes.txt', False),
-    ('GPT_keywords.txt', 'embeddings/GPT_keywords_embeddings.h5', 'state_file_keywords.txt', True)
+    (args.sub_biomes_input, sub_output, sub_state, False),
+    (args.keywords_input, key_output, key_state, True)
 ]
 
-batch_size = 1000  # API batch size
-file_slice_size = 10000  # how many samples to load per slice
-max_requests_per_round = 100  # requests before waiting
-wait_time = 60  # seconds to wait
-embedding_dim = 1536
+batch_size = args.batch_size
+file_slice_size = args.file_slice_size
+max_requests_per_round = args.max_requests_per_round
+wait_time = args.wait_time
+embedding_dim = args.embedding_dim
+model = args.model
 
 # ===== SETUP API =====
 with open(api_key_path, 'r') as f:
@@ -64,7 +126,7 @@ def get_embeddings(samples_dict):
         try:
             response = openai_client.embeddings.create(
                 input=chunk,
-                model="text-embedding-3-small"
+                model=model
             )
             embeddings = [item.embedding for item in response.data]
             for j, sample_id in enumerate(sample_ids_chunk):
@@ -159,233 +221,6 @@ for infile, outfile, statefile, keywords in input_files:
 
 overall_elapsed = time.time() - overall_start_time
 print(f"🏁 All embedding runs completed in {overall_elapsed/60:.2f} minutes")
-
-# 🏁 speed for keywords: : 1076410 samples in 60.78 min
-
-
-
-
-####
-
-
-# trying to align! 
-
-
-
-import os
-import numpy as np
-import h5py
-from tqdm import tqdm
-import time
-
-# Paths
-work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
-subbiomes_path = os.path.join(work_dir, 'embeddings/GPT_sub_biomes_embeddings.h5')
-keywords_path = os.path.join(work_dir, 'embeddings/GPT_keywords_embeddings.h5')
-output_path = os.path.join(work_dir, 'embeddings/GPT_sub_biomes_embeddings_aligned.h5')
-
-embedding_dim = 1536
-batch_size = 10000
-
-# Open files
-with h5py.File(subbiomes_path, 'r') as subf, h5py.File(keywords_path, 'r') as keyf, h5py.File(output_path, 'w') as outf:
-    # Build lookup: sample ID → index in sub-biomes
-    sub_ids = subf['sample_ids'][:]
-    sub_ids = np.array([s.decode('utf-8') if isinstance(s, bytes) else str(s) for s in sub_ids])
-    sub_index = {sid: i for i, sid in enumerate(sub_ids)}
-
-    # Reference list from keywords file
-    key_ids = keyf['sample_ids'][:]
-    key_ids = np.array([s.decode('utf-8') if isinstance(s, bytes) else str(s) for s in key_ids])
-    n_samples = len(key_ids)
-
-    # Prepare output datasets
-    dt = h5py.string_dtype(encoding='utf-8')
-    outf.create_dataset('sample_ids', shape=(n_samples,), dtype=dt)
-    outf.create_dataset('texts', shape=(n_samples,), dtype=dt)
-    outf.create_dataset('embeddings', shape=(n_samples, embedding_dim), dtype='f4')
-
-    missing_count = 0
-    milestone_counter = 0
-    total_start_time = time.time()
-
-    # Progress bar
-    pbar = tqdm(total=n_samples, desc="Aligning samples", unit="samples")
-
-    # Process in batches
-    for start in range(0, n_samples, batch_size):
-        batch_start_time = time.time()
-        end = min(start + batch_size, n_samples)
-        batch_ids = key_ids[start:end]
-
-        batch_texts = []
-        batch_embeds = []
-
-        for sid in batch_ids:
-            if sid in sub_index:
-                idx = sub_index[sid]
-                text = subf['texts'][idx]
-                text = text.decode('utf-8') if isinstance(text, bytes) else str(text)
-                embed = subf['embeddings'][idx]
-            else:
-                text = 'NA'
-                embed = np.full(embedding_dim, np.nan)
-                missing_count += 1
-
-            batch_texts.append(text)
-            batch_embeds.append(embed)
-
-        # Write batch to output
-        outf['sample_ids'][start:end] = batch_ids
-        outf['texts'][start:end] = np.array(batch_texts, dtype=object)
-        outf['embeddings'][start:end, :] = np.vstack(batch_embeds)
-
-        batch_elapsed = time.time() - batch_start_time
-        pbar.update(len(batch_ids))
-        milestone_counter += len(batch_ids)
-
-        if milestone_counter % 10000 == 0:
-            print(f" → Processed {milestone_counter} samples — last batch took {batch_elapsed:.2f} sec")
-
-        if milestone_counter % 100000 == 0:
-            total_elapsed = (time.time() - total_start_time) / 60
-            print(f" ⏱ Reached {milestone_counter} samples — total elapsed time: {total_elapsed:.2f} min")
-
-    pbar.close()
-    print(f"✅ Alignment complete: {n_samples} total samples, {missing_count} missing in sub-biomes")
-    total_elapsed = (time.time() - total_start_time) / 60
-    print(f"✅ Saved aligned file to {output_path} in {total_elapsed:.2f} minutes")
-
-
-
-# Alignment complete: 2056410 total samples, 19827 missing in sub-biomes
-# ✅ Saved aligned file to /Users/danielagaio/cloudstor/Gaio/MicrobeAtlasProject/Hackathon/embeddings/GPT_sub_biomes_embeddings_aligned.h5 in 12.20 minutes
-
-####
-
-
-
-# averaged embeddings of sub-biomes + keywords 
-
-
-# Paths
-work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
-
-subbiomes_path = os.path.join(work_dir, 'embeddings/GPT_sub_biomes_embeddings_aligned.h5')
-keywords_path = os.path.join(work_dir, 'embeddings/GPT_keywords_embeddings.h5')
-output_path = os.path.join(work_dir, 'embeddings/GPT_sub_biomes_keywords_embeddings.h5')
-
-batch_size = 10000
-
-# ===== Safeguard: avoid overwriting output =====
-if os.path.exists(output_path):
-    print(f"⚠️ Output file {output_path} already exists. Exiting to avoid overwrite.")
-    exit(1)
-
-# ===== Load input file metadata =====
-with h5py.File(subbiomes_path, 'r') as subf, h5py.File(keywords_path, 'r') as keyf:
-    sub_ids = subf['sample_ids'][:]
-    key_ids = keyf['sample_ids'][:]
-
-    # Decode bytes to strings
-    sub_ids = np.array([s.decode('utf-8') if isinstance(s, bytes) else str(s) for s in sub_ids])
-    key_ids = np.array([s.decode('utf-8') if isinstance(s, bytes) else str(s) for s in key_ids])
-
-    # Find intersection and get index positions
-    common_ids, sub_idx_pos, key_idx_pos = np.intersect1d(sub_ids, key_ids, return_indices=True)
-    print(f"✅ {len(common_ids)} common samples found")
-
-    # Sort indices ONCE (use subbiome order)
-    sorted_order = np.argsort(sub_idx_pos)
-    common_ids = common_ids[sorted_order]
-    sub_idx_pos = sub_idx_pos[sorted_order]
-    key_idx_pos = key_idx_pos[np.argsort(key_idx_pos)]  # align keywords
-
-    # ===== Prepare output HDF5 file =====
-    dt = h5py.string_dtype(encoding='utf-8')
-    with h5py.File(output_path, 'w') as outf:
-        outf.create_dataset('sample_ids', shape=(0,), maxshape=(None,), dtype=dt)
-        outf.create_dataset('sub_texts', shape=(0,), maxshape=(None,), dtype=dt)
-        outf.create_dataset('key_texts', shape=(0,), maxshape=(None,), dtype=dt)
-        outf.create_dataset('embeddings', shape=(0, 1536), maxshape=(None, 1536), dtype='f4')
-
-        for i in range(0, len(common_ids), batch_size):
-            batch_ids = common_ids[i:i + batch_size]
-            sub_batch_idx = sub_idx_pos[i:i + batch_size]
-            key_batch_idx = key_idx_pos[i:i + batch_size]
-
-            sub_texts = subf['texts'][sub_batch_idx]
-            key_texts = keyf['texts'][key_batch_idx]
-            sub_embeds = subf['embeddings'][sub_batch_idx]
-            key_embeds = keyf['embeddings'][key_batch_idx]
-
-            # Decode texts if needed
-            sub_texts = [s.decode('utf-8') if isinstance(s, bytes) else str(s) for s in sub_texts]
-            key_texts = [s.decode('utf-8') if isinstance(s, bytes) else str(s) for s in key_texts]
-
-            # old: 
-            #avg_embeds = (sub_embeds + key_embeds) / 2
-            
-            # new: 
-            # Initialize averaged array
-            avg_embeds = np.where(
-                np.isnan(sub_embeds) & np.isnan(key_embeds),
-                np.nan,
-                np.where(
-                    np.isnan(sub_embeds),
-                    key_embeds,
-                    np.where(
-                        np.isnan(key_embeds),
-                        sub_embeds,
-                        (sub_embeds + key_embeds) / 2
-                    )
-                )
-            )
-
-
-            # Resize and write
-            n = outf['sample_ids'].shape[0]
-            outf['sample_ids'].resize(n + len(batch_ids), axis=0)
-            outf['sub_texts'].resize(n + len(batch_ids), axis=0)
-            outf['key_texts'].resize(n + len(batch_ids), axis=0)
-            outf['embeddings'].resize(n + len(batch_ids), axis=0)
-
-            outf['sample_ids'][n:] = np.array(batch_ids, dtype=object)
-            outf['sub_texts'][n:] = np.array(sub_texts, dtype=object)
-            outf['key_texts'][n:] = np.array(key_texts, dtype=object)
-            outf['embeddings'][n:] = avg_embeds
-
-            print(f" → Processed batch {i // batch_size +1} ({len(batch_ids)} samples)")
-
-print(f"✅ Saved averaged embeddings to {output_path}")
-
-
-
-####
-
-
-
-def count_samples_in_h5(h5_path):
-    with h5py.File(h5_path, 'r') as f:
-        sample_ids = f['sample_ids'][:]
-        n_samples = sample_ids.shape[0]
-        unique_sample_ids = np.unique(sample_ids)
-        n_unique_samples = unique_sample_ids.shape[0]
-        print(f"✅ {n_samples} samples in {h5_path}")
-        print(f"🔹 {n_unique_samples} unique samples in {h5_path}")
-
-# Example usage:
-work_dir = os.path.join(os.path.expanduser('~'), "cloudstor/Gaio/MicrobeAtlasProject/Hackathon")
-
-count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_sub_biomes_embeddings.h5')) # 2036583
-count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_sub_biomes_embeddings_aligned.h5')) # 2056410
-count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_keywords_embeddings.h5')) # 2056410
-count_samples_in_h5(os.path.join(work_dir, 'embeddings/GPT_sub_biomes_keywords_embeddings.h5')) # 2056410
-
-
-
-
-####
 
 
 

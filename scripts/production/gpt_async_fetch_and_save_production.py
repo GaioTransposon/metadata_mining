@@ -129,7 +129,7 @@ for batch_info in batch_info_list:
         
 
 
-# run as: 
+# # run as: 
 # python ~/github/metadata_mining/scripts/production/gpt_async_fetch_and_save_production.py \
 #     --work_dir "MicrobeAtlasProject2024" \
 #     --api_key_path "Desktop/keys/my_api_key_production_run"

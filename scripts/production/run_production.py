@@ -16,11 +16,11 @@ gzip -c /mnt/mnemo6/dpatsch/data_pipeline/downloads/20240219/samples.info \
 cp /mnt/mnemo6/janko/projects/microbe_atlas/results/all_minfilt_sampids_map2024.tsv /mnt/mnemo5/dgaio/MicrobeAtlasProject/.
 
 # copy both to local 
-MicrobeAtlasProject2024
+~/MicrobeAtlasProject2024
 
 # make a test file: 
-gzip -dc sample.info.gz | head -n 1000000 > sample.info_test
-gzip sample.info_test
+gzip -dc ~/MicrobeAtlasProject2024sample.info.gz | head -n 1000000 > ~/MicrobeAtlasProject2024sample.info_test
+gzip ~/MicrobeAtlasProject2024sample.info_test
 
 
 
@@ -79,9 +79,51 @@ python ~/github/metadata_mining/scripts/production/gpt_async_batch_production.py
 
     
 
-
-
 python ~/github/metadata_mining/scripts/production/gpt_async_fetch_and_save_production.py \
     --work_dir "MicrobeAtlasProject2024" \
     --api_key_path "Desktop/keys/my_api_key_production_run"
+
+
+
+
+# gather output: 
+cd ~/MicrobeAtlasProject2024/production && python3 - <<'PY'
+import csv
+import glob
+
+biome_out = open("GPT_biomes.txt", "w")
+sub_out = open("GPT_sub_biomes.txt", "w")
+key_out = open("GPT_keywords.txt", "w")
+
+for file in glob.glob("gpt_clean_output_batch*.csv"):
+    print(f"Processing {file}")
+
+    with open(file, newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+
+        for row in reader:
+            sid = row["sample_id"]
+
+            biome_out.write(f"{sid}\t{row['biome_label']}\n")
+            sub_out.write(f"{sid}\t{row['sub_biome']}\n")
+            key_out.write(f"{sid}\t{row['keywords']}\n")
+
+biome_out.close()
+sub_out.close()
+key_out.close()
+
+print("✅ Done.")
+PY
+
+
+python ~/github/metadata_mining/scripts/production/make_embeddings.py \
+  --work_dir ~/MicrobeAtlasProject2024/production \
+  --model text-embedding-3-large \
+  --embedding_dim 3072
+  
+  
+python  ~/github/metadata_mining/scripts/production/align_and_average_embeddings.py \
+  --work_dir ~/MicrobeAtlasProject2024/production \
+  --embedding_dim 3072
+
 
