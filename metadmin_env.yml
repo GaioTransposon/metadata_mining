@@ -113,6 +113,7 @@ dependencies:
     - propcache==0.3.2
     - pydantic==2.11.7
     - pydantic-core==2.33.2
+    - pronto
     - regex==2024.11.6
     - sniffio==1.3.1
     - tiktoken==0.5.2

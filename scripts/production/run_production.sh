@@ -16,7 +16,7 @@ cp /mnt/mnemo6/janko/projects/microbe_atlas/results/all_minfilt_sampids_map2024.
 gzip -dc ~/MicrobeAtlasProject2024sample.info.gz | head -n 1000000 > ~/MicrobeAtlasProject2024sample.info_test
 gzip ~/MicrobeAtlasProject2024sample.info_test
 
-
+conda env create -f ~/github/metadata_mining/metadmin_env.yml
 
 python ~/github/metadata_mining/scripts/dirs.py \
     --input_file '~/MicrobeAtlasProject2024/sample.info_test.gz' \
