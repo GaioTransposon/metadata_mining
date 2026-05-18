@@ -104,18 +104,55 @@ biome_out.close()
 sub_out.close()
 key_out.close()
 
-print("✅ Done.")
+print("✅ Done.") 
 PY
 
 
-# Wait before running this below as I am comparing the quality with those created using text-embedding-3-small 
+# Wait before running this below:
+
 
 python ~/github/metadata_mining/scripts/production/make_embeddings.py \
   --work_dir ~/MicrobeAtlasProject2024/production \
+  --api_key_path ~/Desktop/keys/my_api_key_embeddings \
+  --model text-embedding-3-small \
+  --embedding_dim 1536 \
+  --include_gold \
+  --gold_dict ~/MicrobeAtlasProject2024/gold_dict.pkl \
+  --gold_subbiome_index 0
+  
+  
+python ~/github/metadata_mining/scripts/production/make_embeddings.py \
+  --work_dir ~/MicrobeAtlasProject2024/production \
+  --api_key_path ~/Desktop/keys/my_api_key_embeddings \
   --model text-embedding-3-large \
-  --embedding_dim 3072
+  --embedding_dim 3072 \
+  --include_gold \
+  --gold_dict ~/MicrobeAtlasProject2024/gold_dict.pkl \
+  --gold_subbiome_index 0
   
 
+   
+
+python  ~/github/metadata_mining/scripts/production/align_and_average_embeddings.py \
+  --work_dir ~/MicrobeAtlasProject2024/production \
+  --embedding_dim 1536
+ 
+python  ~/github/metadata_mining/scripts/production/align_and_average_embeddings.py \
+  --work_dir ~/MicrobeAtlasProject2024/production \
+  --embedding_dim 3072
+
+
+
+
+python ~/github/metadata_mining/scripts/production/compact_performance_metrics.py \
+  --work_dir ~/MicrobeAtlasProject2024/production \
+  --gold_dict ~/MicrobeAtlasProject2024/gold_dict.pkl \
+  --embedding_dim 1536
+  
+python ~/github/metadata_mining/scripts/production/compact_performance_metrics.py \
+  --work_dir ~/MicrobeAtlasProject2024/production \
+  --gold_dict ~/MicrobeAtlasProject2024/gold_dict.pkl \
+  --embedding_dim 3072
 
 
 
