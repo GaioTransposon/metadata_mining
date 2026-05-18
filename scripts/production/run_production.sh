@@ -108,15 +108,14 @@ print("✅ Done.")
 PY
 
 
+# Wait before running this below as I am comparing the quality with those created using text-embedding-3-small 
+
 python ~/github/metadata_mining/scripts/production/make_embeddings.py \
   --work_dir ~/MicrobeAtlasProject2024/production \
   --model text-embedding-3-large \
   --embedding_dim 3072
   
-  
-python  ~/github/metadata_mining/scripts/production/align_and_average_embeddings.py \
-  --work_dir ~/MicrobeAtlasProject2024/production \
-  --embedding_dim 3072
+
 
 
 
